@@ -1,6 +1,16 @@
 #summary Short scripts in the examples subdirectory
 #labels Featured
 
+= Introduction =
+
+The examples directory has a few scripts which use the library.
+
+= print_booklet.py =
+
+A printer with a fancy printer and/or a full-up copy of Acrobat can easily turn your small PDF into a little booklet (for example, print 4 letter-sized pages on a single 11" x 17").
+
+But that assumes several things, including that the personnel know how to operate the hardware and software.  print_booklet.py lets you turn your PDF into a preformatted booklet, to give them fewer chances to mess it up.
+
 = print_two.py =
 
 If you ever want to print something that is like a small booklet, but needs to be spiral bound, you either have to do some fancy rearranging, or just waste half your paper.
