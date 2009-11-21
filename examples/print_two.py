@@ -49,4 +49,4 @@ inpfn, = sys.argv[1:]
 outfn = 'print_two.' + os.path.basename(inpfn)
 pages = PdfReader(inpfn).pages
 
-PdfWriter().addpages(fixpage(x) for x in pages).write('print_two.' + inpfn)
+PdfWriter().addpages(fixpage(x) for x in pages).write(outfn)
