@@ -1,0 +1,185 @@
+# A part of pdfrw (pdfrw.googlecode.com)
+# Copyright (C) 2006-2009 Patrick Maupin, Austin, Texas
+# MIT license -- See LICENSE.txt for details
+
+'''
+The PdfReader class reads an entire PDF file into memory and
+parses the top-level container objects.  (It does not parse
+into streams.)  The object subclasses list, and the
+document pages are stored in the list.
+'''
+
+from pdftokens import PdfTokens
+from pdfobjects import PdfDict, PdfArray, PdfName
+from pdfcompress import uncompress
+
+class PdfReader(list):
+
+    class Unresolved:
+        # Used as a placeholder until we have an object.
+        pass
+
+    def readindirect(self, objnum, gennum):
+        ''' Read an indirect object.  If it has already
+            been read, return it from the cache.
+        '''
+
+        def setobj(obj):
+            # Store the new object in the dictionary
+            # once we have its value
+            record[1] = obj
+
+        def ordinary(source, setobj, obj):
+            # Deal with an ordinary (non-array, non-dict) object
+            setobj(obj)
+            return obj
+
+        fdata, objnum, gennum = self.fdata, int(objnum), int(gennum)
+        record = self.indirect_objects[fdata, objnum, gennum]
+        if record[1] is not self.Unresolved:
+            return record[1]
+
+        # Read the object header and validate it
+        source = PdfTokens(fdata, record[0], True)
+        objid = source.multiple(3)
+        assert int(objid[0]) == objnum, objid
+        assert int(objid[1]) == gennum, objid
+        assert objid[2] == 'obj', objid
+
+        # Read the object, and call special code if it starts
+        # an array or dictionary
+        obj = source.next()
+        obj = self.special.get(obj, ordinary)(source, setobj, obj)
+        self.readstream(obj, source)
+        obj.indirect = True
+        return obj
+
+    @staticmethod
+    def readstream(obj, source):
+        ''' Read optional stream following a dictionary
+            object.
+        '''
+        tok = source.next()
+        if tok == 'endobj':
+            return  # No stream
+
+        assert isinstance(obj, PdfDict)
+        assert tok == 'stream', tok
+        floc = source.floc
+        fdata = source.fdata
+        ch = fdata[floc]
+        if ch == '\r':
+            floc += 1
+            ch = fdata[floc]
+        assert ch == '\n'
+        startstream = floc + 1
+        endstream = startstream + int(obj.Length)
+        obj._stream = fdata[startstream:endstream]
+        source = PdfTokens(fdata, endstream, True)
+        endit = source.multiple(2)
+        assert endit == 'endstream endobj'.split(), endit
+
+    def readarray(self, source, setobj=lambda x:None, original=None):
+        special = self.special
+        result = PdfArray()
+        setobj(result)
+
+        for value in source:
+            if value == ']':
+                break
+            if value in special:
+                value = special[value](source)
+            elif value == 'R':
+                generation = result.pop()
+                value = self.readindirect(result.pop(), generation)
+            result.append(value)
+        return result
+
+    def readdict(self, source, setobj=lambda x:None, original=None):
+        special = self.special
+        result = PdfDict()
+        setobj(result)
+
+        tok = source.next()
+        while tok != '>>':
+            assert tok.startswith('/'), (tok, source.multiple(10))
+            key = tok
+            value = source.next()
+            if value in special:
+                value = special[value](source)
+                tok = source.next()
+            else:
+                tok = source.next()
+                if value.isdigit() and tok.isdigit():
+                    assert source.next() == 'R'
+                    value = self.readindirect(value, tok)
+                    tok = source.next()
+            result[key] = value
+
+        return result
+
+    @staticmethod
+    def readxref(fdata):
+        startloc = fdata.rfind('startxref')
+        xrefinfo = list(PdfTokens(fdata, startloc))
+        assert len(xrefinfo) == 3, xrefinfo
+        assert xrefinfo[0] == 'startxref', xrefinfo[0]
+        assert xrefinfo[1].isdigit(), xrefinfo[1]
+        assert xrefinfo[2].rstrip() == '%%EOF', repr(xrefinfo[2])
+        return startloc, PdfTokens(fdata, int(xrefinfo[1]))
+
+    def parsexref(self, source):
+        tok = source.next()
+        assert tok == 'xref', tok
+        while 1:
+            tok = source.next()
+            if tok == 'trailer':
+                break
+            startobj = int(tok)
+            for objnum in range(startobj, startobj + int(source.next())):
+                offset = int(source.next())
+                generation = int(source.next())
+                if source.next() == 'n':
+                    objid = self.fdata, objnum, generation
+                    objval = [offset, self.Unresolved]
+                    self.indirect_objects.setdefault(objid, objval)
+
+    PageName = PdfName.Page
+    PagesName = PdfName.Pages
+
+    def readpages(self, node):
+        # PDFs can have arbitrarily nested Pages/Page
+        # dictionary structures.
+        if node.Type == self.PageName:
+            return [node]
+        assert node.Type == self.PagesName, node.Type
+        result = []
+        for node in node.Kids:
+            result.extend(self.readpages(node))
+        return result
+
+    def __init__(self, fname=None, fdata=None, decompress=True):
+
+        if fname is not None:
+            assert fdata is None
+            f = open(fname, 'rb')
+            fdata = f.read()
+            f.close()
+
+        assert fdata is not None
+        self.fdata = fdata
+
+        self.indirect_objects = {}
+        self.special = {'<<': self.readdict, '[': self.readarray}
+
+        startloc, source = self.readxref(fdata)
+        self.parsexref(source)
+        assert source.next() == '<<'
+        self.trailer = trailer = self.readdict(source)
+        assert source.next() == 'startxref' and source.floc > startloc
+        self[:] = self.readpages(trailer.Root.Pages)
+        if decompress:
+            self.uncompress()
+
+    def uncompress(self):
+        uncompress(x[1] for x in self.indirect_objects.itervalues())
