@@ -125,7 +125,7 @@ class PdfTokens(object):
     def regular_string(self, token):
         def escaped():
             escaped = False
-            i = -1
+            i = -2
             while tokens[i] == '\\':
                 escaped = not escaped
                 i -= 1
