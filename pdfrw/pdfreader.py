@@ -40,7 +40,7 @@ class PdfReader(PdfDict):
             return record[1]
 
         # Read the object header and validate it
-        source = PdfTokens(fdata, record[0], True)
+        source = PdfTokens(fdata, record[0])
         objid = source.multiple(3)
         assert int(objid[0]) == objnum, objid
         assert int(objid[1]) == gennum, objid
@@ -75,7 +75,7 @@ class PdfReader(PdfDict):
         startstream = floc + 1
         endstream = startstream + int(obj.Length)
         obj._stream = fdata[startstream:endstream]
-        source = PdfTokens(fdata, endstream, True)
+        source = PdfTokens(fdata, endstream)
         endit = source.multiple(2)
         assert endit == 'endstream endobj'.split(), endit
 
@@ -121,7 +121,7 @@ class PdfReader(PdfDict):
     @staticmethod
     def readxref(fdata):
         startloc = fdata.rfind('startxref')
-        xrefinfo = list(PdfTokens(fdata, startloc))
+        xrefinfo = list(PdfTokens(fdata, startloc, False))
         assert len(xrefinfo) == 3, xrefinfo
         assert xrefinfo[0] == 'startxref', xrefinfo[0]
         assert xrefinfo[1].isdigit(), xrefinfo[1]
