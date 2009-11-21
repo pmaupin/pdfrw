@@ -34,7 +34,13 @@ class FormatObjects(object):
         # Can't hash dicts, so just hash the object ID
         objid = id(obj)
 
-        if not getattr(obj, 'indirect', False):
+        # Automatically set stream objects to indirect
+        if isinstance(obj, PdfDict):
+            indirect = obj.indirect or (obj.stream is not None)
+        else:
+            indirect = getattr(obj, 'indirect', False)
+
+        if not indirect:
             visited = self.visited
             assert objid not in visited, \
                 'Circular reference encountered in non-indirect object %s' % repr(obj)
