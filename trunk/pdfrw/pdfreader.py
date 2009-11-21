@@ -180,6 +180,7 @@ class PdfReader(PdfDict):
         self.pages = self.readpages(self.Root.Pages)
         if decompress:
             self.uncompress()
+        del self['/special'], self['/fdata']
 
     def uncompress(self):
         uncompress(x[1] for x in self.indirect_objects.itervalues())
