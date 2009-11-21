@@ -101,7 +101,7 @@ class PdfTokens(object):
 
     cached_strings = {}
 
-    def __init__(self, fdata, startloc=0, strip_comments=False, streamlen=None):
+    def __init__(self, fdata, startloc=0, strip_comments=True, streamlen=None):
         self.primitive = _PrimitiveTokens(fdata, startloc, streamlen)
         self.fdata = fdata
         self.strip_comments = strip_comments

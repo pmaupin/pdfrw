@@ -151,6 +151,12 @@ class PdfWriter(object):
     def addpage(self, page):
         assert page.Type == PdfName.Page
         self.pagearray.append(IndirectPdfDict(page))
+        return self
+
+    def addpages(self, pagelist):
+        for page in pagelist:
+            self.addpage(page)
+        return self
 
     def write(self, fname):
         pagearray = self.pagearray
@@ -174,7 +180,6 @@ class PdfWriter(object):
 if __name__ == '__main__':
     debug = True
     import pdfreader
-    from pdftokens import PdfTokens
     x = pdfreader.PdfReader('source.pdf')
     y = PdfWriter()
     for i, page in enumerate(x.pages):
