@@ -5,15 +5,15 @@
 
 In general, PDF files conceptually map quite well to Python.  The major objects to think about are:
 
-  * strings.  Most things are strings.  These also often decompose naturally into
-  * streams tokens.  These can be combined to create higher-level objects like
-  * arrays and
-  * dictionaries and
-  * contents streams (which can be more streams of tokens)
+  * *strings*.  Most things are strings.  These also often decompose naturally into
+  * *lists of tokens*.  Tokens can be combined to create higher-level objects like
+  * *arrays* and
+  * *dictionaries* and
+  * *Contents streams* (which can be more streams of tokens)
 
 = Difficulties =
 
-The apparent primary difficulty in mapping PDF files to Python is the concept of
+The apparent primary difficulty in mapping PDF files to Python is the PDF file concept of
 "indirect objects."  But an indirect object is really just a way to get around
 the chicken and egg problem of circular object references when mapping arbitrary
 data structures to files.  To flatten out a circular reference, an indirect object
