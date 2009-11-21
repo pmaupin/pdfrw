@@ -1,7 +1,10 @@
 from inspect import getargspec
 
 from pdftokens import PdfTokens
+from pdfobjects import PdfString
 
+#############################################################################
+# Graphics parsing
 
 def parse_array(self, token='[', params=None):
     mylist = []
@@ -143,6 +146,98 @@ def parse_stroke_cmyk(self, token='K', params='ffff'):
 def parse_fill_cmyk(self, token='k', params='ffff'):
     self.canv.setFillColorCMYK(*params)
 
+#############################################################################
+# Text parsing
+
+def parse_begin_text(self, token='BT', params=''):
+    assert self.tpath is None
+    self.tpath = self.canv.beginPath()
+
+def parse_text_transform(self, token='Tm', params='ffffff'):
+    path = self.tpath
+
+    # Stoopid optimization to remove nop
+    try:
+        code = path._code
+    except AttributeError:
+        pass
+    else:
+        if code[-1] ==  '1 0 0 1 0 0 Tm':
+            code.pop()
+
+    path.setTextTransform(*params)
+
+def parse_setfont(self, token='Tf', params='nf'):
+    fontinfo = self.fontdict[params[0]]
+    self.tpath._setfont(fontinfo.name, params[1])
+    self.curfont = fontinfo
+
+def parse_TJ(self, token='TJ', params='a'):
+    hexdict = self.curfont.hexdict
+    result = []
+    for x in a:
+        if x.startswith('<'):
+            result.append(hexdict[x])
+        elif x.startswith('('):
+            result.append(x.decode())
+        else:
+            int(x)
+    self.tpath.textOut(''.join(result))
+
+def parse_end_text(self, token='ET', params=''):
+    assert self.tpath is not None
+    self.canv.drawText(self.tpath)
+    self.tpath=None
+
+def parse_move_cursor(self, token='Td', params='ff'):
+    self.tpath.moveCursor(params[0], -params[1])
+
+def parse_set_leading(self, token='TL', params='f'):
+    self.tpath.setLeading(*params)
+
+def parse_text_out(self, token='Tj', params='t'):
+    self.tpath.textOut(t.decode())
+
+def parse_text_line(self, token='T*', params=''):
+    self.tpath.textLine()
+
+def parse_set_char_space(self, token='Tc', params='f'):
+    self.tpath.setCharSpace(*params)
+
+def parse_set_word_space(self, token='Tw', params='f'):
+    self.tpath.setWordSpace(*params)
+
+def parse_set_hscale(self, token='Tz', params='f'):
+    self.tpath.setHorizScale(params[0] - 100)
+
+def parse_set_rise(self, token='Ts', params='f'):
+    self.tpath.setRise(*params)
+
+def parse_xobject(self, token='Do', params='n'):
+    # TODO: Need to do this
+    pass
+
+class FontInfo(object):
+    ''' Pretty basic -- needs a lot of work to work right for all fonts
+    '''
+    def __init__(self, source):
+        self.name = source.BaseFont[1:]
+        info = source.ToUnicode
+        if not info:
+            return
+        info = info.stream.split('beginbfchar')[1].split('endbfchar')[0]
+        info = list(PdfTokens(info))
+        assert not len(info) & 1
+        info2 = []
+        for x in info:
+            assert x[0] == '<' and x[-1] == '>' and len(x) in (4,6), x
+            i = int(x[1:-1], 16)
+            assert 0 <= i <= 255
+            info2.append(i)
+        self.hexdict = dict((x,chr(y)) for (x,y) in zip(info[::2], info2[1::2]))
+
+#############################################################################
+# Control structures
 
 def findparsefuncs():
     def checkname(n):
@@ -153,7 +248,11 @@ def findparsefuncs():
         assert isinstance(a, list), a
         return a
 
-    fixparam = dict(f=float, i=int, n=checkname, a=checkarray, s=str)
+    def checktext(t):
+        assert isinstance(t, PdfString)
+        return t
+
+    fixparam = dict(f=float, i=int, n=checkname, a=checkarray, s=str, t=checktext)
     fixcache = {}
     def fixlist(params):
         try:
@@ -189,6 +288,8 @@ class _ParseClass(object):
         self.params = params = []
         self.canv = canvas
         self.gpath = None
+        self.tpath = None
+        self.fontdict = dict((x,FontInfo(y)) for (x, y) in page.Resources.Font.iteritems())
 
         for token in self.tokens:
             info = dispatch(token)
