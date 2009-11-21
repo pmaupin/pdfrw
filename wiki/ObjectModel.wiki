@@ -1,4 +1,5 @@
 #summary How pdfrw maps PDF files to Python
+#labels Featured
 
 = Introduction =
 
