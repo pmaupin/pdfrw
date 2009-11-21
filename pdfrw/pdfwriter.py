@@ -171,7 +171,7 @@ if __name__ == '__main__':
     from pdftokens import PdfTokens
     x = pdfreader.PdfReader('source.pdf')
     y = PdfWriter()
-    for i, page in enumerate(x):
+    for i, page in enumerate(x.pages):
         print '  Adding page', i+1, '\r',
         y.addpage(page)
     print
