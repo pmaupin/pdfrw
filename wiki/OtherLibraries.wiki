@@ -1,0 +1,39 @@
+#summary Other PDF manipulation libraries and tools
+
+= Pure Python =
+
+  * <a href="http://pybrary.net/pyPdf/">pypdf</a>
+
+    pyPdf is, in some ways, very full-featured.
+    It can do decompression and decryption and seems
+    to know a lot about items inside at least some
+    kinds of PDF files.  In comparison, pdfrw tries
+    to know very little about the content of PDF
+    files, and focuses on trying to have a more
+    Pythonic API for mapping the PDF file container
+    syntax to Python.
+
+  * <a href="http://www.boddie.org.uk/david/Projects/Python/pdftools/index.html">pdftools</a>
+
+    pdftools feels large and I fell asleep trying to figure
+    out how it all fit together, but many others have
+    done useful things with it.
+
+  * <a href="http://www.reportlab.com/docs/pagecatcher-ds.pdf">pagecatcher</a>
+
+    My understanding is that pagecatcher would have done
+    exactly what I wanted.  But I was on a zero budget,
+    so I've never had the pleasure of experiencing
+    pagecatcher.  I do, however, use and like reportlab
+    (open source, from the people who make pagecatcher)
+    so I'm sure pagecatcher is great, better documented
+    and much more full-featured than the open source
+    options.
+
+= non-Python libraries =
+
+  * pyPoppler apparently works quite well for displaying PDF files.
+
+= Other tools =
+
+  * pdftk is a wonderful command line tool for basic manipulation
