@@ -27,8 +27,9 @@ def fixpage(page, count=[0]):
             del page[key]
 
     startsize = tuple(box[2:])
-    finalsize = tuple(2*x for x in box[2:])
+    finalsize = box[3], 2 * box[2]
     page.MediaBox = PdfArray((0, 0) + finalsize)
+    page.Rotate = (int(page.Rotate or 0) + 90) % 360
 
     contents = page.Contents
     stream = contents.stream
