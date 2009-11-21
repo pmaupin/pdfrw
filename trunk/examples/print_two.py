@@ -32,6 +32,8 @@ def fixpage(page, count=[0]):
     page.Rotate = (int(page.Rotate or 0) + 90) % 360
 
     contents = page.Contents
+    assert contents.Filter is None, "Must decompress page first"
+
     stream = contents.stream
     stream = '0 1 -1 0 %s %s cm\n%s' % (finalsize[0], 0, stream)
 
