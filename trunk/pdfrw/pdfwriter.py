@@ -27,7 +27,7 @@ class FormatObjects(object):
     ''' FormatObjects performs the actual formatting and disk write.
     '''
 
-    def add(self, obj):
+    def add(self, obj, visited):
         ''' Add an object to our list, if it's an indirect
             object.  Just format it if not.
         '''
@@ -41,11 +41,10 @@ class FormatObjects(object):
             indirect = getattr(obj, 'indirect', False)
 
         if not indirect:
-            visited = self.visited
             assert objid not in visited, \
                 'Circular reference encountered in non-indirect object %s' % repr(obj)
             visited.add(objid)
-            result = self.format_obj(obj)
+            result = self.format_obj(obj, visited)
             visited.remove(objid)
             return result
 
@@ -80,14 +79,16 @@ class FormatObjects(object):
             subarray.append(x)
         return formatter % '\n  '.join(' '.join(x) for x in bigarray)
 
-    def format_obj(self, obj):
+    def format_obj(self, obj, visited=None):
         ''' format PDF object data into semi-readable ASCII.
             May mutually recurse with add() -- add() will
             return references for indirect objects, and add
             the indirect object to the list.
         '''
+        if visited is None:
+            visited = set()
         if isinstance(obj, PdfArray):
-            myarray = [self.add(x) for x in obj]
+            myarray = [self.add(x, visited) for x in obj]
             return self.format_array(myarray, '[%s]')
         elif isinstance(obj, PdfDict):
             if self.compress and obj.stream:
@@ -95,7 +96,7 @@ class FormatObjects(object):
             myarray = []
             for key, value in sorted(obj.iteritems()):
                 myarray.append(key)
-                myarray.append(self.add(value))
+                myarray.append(self.add(value, visited))
             result = self.format_array(myarray, '<<%s>>')
             stream = obj.stream
             if stream is not None:
@@ -110,7 +111,6 @@ class FormatObjects(object):
         self.compress = compress
         self.indirect_dict = {}
         self.objlist = []
-        self.visited = set()
 
         # The first format of trailer gets all the information,
         # but we throw away the actual trailer formatting.
