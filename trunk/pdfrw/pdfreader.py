@@ -13,9 +13,9 @@ from pdftokens import PdfTokens
 from pdfobjects import PdfDict, PdfArray, PdfName
 from pdfcompress import uncompress
 
-class PdfReader(list):
+class PdfReader(PdfDict):
 
-    class Unresolved:
+    class unresolved:
         # Used as a placeholder until we have an object.
         pass
 
@@ -36,7 +36,7 @@ class PdfReader(list):
 
         fdata, objnum, gennum = self.fdata, int(objnum), int(gennum)
         record = self.indirect_objects[fdata, objnum, gennum]
-        if record[1] is not self.Unresolved:
+        if record[1] is not self.unresolved:
             return record[1]
 
         # Read the object header and validate it
@@ -141,18 +141,18 @@ class PdfReader(list):
                 generation = int(source.next())
                 if source.next() == 'n':
                     objid = self.fdata, objnum, generation
-                    objval = [offset, self.Unresolved]
+                    objval = [offset, self.unresolved]
                     self.indirect_objects.setdefault(objid, objval)
 
-    PageName = PdfName.Page
-    PagesName = PdfName.Pages
+    pagename = PdfName.Page
+    pagesname = PdfName.Pages
 
     def readpages(self, node):
         # PDFs can have arbitrarily nested Pages/Page
         # dictionary structures.
-        if node.Type == self.PageName:
+        if node.Type == self.pagename:
             return [node]
-        assert node.Type == self.PagesName, node.Type
+        assert node.Type == self.pagesname, node.Type
         result = []
         for node in node.Kids:
             result.extend(self.readpages(node))
@@ -175,9 +175,9 @@ class PdfReader(list):
         startloc, source = self.readxref(fdata)
         self.parsexref(source)
         assert source.next() == '<<'
-        self.trailer = trailer = self.readdict(source)
+        self.update(self.readdict(source))
         assert source.next() == 'startxref' and source.floc > startloc
-        self[:] = self.readpages(trailer.Root.Pages)
+        self.pages = self.readpages(self.Root.Pages)
         if decompress:
             self.uncompress()
 
