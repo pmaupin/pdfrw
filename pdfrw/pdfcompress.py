@@ -17,7 +17,7 @@ def streamobjects(mylist):
         if isinstance(obj, PdfDict) and obj.stream is not None:
             yield obj
 
-def uncompress(mylist):
+def uncompress(mylist, warnings=set()):
     flate = PdfName.FlateDecode
     for obj in streamobjects(mylist):
         ftype = obj.Filter
@@ -25,7 +25,10 @@ def uncompress(mylist):
             continue
         parms = obj.DecodeParms
         if ftype != flate or parms is not None:
-            print 'Not decompressing: cannot use filter %s with parameters %s' % (repr(ftype), repr(parms))
+            msg = 'Not decompressing: cannot use filter %s with parameters %s' % (repr(ftype), repr(parms))
+            if msg not in warnings:
+                warnings.add(msg)
+                print msg
         else:
             obj.stream = zlib.decompress(obj.stream)
             obj.Filter = None
