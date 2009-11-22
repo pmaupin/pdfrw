@@ -3,7 +3,7 @@
 # MIT license -- See LICENSE.txt for details
 
 '''
-A token parser for PDF streams.
+A tokenizer for PDF streams.
 
 In general, documentation used was "PDF reference",
 sixth edition, for PDF version 1.7, dated November 2006.
