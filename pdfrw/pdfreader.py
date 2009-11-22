@@ -5,8 +5,9 @@
 '''
 The PdfReader class reads an entire PDF file into memory and
 parses the top-level container objects.  (It does not parse
-into streams.)  The object subclasses list, and the
-document pages are stored in the list.
+into streams.)  The object subclasses PdfDict, and the
+document pages are stored in a list in the pages attribute
+of the object.
 '''
 
 from pdftokens import PdfTokens

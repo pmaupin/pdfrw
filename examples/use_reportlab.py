@@ -20,7 +20,7 @@ from pdfrw.decodegraphics import parsepage
 inpfn, = sys.argv[1:]
 outfn = 'use_reportlab.' + os.path.basename(inpfn)
 pages = PdfReader(inpfn).pages
-canvas = Canvas(outfn)
+canvas = Canvas(outfn, pageCompression=0)
 
 for page in pages:
     box = [float(x) for x in page.MediaBox]
