@@ -173,6 +173,10 @@ def parse_setfont(self, token='Tf', params='nf'):
     self.tpath._setFont(fontinfo.name, params[1])
     self.curfont = fontinfo
 
+def parse_text_out(self, token='Tj', params='t'):
+    text = params[0].decode(self.curfont.remap, self.curfont.twobyte)
+    self.tpath.textOut(text)
+
 def parse_TJ(self, token='TJ', params='a'):
     remap = self.curfont.remap
     twobyte = self.curfont.twobyte
@@ -183,7 +187,8 @@ def parse_TJ(self, token='TJ', params='a'):
         else:
             # TODO: Adjust spacing between characters here
             int(x)
-    self.tpath.textOut(''.join(result))
+    text = ''.join(result)
+    self.tpath.textOut(text)
 
 def parse_end_text(self, token='ET', params=''):
     assert self.tpath is not None
@@ -195,9 +200,6 @@ def parse_move_cursor(self, token='Td', params='ff'):
 
 def parse_set_leading(self, token='TL', params='f'):
     self.tpath.setLeading(*params)
-
-def parse_text_out(self, token='Tj', params='t'):
-    self.tpath.textOut(params[0].decode(self.curfont.remap, self.curfont.twobyte))
 
 def parse_text_line(self, token='T*', params=''):
     self.tpath.textLine()
@@ -291,8 +293,11 @@ class _ParseClass(object):
     @classmethod
     def parsepage(cls, page, canvas=None):
         self = cls()
+        contents = page.Contents
+        if contents.Filter is not None:
+            raise SystemExit('Cannot parse graphics -- page encoded with %s' % contents.Filter)
         dispatch = cls.dispatch.get
-        self.tokens = tokens = iter(PdfTokens(page.Contents.stream))
+        self.tokens = tokens = iter(PdfTokens(contents.stream))
         self.params = params = []
         self.canv = canvas
         self.gpath = None
