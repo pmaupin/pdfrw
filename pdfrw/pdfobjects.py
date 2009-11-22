@@ -33,12 +33,17 @@ class PdfString(str):
     unescape_pattern = r'(\\b|\\f|\\n|\\r|\\t|\\\r\n|\\\r|\\\n|\\[0-9]+|\\)'
     unescape_func = re.compile(unescape_pattern).split
 
-    hex_pattern = '([a-fA-F0-9][a-fA-F0-9])'
+    hex_pattern = '([a-fA-F0-9][a-fA-F0-9]|[a-fA-F0-9])'
     hex_func = re.compile(hex_pattern).split
+
+    hex_pattern2 = '([a-fA-F0-9][a-fA-F0-9][a-fA-F0-9][a-fA-F0-9]|[a-fA-F0-9][a-fA-F0-9]|[a-fA-F0-9])'
+    hex_func2 = re.compile(hex_pattern2).split
+
+    hex_funcs = hex_func, hex_func2
 
     indirect = False
 
-    def decode_regular(self):
+    def decode_regular(self, remap=chr):
         assert self[0] == '(' and self[-1] == ')'
         mylist = self.unescape_func(self[1:-1])
         result = []
@@ -50,27 +55,25 @@ class PdfString(str):
                 # FIXME: TODO: Handle unicode here
                 if value > 127:
                     value = 127
-                chunk = chr(value)
+                chunk = remap(value)
             if chunk:
                 result.append(chunk)
         return ''.join(result)
 
-    def decode_hex(self):
+    def decode_hex(self, remap=chr, twobytes=False):
         data = self
-        if len(data) & 1:
-            data = data[:-1] + '0' + data[-1]
-        data = self.hex_func.split(self)
+        data = self.hex_funcs[twobytes](self)
         chars = data[1::2]
         other = data[0::2]
         assert other[0] == '<' and other[-1] == '>' and ''.join(other) == '<>', self
-        return ''.join(chr(int(x, 16)) for x in data)
+        return ''.join(remap(int(x, 16)) for x in chars)
 
-    def decode(self):
+    def decode(self, remap=chr, twobytes=False):
         if self.startswith('('):
-            return self.decode_regular()
+            return self.decode_regular(remap)
 
         else:
-            return self.decode_hex()
+            return self.decode_hex(remap, twobytes)
 
 class PdfDict(dict):
     indirect = False

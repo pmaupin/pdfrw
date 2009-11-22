@@ -174,14 +174,14 @@ def parse_setfont(self, token='Tf', params='nf'):
     self.curfont = fontinfo
 
 def parse_TJ(self, token='TJ', params='a'):
-    hexdict = self.curfont.hexdict
+    remap = self.curfont.remap
+    twobyte = self.curfont.twobyte
     result = []
-    for x in a:
-        if x.startswith('<'):
-            result.append(hexdict[x])
-        elif x.startswith('('):
-            result.append(x.decode())
+    for x in params[0]:
+        if isinstance(x, PdfString):
+            result.append(x.decode(remap, twobyte))
         else:
+            # TODO: Adjust spacing between characters here
             int(x)
     self.tpath.textOut(''.join(result))
 
@@ -197,7 +197,7 @@ def parse_set_leading(self, token='TL', params='f'):
     self.tpath.setLeading(*params)
 
 def parse_text_out(self, token='Tj', params='t'):
-    self.tpath.textOut(params[0].decode())
+    self.tpath.textOut(params[0].decode(self.curfont.remap, self.curfont.twobyte))
 
 def parse_text_line(self, token='T*', params=''):
     self.tpath.textLine()
@@ -221,8 +221,15 @@ def parse_xobject(self, token='Do', params='n'):
 class FontInfo(object):
     ''' Pretty basic -- needs a lot of work to work right for all fonts
     '''
+    lookup = {
+        'BitstreamVeraSans' : 'Helvetica',   # WRONG -- have to learn about font stuff...
+             }
+
     def __init__(self, source):
-        self.name = source.BaseFont[1:]
+        name = source.BaseFont[1:]
+        self.name = self.lookup.get(name, name)
+        self.remap = chr
+        self.twobyte = False
         info = source.ToUnicode
         if not info:
             return
@@ -233,9 +240,9 @@ class FontInfo(object):
         for x in info:
             assert x[0] == '<' and x[-1] == '>' and len(x) in (4,6), x
             i = int(x[1:-1], 16)
-            assert 0 <= i <= 255
             info2.append(i)
-        self.hexdict = dict((x,chr(y)) for (x,y) in zip(info[::2], info2[1::2]))
+        self.remap = dict((x,chr(y)) for (x,y) in zip(info2[::2], info2[1::2])).get
+        self.twobyte = len(info[0]) > 4
 
 #############################################################################
 # Control structures
