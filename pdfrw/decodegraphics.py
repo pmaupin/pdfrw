@@ -114,11 +114,12 @@ def parse_nop(self, token='n', params=''):
     finish_path(self, 0, 0, 0)
 
 def finish_path(self, stroke, fill, fillmode):
-    canv = self.canv
-    canv._fillmode, oldmode = fillmode, canv._fillmode
-    canv.drawPath(self.gpath, stroke, fill)
-    canv._fillmode = oldmode
-    self.gpath = None
+    if self.gpath is not None:
+        canv = self.canv
+        canv._fillMode, oldmode = fillmode, canv._fillMode
+        canv.drawPath(self.gpath, stroke, fill)
+        canv._fillMode = oldmode
+        self.gpath = None
 
 def parse_clip_path(self, token='W', params=''):
     # TODO: add logging
@@ -151,7 +152,7 @@ def parse_fill_cmyk(self, token='k', params='ffff'):
 
 def parse_begin_text(self, token='BT', params=''):
     assert self.tpath is None
-    self.tpath = self.canv.beginPath()
+    self.tpath = self.canv.beginText()
 
 def parse_text_transform(self, token='Tm', params='ffffff'):
     path = self.tpath
@@ -169,7 +170,7 @@ def parse_text_transform(self, token='Tm', params='ffffff'):
 
 def parse_setfont(self, token='Tf', params='nf'):
     fontinfo = self.fontdict[params[0]]
-    self.tpath._setfont(fontinfo.name, params[1])
+    self.tpath._setFont(fontinfo.name, params[1])
     self.curfont = fontinfo
 
 def parse_TJ(self, token='TJ', params='a'):
@@ -196,7 +197,7 @@ def parse_set_leading(self, token='TL', params='f'):
     self.tpath.setLeading(*params)
 
 def parse_text_out(self, token='Tj', params='t'):
-    self.tpath.textOut(t.decode())
+    self.tpath.textOut(params[0].decode())
 
 def parse_text_line(self, token='T*', params=''):
     self.tpath.textLine()
