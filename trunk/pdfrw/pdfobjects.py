@@ -30,7 +30,7 @@ class PdfString(str):
                      '\\\r\n': '', '\\\r':'', '\\\n':'',
                      '\\\\':'\\', '\\':'',
                     }
-    unescape_pattern = '(\\b|\\f|\\n|\\r|\\t|\\\r\n|\\\r||\\\n|\\\\|\\[0-9]*)'
+    unescape_pattern = r'(\\b|\\f|\\n|\\r|\\t|\\\r\n|\\\r|\\\n|\\[0-9]+|\\)'
     unescape_func = re.compile(unescape_pattern).split
 
     hex_pattern = '([a-fA-F0-9][a-fA-F0-9])'
@@ -39,14 +39,18 @@ class PdfString(str):
     indirect = False
 
     def decode_regular(self):
-        source = self.re_func(self)
-        assert mylist.pop(0) == '(' and mylist.pop() == ')'
+        assert self[0] == '(' and self[-1] == ')'
+        mylist = self.unescape_func(self[1:-1])
         result = []
         unescape = self.unescape_dict.get
         for chunk in mylist:
             chunk = unescape(chunk, chunk)
             if chunk.startswith('\\') and len(chunk) > 1:
-                chunk = chr(int(chunk[1:], 8))
+                value = int(chunk[1:], 8)
+                # FIXME: TODO: Handle unicode here
+                if value > 127:
+                    value = 127
+                chunk = chr(value)
             if chunk:
                 result.append(chunk)
         return ''.join(result)
