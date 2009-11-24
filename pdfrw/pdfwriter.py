@@ -153,6 +153,8 @@ class PdfWriter(object):
         self.pagearray.append(IndirectPdfDict(page))
         return self
 
+    addPage = addpage  # for compatibility with pyPdf
+
     def addpages(self, pagelist):
         for page in pagelist:
             self.addpage(page)
@@ -173,9 +175,12 @@ class PdfWriter(object):
         )
 
         trailer = PdfDict(Root=rootdict)
-        f = open(fname, 'wb')
+
+        preexisting = hasattr(fname, 'write')
+        f = preexisting and fname or open(fname, 'wb')
         FormatObjects.dump(f, trailer, self.version, self.compress)
-        f.close()
+        if not preexisting:
+            f.close()
 
 if __name__ == '__main__':
     debug = True

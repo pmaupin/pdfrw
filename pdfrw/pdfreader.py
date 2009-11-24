@@ -163,9 +163,13 @@ class PdfReader(PdfDict):
 
         if fname is not None:
             assert fdata is None
-            f = open(fname, 'rb')
-            fdata = f.read()
-            f.close()
+            # Allow reading preexisting streams like pyPdf
+            if hasattr(fname, 'read'):
+                fdata = fname.read()
+            else:
+                f = open(fname, 'rb')
+                fdata = f.read()
+                f.close()
 
         assert fdata is not None
         self.fdata = fdata
@@ -182,6 +186,14 @@ class PdfReader(PdfDict):
         if decompress:
             self.uncompress()
         del self['/special'], self['/fdata']
+
+        # For compatibility with pyPdf
+        self.numPages = len(self.pages)
+
+
+    # For compatibility with pyPdf
+    def getPage(self, pagenum):
+        return self.pages[pagenum]
 
     def uncompress(self):
         uncompress(x[1] for x in self.indirect_objects.itervalues())

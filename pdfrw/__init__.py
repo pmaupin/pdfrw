@@ -6,3 +6,8 @@ from pdfwriter import PdfWriter
 from pdfreader import PdfReader
 from pdfobjects import PdfObject, PdfName, PdfArray, PdfDict, IndirectPdfDict
 from pdftokens import PdfTokens
+
+# Add a tiny bit of compatibility to pyPdf
+
+PdfFileReader = PdfReader
+PdfFileWriter = PdfWriter

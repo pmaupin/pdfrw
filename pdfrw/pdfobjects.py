@@ -61,8 +61,8 @@ class PdfString(str):
         return ''.join(result)
 
     def decode_hex(self, remap=chr, twobytes=False):
-        data = self
-        data = self.hex_funcs[twobytes](self)
+        data = ''.join(self.split())
+        data = self.hex_funcs[twobytes](data)
         chars = data[1::2]
         other = data[0::2]
         assert other[0] == '<' and other[-1] == '>' and ''.join(other) == '<>', self
