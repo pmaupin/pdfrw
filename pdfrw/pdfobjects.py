@@ -91,6 +91,9 @@ class PdfDict(dict):
             if len(args) == 1:
                 args = args[0]
             self.update(args)
+            if isinstance(args, PdfDict):
+                self.indirect = args.indirect
+                self._stream = args.stream
 
     def __getattr__(self, name):
         return self.get(PdfName(name))
@@ -111,6 +114,27 @@ class PdfDict(dict):
             if value is not None:
                 assert key.startswith('/'), (key, value)
                 yield key, value
+
+    @property
+    def search(self):
+        class Search(object):
+            def __init__(self, basedict):
+                self.basedict = basedict
+            def __getattr__(self, name):
+                return self[name]
+            def __getitem__(self, name):
+                visited = set()
+                mydict = self.basedict
+                while 1:
+                    value = getattr(mydict, name)
+                    if value is not None:
+                        return value
+                    visited.add(mydict)
+                    mydict = mydict.Parent
+                    if mydict is None:
+                        return
+                    assert mydict not in visited
+        return Search(self)
 
 class IndirectPdfDict(PdfDict):
     indirect = True
