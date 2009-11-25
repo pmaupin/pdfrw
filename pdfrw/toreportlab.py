@@ -19,8 +19,7 @@ Parameters:
 
 Returns:
         A corresponding reportlab object, or the object
-        name if the object is an Xobject.  (Reportlab
-        seems weird about Xobjects.)
+        name if the object is an Xobject.
 
 Notes:
     1) Original objects are annotated with a
@@ -31,6 +30,14 @@ Notes:
         objects for different pages.  Then you
         need to do your own deep copying (of circular
         structures).  You're on your own.
+
+    2) ReportLab seems weird about FormXObjects.
+       They pass around a partial name instead of the
+       object or a reference to it.  So we have to
+       reach into reportlab and get a number for
+       a unique name.  I guess this is to make it
+       where you can combine page streams with
+       impunity, but that's just a guess.
 
 makerl(rldoc, pdfobj, isxobj=False):
 
