@@ -129,11 +129,12 @@ class PdfDict(dict):
                     value = getattr(mydict, name)
                     if value is not None:
                         return value
-                    visited.add(mydict)
+                    myid = id(mydict)
+                    assert myid not in visited
+                    visited.add(myid)
                     mydict = mydict.Parent
                     if mydict is None:
                         return
-                    assert mydict not in visited
         return Search(self)
 
 class IndirectPdfDict(PdfDict):
