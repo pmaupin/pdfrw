@@ -22,9 +22,16 @@ Reference for content:   Adobe PDF reference, sixth edition, version 1.7
 from pdfobjects import PdfDict, PdfArray, PdfName
 from pdfreader import PdfReader
 
-class ViewInfo(PdfDict):
+class ViewInfo(object):
+    ''' Instantiate ViewInfo with a uri, and it will parse out
+        the filename, page, and viewrect into object attributes.
+    '''
+    doc = None
+    docname = None
+    page = None
+    viewrect = None
+
     def __init__(self, pageinfo):
-        validkeys = self.validkeys
         pageinfo=pageinfo.split('#',1)
         if len(pageinfo) == 2:
             pageinfo[1:] = pageinfo[1].replace('&', '#').split('#')
@@ -39,19 +46,25 @@ class ViewInfo(PdfDict):
             value = value.replace(',', ' ').split()
             if key == 'page':
                 assert len(value) == 1
-                self[key] = int(value[0])
+                setattr(self, key, int(value[0]))
             elif key == 'viewrect':
                 assert len(value) == 4
-                self[key] = [float(x) for x in value]
+                setattr(self, key, [float(x) for x in value])
             else:
                 log.error('Unknown option: %s', key)
 
-def xobj(pageinfo, doc=None):
-    if not isinstance(pageinfo, str):
-        assert isinstance(pageinfo, ViewInfo)
-    else:
+def xobj(pageinfo, doc=None, allow_compressed=True):
+    ''' xobj creates and returns an actual Form XObject.
+        Can work standalone, or in conjunction with
+        the CacheXObj class (below).
+    '''
+    if not isinstance(pageinfo, ViewInfo):
         pageinfo = ViewInfo(pageinfo)
 
+    # If we're explicitly passed a document,
+    # make sure we don't have one implicitly as well.
+    # If no implicit or explicit doc, then read one in
+    # from the filename.
     if doc is not None:
         assert pageinfo.doc is None
         pageinfo.doc = doc
@@ -67,7 +80,9 @@ def xobj(pageinfo, doc=None):
     result = PdfDict(sourcepage.Contents)
     # Make sure the only attribute is length
     # All the filters must have been executed
-    assert int(result.Length) == len(result.stream) and len([x for x in result.iteritems()]) == 1
+    assert int(result.Length) == len(result.stream)
+    if not allow_compressed:
+        assert len([x for x in result.iteritems()]) == 1
     result.Type = PdfName.XObject
     result.Subtype = PdfName.Form
     result.FormType = 1
@@ -92,13 +107,22 @@ def xobj(pageinfo, doc=None):
 class CacheXObj(object):
     ''' Use to keep from reparsing files over and over,
         and to keep from making the output too much
-        bigger than it ought to be.
+        bigger than it ought to be by replicating
+        unnecessary object copies.
     '''
-    def __init__(self):
+    def __init__(self, decompress=False):
+        ''' Set decompress true if you need
+            the Form XObjects to be decompressed.
+            Will decompress what it can and scream
+            about the rest.
+        '''
         self.cached_pdfs = {}
         self.cached_xobjs = {}
+        self.decompress = decompress
 
     def load(self, sourcename):
+        ''' Load a Form XObject from a uri
+        '''
         xcache = self.cached_xobjs
         result = xcache.get(sourcename)
         if result is not None:
@@ -110,8 +134,8 @@ class CacheXObj(object):
         pcache = self.cached_pdfs
         doc = pcache.get(fname)
         if doc is None:
-            doc = pcache[fname] = PdfReader(fname)
+            doc = pcache[fname] = PdfReader(fname, decompress=self.decompress)
 
-        result = xcache[sourcename] = xobj(info, doc)
+        result = xcache[sourcename] = xobj(info, doc,
+                                        allow_compressed=not self.decompress)
         return result
-
