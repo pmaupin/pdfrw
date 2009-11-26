@@ -64,7 +64,8 @@ def _makedict(rldoc, pdfobj, isxobj):
     pdfobj._rl_obj = rlobj
 
     for key, value in pdfobj.iteritems():
-        rldict[key[1:]] = makerl(rldoc, value)
+        if key != '/_rl_obj':
+            rldict[key[1:]] = makerl(rldoc, value)
 
     return rlobj
 
@@ -84,22 +85,23 @@ def _makestream(rldoc, pdfobj, isxobj):
     pdfobj._rl_obj = rlobj
 
     for key, value in pdfobj.iteritems():
-        rldict[key[1:]] = makerl(rldoc, value)
+        if key != '/_rl_obj':
+            rldict[key[1:]] = makerl(rldoc, value)
 
     return name or rlobj
 
 def _makearray(rldoc, pdfobj, isxobj):
     assert isinstance(pdfobj, PdfArray)
-    assert pdfobj._rl_obj is None
+    assert not hasattr(pdfobj, '_rl_obj')
     assert not isxobj
 
-    mylist = []
-    rlobj = rlarray = RLArray(mylist)
+    rlobj = rlarray = RLArray([])
     if pdfobj.indirect:
         rlobj.__RefOnly__ = 1
         rlobj = rldoc.Reference(rlobj)
     pdfobj._rl_obj = rlobj
 
+    mylist = rlobj.sequence
     for value in pdfobj:
         mylist.append(makerl(rldoc, value))
 
