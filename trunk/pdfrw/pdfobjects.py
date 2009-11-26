@@ -84,6 +84,13 @@ class PdfDict(dict):
                     _stream = ('stream', False),
                    )
 
+    def __setitem__(self, name, value):
+        assert name.startswith('/'), name
+        if value is not None:
+            dict.__setitem__(self, name, value)
+        else:
+            del self[name]
+
     def __init__(self, *args, **kw):
         for key, value in kw.iteritems():
             setattr(self, key, value)
@@ -136,6 +143,18 @@ class PdfDict(dict):
                     if mydict is None:
                         return
         return Search(self)
+
+    @property
+    def private(self):
+        ''' Allows setting private metadata for use in
+            processing (not sent to PDF file)
+        '''
+        class Private(object):
+            pass
+
+        result = Private()
+        result.__dict__ = self.__dict__
+        return result
 
 class IndirectPdfDict(PdfDict):
     indirect = True

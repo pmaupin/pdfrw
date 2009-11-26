@@ -61,11 +61,10 @@ def _makedict(rldoc, pdfobj, isxobj):
     if pdfobj.indirect:
         rlobj.__RefOnly__ = 1
         rlobj = rldoc.Reference(rlobj)
-    pdfobj._rl_obj = rlobj
+    pdfobj.private._rl_obj = rlobj
 
     for key, value in pdfobj.iteritems():
-        if key != '/_rl_obj':
-            rldict[key[1:]] = makerl(rldoc, value)
+        rldict[key[1:]] = makerl(rldoc, value)
 
     return rlobj
 
@@ -82,11 +81,10 @@ def _makestream(rldoc, pdfobj, isxobj):
     rldict = RLDict()
     rlobj = RLStream(rldict, pdfobj.stream)
     rlobj = rldoc.Reference(rlobj, xobjname)
-    pdfobj._rl_obj = rlobj
+    pdfobj.private._rl_obj = rlobj
 
     for key, value in pdfobj.iteritems():
-        if key != '/_rl_obj':
-            rldict[key[1:]] = makerl(rldoc, value)
+        rldict[key[1:]] = makerl(rldoc, value)
 
     return name or rlobj
 
