@@ -1,5 +1,7 @@
 Example programs:
 
+subset.py -- This will retrieve a subset of pages from a document.
+
 print_two.py  -- this is used when printing two cut-down copies on a single sheet of paper (double-sided)  Requires uncompressed PDF.
 
 booklet.py -- Converts a PDF into a booklet.
