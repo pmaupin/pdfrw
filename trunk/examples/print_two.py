@@ -5,7 +5,10 @@ usage:   print_two.py my.pdf
 
 Creates print_two.my.pdf
 
-Take a look and see what you get.
+This is only useful when you can cut down sheets of paper to make two
+small documents.  Works for double-sided only right now.  Needs
+uncompressed PDF.
+
 '''
 
 import sys
