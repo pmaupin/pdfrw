@@ -92,8 +92,6 @@ class PdfDict(dict):
             del self[name]
 
     def __init__(self, *args, **kw):
-        for key, value in kw.iteritems():
-            setattr(self, key, value)
         if args:
             if len(args) == 1:
                 args = args[0]
@@ -101,6 +99,8 @@ class PdfDict(dict):
             if isinstance(args, PdfDict):
                 self.indirect = args.indirect
                 self._stream = args.stream
+        for key, value in kw.iteritems():
+            setattr(self, key, value)
 
     def __getattr__(self, name):
         return self.get(PdfName(name))
@@ -123,7 +123,10 @@ class PdfDict(dict):
                 yield key, value
 
     @property
-    def search(self):
+    def inheritable(self):
+        ''' Search through ancestors as needed for inheritable
+            dictionary items
+        '''
         class Search(object):
             def __init__(self, basedict):
                 self.basedict = basedict

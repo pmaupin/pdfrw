@@ -15,11 +15,9 @@ The interface to this function is through the makerl() function.
 Parameters:
         rldoc       - a reportlab "document"
         pdfobj      - a top-level pdfrw PDF object
-        isxobj      - set True if pdfobj is an XObject
 
 Returns:
-        A corresponding reportlab object, or the object
-        name if the object is an Xobject.
+        A corresponding reportlab object.
 
 Notes:
     1) Original objects are annotated with a
@@ -39,23 +37,22 @@ Notes:
        where you can combine page streams with
        impunity, but that's just a guess.
 
-makerl(rldoc, pdfobj, isxobj=False):
+makerl(rldoc, pdfobj):
 
 '''
 
 from reportlab.pdfbase import pdfdoc as rldocmodule
-from pdfobjects import PdfDict, PdfArray
+from pdfobjects import PdfDict, PdfArray, PdfName
 
 RLStream = rldocmodule.PDFStream
 RLDict = rldocmodule.PDFDictionary
 RLArray = rldocmodule.PDFArray
 
 
-def _makedict(rldoc, pdfobj, isxobj):
+def _makedict(rldoc, pdfobj):
     assert isinstance(pdfobj, PdfDict)
     assert pdfobj.stream is None
     assert pdfobj._rl_obj is None
-    assert not isxobj
 
     rlobj = rldict = RLDict()
     if pdfobj.indirect:
@@ -68,7 +65,7 @@ def _makedict(rldoc, pdfobj, isxobj):
 
     return rlobj
 
-def _makestream(rldoc, pdfobj, isxobj):
+def _makestream(rldoc, pdfobj, xobjtype=PdfName.XObject):
     assert isinstance(pdfobj, PdfDict)
     assert pdfobj.stream is not None
     assert pdfobj._rl_obj is None
@@ -76,11 +73,13 @@ def _makestream(rldoc, pdfobj, isxobj):
     rldict = RLDict()
     rlobj = RLStream(rldict, pdfobj.stream)
 
-    if isxobj:
-        result = 'pdfrw_%s' % (rldoc.objectcounter+1)
-        rldoc.Reference(rlobj, rldoc.getXObjectName(result))
+    if pdfobj.Type == xobjtype:
+        name = 'pdfrw_%s' % (rldoc.objectcounter+1)
+        pdfobj.private.rl_xobj_name = name
+        name = rldoc.getXObjectName(name)
     else:
-        result = rldoc.Reference(rlobj)
+        name = None
+    result = rldoc.Reference(rlobj, name)
     pdfobj.private._rl_obj = result
 
     for key, value in pdfobj.iteritems():
@@ -88,10 +87,9 @@ def _makestream(rldoc, pdfobj, isxobj):
 
     return result
 
-def _makearray(rldoc, pdfobj, isxobj):
+def _makearray(rldoc, pdfobj):
     assert isinstance(pdfobj, PdfArray)
     assert not hasattr(pdfobj, '_rl_obj')
-    assert not isxobj
 
     rlobj = rlarray = RLArray([])
     if pdfobj.indirect:
@@ -105,12 +103,11 @@ def _makearray(rldoc, pdfobj, isxobj):
 
     return rlobj
 
-def _makestr(rldoc, pdfobj, isxobj):
-    assert not isxobj
+def _makestr(rldoc, pdfobj):
     assert isinstance(pdfobj, (float, int, str)), repr(pdfobj)
     return pdfobj
 
-def makerl(rldoc, pdfobj, isxobj=False):
+def makerl(rldoc, pdfobj):
     value = getattr(pdfobj, '_rl_obj', None)
     if value is not None:
         return value
@@ -123,4 +120,4 @@ def makerl(rldoc, pdfobj, isxobj=False):
         func = _makearray
     else:
         func = _makestr
-    return func(rldoc, pdfobj, isxobj)
+    return func(rldoc, pdfobj)
