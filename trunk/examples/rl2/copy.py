@@ -1,11 +1,13 @@
 #!/usr/bin/env python
 
 '''
-usage:   use_reportlab.py my.pdf
+usage:   copy.py my.pdf
 
-Creates use_reportlab.my.pdf
+Creates copy.my.pdf
 
-Take a look and see what you get.
+Uses somewhat-functional parser.  For better results
+for most things, see the Form XObject-based method.
+
 '''
 
 import sys
@@ -13,12 +15,11 @@ import os
 
 from reportlab.pdfgen.canvas import Canvas
 
-import find_pdfrw
+from decodegraphics import parsepage
 from pdfrw import PdfReader, PdfWriter, PdfArray
-from pdfrw.decodegraphics import parsepage
 
 inpfn, = sys.argv[1:]
-outfn = 'use_reportlab.' + os.path.basename(inpfn)
+outfn = 'copy.' + os.path.basename(inpfn)
 pages = PdfReader(inpfn).pages
 canvas = Canvas(outfn, pageCompression=0)
 
