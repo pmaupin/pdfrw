@@ -88,7 +88,7 @@ class PdfDict(dict):
         assert name.startswith('/'), name
         if value is not None:
             dict.__setitem__(self, name, value)
-        else:
+        elif name in self:
             del self[name]
 
     def __init__(self, *args, **kw):
