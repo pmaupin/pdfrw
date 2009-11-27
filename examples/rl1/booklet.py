@@ -40,15 +40,20 @@ def make_pdf(outfn, xobjpairs):
     for xobjlist in xobjpairs:
         x = y = 0
         for xobj in xobjlist:
-            makerl(canvas._doc, xobj)
+            makerl(canvas, xobj)
             x += xobj.BBox[2]
             y = max(y, xobj.BBox[3])
-        if xobjlist[0] == xobjlist[-1]:
-            xobjlist = xobjlist[:1]
 
         canvas.setPageSize((x,y))
 
-        x = y = 0
+        # Handle blank back page
+        if len(xobjlist) > 1 and xobjlist[0] == xobjlist[-1]:
+            xobjlist = xobjlist[:1]
+            x = xobjlist[0].BBox[2]
+        else:
+            x = 0
+        y = 0
+
         for xobj in xobjlist:
             canvas.saveState()
             canvas.translate(x, y)
