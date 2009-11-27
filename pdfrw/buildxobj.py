@@ -4,6 +4,11 @@
 
 '''
 
+This module contains code to build PDF "Form XObjects".
+
+A Form XObject allows a fragment from one PDF file to be cleanly
+included in another PDF file.
+
 Reference for syntax: "Parameters for opening PDF files" from SDK 8.1
 
         http://www.adobe.com/devnet/acrobat/pdfs/pdf_open_parameters.pdf
@@ -53,6 +58,67 @@ class ViewInfo(object):
             else:
                 log.error('Unknown option: %s', key)
 
+def getrects(inheritable, pageinfo):
+    ''' Given the inheritable attributes of a page and
+        the desired pageinfo rectangle, return the page's
+        media box and the calculated boundary (clip) box.
+    '''
+    mbox = tuple(float(x) for x in inheritable.MediaBox)
+    vrect = pageinfo.viewrect
+    if vrect is None:
+        cbox = tuple(float(x) for x in (inheritable.CropBox or mbox))
+    else:
+        mleft, mbot, mright, mtop = mbox
+        x, y, w, h = vrect
+        cleft = mleft + x
+        ctop = mtop - y
+        cright = cleft + w
+        cbot = ctop - h
+        cbox = max(mleft, cleft), max(mbot, cbot), min(mright, cright), min(mtop, ctop)
+    return mbox, cbox
+
+def _cache_xobj(contents, resources, mbox, bbox):
+    ''' Return a cached Form XObject, or create a new one and cache it.
+    '''
+    cachedict = contents.xobj_cachedict
+    if cachedict is None:
+        cachedict = contents.private.xobj_cachedict = {}
+    result = cachedict.get(bbox)
+    if result is None:
+        func = mbox == bbox and _get_fullpage or _get_subpage
+        result = func(contents, resources, mbox, bbox)
+        result.Type = PdfName.XObject
+        result.Subtype = PdfName.Form
+        result.FormType = 1
+        result.BBox = PdfArray(bbox)
+        cachedict[bbox] = result
+    return result
+
+def _get_fullpage(contents, resources, mbox, bbox):
+    ''' fullpage is easy.  Just copy the contents,
+        set up the resources, and let _cache_xobj handle the
+        rest.
+    '''
+    return PdfDict(contents, Resources=resources)
+
+def _get_subpage(contents, resources, mbox, bbox):
+    ''' subpages *could* be as easy as full pages, but we
+        choose to complicate life by creating a Form XObject
+        for the page, and then one that references it for
+        the subpage, on the off-chance that we want multiple
+        items from the page.
+    '''
+    return PdfDict(
+        stream = '/FullPage Do\n',
+        Resources = PdfDict(
+            XObject = PdfDict(
+                FullPage = _cache_xobj(contents, resources, mbox, mbox)
+            )
+        )
+    )
+
+#_get_subpage = _get_fullpage
+
 def xobj(pageinfo, doc=None, allow_compressed=True):
     ''' xobj creates and returns an actual Form XObject.
         Can work standalone, or in conjunction with
@@ -75,33 +141,17 @@ def xobj(pageinfo, doc=None, allow_compressed=True):
     assert isinstance(doc, PdfReader)
 
     sourcepage = doc.pages[(pageinfo.page or 1) - 1]
-    sourceinfo = sourcepage.search
-
-    result = PdfDict(sourcepage.Contents)
+    inheritable = sourcepage.inheritable
+    resources = inheritable.Resources
+    mbox, bbox = getrects(inheritable, pageinfo)
+    contents = sourcepage.Contents
     # Make sure the only attribute is length
     # All the filters must have been executed
-    assert int(result.Length) == len(result.stream)
+    assert int(contents.Length) == len(contents.stream)
     if not allow_compressed:
-        assert len([x for x in result.iteritems()]) == 1
-    result.Type = PdfName.XObject
-    result.Subtype = PdfName.Form
-    result.FormType = 1
-    result.Resources = sourceinfo.Resources
+        assert len([x for x in contents.iteritems()]) == 1
 
-    mbox = sourceinfo.MediaBox
-    vrect = pageinfo.viewrect
-    if vrect is None:
-        cbox = [float(x) for x in sourceinfo.CropBox or mbox]
-    else:
-        mleft, mbot, mright, mtop = [float(x) for x in mbox]
-        x, y, w, h = vrect
-        cleft = mleft + x
-        ctop = mtop - y
-        cright = cleft + w
-        cbot = ctop - h
-        cbox = max(mleft, cleft), max(mbot, cbot), min(mright, cright), min(mtop, ctop)
-    result.BBox = PdfArray(cbox)
-    return result
+    return _cache_xobj(contents, resources, mbox, bbox)
 
 
 class CacheXObj(object):
@@ -117,25 +167,15 @@ class CacheXObj(object):
             about the rest.
         '''
         self.cached_pdfs = {}
-        self.cached_xobjs = {}
         self.decompress = decompress
 
     def load(self, sourcename):
         ''' Load a Form XObject from a uri
         '''
-        xcache = self.cached_xobjs
-        result = xcache.get(sourcename)
-        if result is not None:
-            return result
-
         info = ViewInfo(sourcename)
         fname = info.docname
-
         pcache = self.cached_pdfs
         doc = pcache.get(fname)
         if doc is None:
             doc = pcache[fname] = PdfReader(fname, decompress=self.decompress)
-
-        result = xcache[sourcename] = xobj(info, doc,
-                                        allow_compressed=not self.decompress)
-        return result
+        return xobj(info, doc, allow_compressed=not self.decompress)
