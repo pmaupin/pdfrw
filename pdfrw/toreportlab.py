@@ -13,16 +13,24 @@ What can you do?
 The interface to this function is through the makerl() function.
 
 Parameters:
-        rldoc       - a reportlab "document"
-        pdfobj      - a top-level pdfrw PDF object
+        canv       - a reportlab "canvas" (also accepts a "document")
+        pdfobj      - a pdfrw PDF object
 
 Returns:
-        A corresponding reportlab object.
+        A corresponding reportlab object, or if the
+        object is a PDF Form XObject, the name to
+        use with reportlab for the object.
+
+        Will recursively convert all necessary objects.
+        Be careful when converting a page -- if /Parent is set,
+        will recursively convert all pages!
 
 Notes:
     1) Original objects are annotated with a
-        _rl_obj attribute which points to the
-        reportlab object.  This is great for
+        derived_rl_obj attribute which points to the
+        reportlab object.  This keeps multiple reportlab
+        objects from being generated for the same pdfobj
+        via repeated calls to makerl.  This is great for
         not putting too many objects into the
         new PDF, but not so good if you are modifying
         objects for different pages.  Then you
@@ -52,23 +60,23 @@ RLArray = rldocmodule.PDFArray
 def _makedict(rldoc, pdfobj):
     assert isinstance(pdfobj, PdfDict)
     assert pdfobj.stream is None
-    assert pdfobj._rl_obj is None
+    assert pdfobj.derived_rl_obj is None
 
     rlobj = rldict = RLDict()
     if pdfobj.indirect:
         rlobj.__RefOnly__ = 1
         rlobj = rldoc.Reference(rlobj)
-    pdfobj.private._rl_obj = rlobj
+    pdfobj.private.derived_rl_obj = rlobj
 
     for key, value in pdfobj.iteritems():
-        rldict[key[1:]] = makerl(rldoc, value)
+        rldict[key[1:]] = makerl_recurse(rldoc, value)
 
     return rlobj
 
 def _makestream(rldoc, pdfobj, xobjtype=PdfName.XObject):
     assert isinstance(pdfobj, PdfDict)
     assert pdfobj.stream is not None
-    assert pdfobj._rl_obj is None
+    assert pdfobj.derived_rl_obj is None
 
     rldict = RLDict()
     rlobj = RLStream(rldict, pdfobj.stream)
@@ -80,26 +88,26 @@ def _makestream(rldoc, pdfobj, xobjtype=PdfName.XObject):
     else:
         name = None
     result = rldoc.Reference(rlobj, name)
-    pdfobj.private._rl_obj = result
+    pdfobj.private.derived_rl_obj = result
 
     for key, value in pdfobj.iteritems():
-        rldict[key[1:]] = makerl(rldoc, value)
+        rldict[key[1:]] = makerl_recurse(rldoc, value)
 
     return result
 
 def _makearray(rldoc, pdfobj):
     assert isinstance(pdfobj, PdfArray)
-    assert not hasattr(pdfobj, '_rl_obj')
+    assert not hasattr(pdfobj, 'derived_rl_obj')
 
     rlobj = rlarray = RLArray([])
     if pdfobj.indirect:
         rlobj.__RefOnly__ = 1
         rlobj = rldoc.Reference(rlobj)
-    pdfobj._rl_obj = rlobj
+    pdfobj.derived_rl_obj = rlobj
 
     mylist = rlobj.sequence
     for value in pdfobj:
-        mylist.append(makerl(rldoc, value))
+        mylist.append(makerl_recurse(rldoc, value))
 
     return rlobj
 
@@ -107,8 +115,8 @@ def _makestr(rldoc, pdfobj):
     assert isinstance(pdfobj, (float, int, str)), repr(pdfobj)
     return pdfobj
 
-def makerl(rldoc, pdfobj):
-    value = getattr(pdfobj, '_rl_obj', None)
+def makerl_recurse(rldoc, pdfobj):
+    value = getattr(pdfobj, 'derived_rl_obj', None)
     if value is not None:
         return value
     if isinstance(pdfobj, PdfDict):
@@ -121,3 +129,12 @@ def makerl(rldoc, pdfobj):
     else:
         func = _makestr
     return func(rldoc, pdfobj)
+
+def makerl(canv, pdfobj):
+    try:
+        doc = canv._doc
+    except AttributeError:
+        doc = canv
+    rlobj = makerl_recurse(doc, pdfobj)
+    name = pdfobj.rl_xobj_name
+    return name or rlobj
