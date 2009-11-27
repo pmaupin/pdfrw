@@ -5,6 +5,10 @@
 
 The examples directory has a few scripts which use the library.
 
+= examples/subset.py =
+
+A tiny example which will extract a subset of pages from a PDF file.
+
 = examples/booklet.py =
 
 A printer with a fancy printer and/or a full-up copy of Acrobat can easily turn your small PDF into a little booklet (for example, print 4 letter-sized pages on a single 11" x 17").
