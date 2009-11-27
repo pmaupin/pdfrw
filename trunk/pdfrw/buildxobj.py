@@ -36,7 +36,7 @@ class ViewInfo(object):
     page = None
     viewrect = None
 
-    def __init__(self, pageinfo):
+    def __init__(self, pageinfo='', **kw):
         pageinfo=pageinfo.split('#',1)
         if len(pageinfo) == 2:
             pageinfo[1:] = pageinfo[1].replace('&', '#').split('#')
@@ -57,6 +57,9 @@ class ViewInfo(object):
                 setattr(self, key, [float(x) for x in value])
             else:
                 log.error('Unknown option: %s', key)
+        for key, value in kw.iteritems():
+            assert hasattr(self, key), key
+            setattr(self, key, value)
 
 def getrects(inheritable, pageinfo):
     ''' Given the inheritable attributes of a page and
@@ -117,10 +120,25 @@ def _get_subpage(contents, resources, mbox, bbox):
         )
     )
 
-#_get_subpage = _get_fullpage
+def pagexobj(page, viewinfo=ViewInfo(), allow_compressed=True):
+    ''' pagexobj creates and returns a Form XObject for
+        a given view within a page (Defaults to entire page.)
+    '''
+    inheritable = page.inheritable
+    resources = inheritable.Resources
+    mbox, bbox = getrects(inheritable, viewinfo)
+    contents = page.Contents
+    # Make sure the only attribute is length
+    # All the filters must have been executed
+    assert int(contents.Length) == len(contents.stream)
+    if not allow_compressed:
+        assert len([x for x in contents.iteritems()]) == 1
 
-def xobj(pageinfo, doc=None, allow_compressed=True):
-    ''' xobj creates and returns an actual Form XObject.
+    return _cache_xobj(contents, resources, mbox, bbox)
+
+
+def docxobj(pageinfo, doc=None, allow_compressed=True):
+    ''' docxobj creates and returns an actual Form XObject.
         Can work standalone, or in conjunction with
         the CacheXObj class (below).
     '''
@@ -141,17 +159,7 @@ def xobj(pageinfo, doc=None, allow_compressed=True):
     assert isinstance(doc, PdfReader)
 
     sourcepage = doc.pages[(pageinfo.page or 1) - 1]
-    inheritable = sourcepage.inheritable
-    resources = inheritable.Resources
-    mbox, bbox = getrects(inheritable, pageinfo)
-    contents = sourcepage.Contents
-    # Make sure the only attribute is length
-    # All the filters must have been executed
-    assert int(contents.Length) == len(contents.stream)
-    if not allow_compressed:
-        assert len([x for x in contents.iteritems()]) == 1
-
-    return _cache_xobj(contents, resources, mbox, bbox)
+    return pagexobj(sourcepage, pageinfo, allow_compressed)
 
 
 class CacheXObj(object):
@@ -178,4 +186,4 @@ class CacheXObj(object):
         doc = pcache.get(fname)
         if doc is None:
             doc = pcache[fname] = PdfReader(fname, decompress=self.decompress)
-        return xobj(info, doc, allow_compressed=not self.decompress)
+        return docxobj(info, doc, allow_compressed=not self.decompress)
