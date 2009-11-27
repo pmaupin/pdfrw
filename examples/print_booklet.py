@@ -7,49 +7,46 @@ Creates print_booklet.my.pdf
 
 Pages organized in a form suitable for booklet printing.
 
-Works on some PDFs generated from OO.
-
-Not thoroughly tested.  Expect some dictionary resource merging
-might be required for general PDF usage.
 '''
 
 import sys
 import os
 
 import find_pdfrw
-from pdfrw import PdfReader, PdfWriter, PdfArray
+from pdfrw import PdfReader, PdfWriter, PdfDict, PdfArray, PdfName, IndirectPdfDict
+from pdfrw.buildxobj import pagexobj
 
-def fixpage(page1, page2):
-    # For demo purposes, just go with the MediaBox and toast the others
-    box = [float(x) for x in page1.MediaBox]
-    box2 = [float(x) for x in page2.MediaBox]
-    assert box == box2
-    assert box[0] == box[1] == 0, "demo won't work on this PDF"
+def fixpage(*pages):
+    pages = [pagexobj(x) for x in pages]
 
-    for page in page1, page2:
-        for key, value in sorted(page.iteritems()):
-            if 'box' in key.lower():
-                del page[key]
+    stream = []
+    x = y = 0
+    for i, page in enumerate(pages):
+        stream.append('q 1 0 0 1 %s 0 cm /P%s Do Q\n' % (x, i))
+        x += page.BBox[2]
+        y = max(y, page.BBox[3])
 
-    startsize = tuple(box[2:])
-    finalsize = 2 * box[2], box[3]
-    page1.MediaBox = PdfArray((0, 0) + finalsize)
+    # Multiple copies of first page used as a placeholder to
+    # get blank page on back.
+    while pages[-1] is pages[0]:
+        pages.pop()
+        stream.pop()
 
-    contents = page.Contents
-    assert contents.Filter is None, "Must decompress page first"
-
-    offset = '1 0 0 1 %s %s cm\n' % (finalsize[0]/2, 0)
-
-    stream2 = page2.Contents.stream
-    stream1 = page1 is not page2 and page1.Contents.stream or ''
-    stream = 'q\n%s\n%s\nQ\n%s' % (offset, stream2, stream1)
-    page1.Contents.stream = stream
-    return page1
+    return IndirectPdfDict(
+        Type = PdfName.Page,
+        Contents = PdfDict(stream=''.join(stream)),
+        MediaBox = PdfArray([0, 0, x, y]),
+        Resources = PdfDict(
+            XObject = PdfDict(
+                ('/P%s' % i, page) for (i, page) in enumerate(pages)),
+        ),
+    )
 
 inpfn, = sys.argv[1:]
 outfn = 'print_booklet.' + os.path.basename(inpfn)
-pages = PdfReader(inpfn).pages
+pages = PdfReader(inpfn, decompress=False).pages
 
+# Use page1 as a marker to print a blank at the end
 if len(pages) & 1:
     pages.append(pages[0])
 
