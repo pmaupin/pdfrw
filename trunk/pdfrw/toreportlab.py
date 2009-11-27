@@ -73,20 +73,20 @@ def _makestream(rldoc, pdfobj, isxobj):
     assert pdfobj.stream is not None
     assert pdfobj._rl_obj is None
 
-    if isxobj:
-        name = 'pdfrw_%s' % (rldoc.objectcounter+1)
-        xobjname = rldoc.getXObjectName(name)
-    else:
-        name = xobjname = None
     rldict = RLDict()
     rlobj = RLStream(rldict, pdfobj.stream)
-    rlobj = rldoc.Reference(rlobj, xobjname)
-    pdfobj.private._rl_obj = rlobj
+
+    if isxobj:
+        result = 'pdfrw_%s' % (rldoc.objectcounter+1)
+        rldoc.Reference(rlobj, rldoc.getXObjectName(result))
+    else:
+        result = rldoc.Reference(rlobj)
+    pdfobj.private._rl_obj = result
 
     for key, value in pdfobj.iteritems():
         rldict[key[1:]] = makerl(rldoc, value)
 
-    return name or rlobj
+    return result
 
 def _makearray(rldoc, pdfobj, isxobj):
     assert isinstance(pdfobj, PdfArray)
