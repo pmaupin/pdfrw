@@ -1,7 +1,7 @@
 #summary How pdfrw maps PDF files to Python
 #labels Featured
 
-= Introduction =
+== Introduction ==
 
 In general, PDF files conceptually map quite well to Python.  The major objects to think about are:
 
@@ -11,7 +11,7 @@ In general, PDF files conceptually map quite well to Python.  The major objects 
   * *dictionaries* and
   * *Contents streams* (which can be more streams of tokens)
 
-= Difficulties =
+== Difficulties ==
 
 The apparent primary difficulty in mapping PDF files to Python is the PDF file concept of
 "indirect objects."  But an indirect object is really just a way to get around
@@ -27,7 +27,7 @@ pdfrw automatically handles indirect references on reading in a PDF file.  It cr
 Another object that doesn't quite map to regular Python is a "stream" which is
 a dictionary with an associated unformatted data block.  pdfrw handles streams by placing a special attribute on a subclassed dictionary.
 
-= Usage Model =
+== Usage Model ==
 
 The usage model for pdfrw treats most objects as strings (it takes their string representation when writing them to a file).  The two main exceptions are the !PdfArray object and the !PdfDict object.
 
