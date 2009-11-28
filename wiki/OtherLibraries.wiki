@@ -2,29 +2,36 @@
 
 = Pure Python =
 
-  * <a href="http://pybrary.net/pyPdf/">pypdf</a>
+  * [http://www.reportlab.org/ reportlab]
+
+    reportlab is must-have software if you want to programmatically
+    generate arbitrary PDFs.
+
+  * [http://pybrary.net/pyPdf/ pyPdf]
 
     pyPdf is, in some ways, very full-featured.
     It can do decompression and decryption and seems
     to know a lot about items inside at least some
-    kinds of PDF files.  In comparison, pdfrw tries
-    to know very little about the content of PDF
-    files, and focuses on trying to have a more
+    kinds of PDF files.  In comparison, pdfrw knows
+    less about specific PDF file features (such as
+    metadata), but focuses on trying to have a more
     Pythonic API for mapping the PDF file container
-    syntax to Python.
+    syntax to Python, and (IMO) has a simpler and
+    better PDF file parser.
 
-  * <a href="http://www.boddie.org.uk/david/Projects/Python/pdftools/index.html">pdftools</a>
+  * [http://www.boddie.org.uk/david/Projects/Python/pdftools/index.html pdftools]
 
     pdftools feels large and I fell asleep trying to figure
     out how it all fit together, but many others have
     done useful things with it.
 
-  * <a href="http://www.reportlab.com/docs/pagecatcher-ds.pdf">pagecatcher</a>
+  * [http://www.reportlab.com/docs/pagecatcher-ds.pdf pagecatcher]
 
     My understanding is that pagecatcher would have done
-    exactly what I wanted.  But I was on a zero budget,
-    so I've never had the pleasure of experiencing
-    pagecatcher.  I do, however, use and like reportlab
+    exactly what I wanted when I built pdfrw.  But I was
+    on a zero budget, so I've never had the pleasure of
+    experiencing pagecatcher.  I do, however, use and
+    like [http://www.reportlab.org/ reportlab]
     (open source, from the people who make pagecatcher)
     so I'm sure pagecatcher is great, better documented
     and much more full-featured than the open source
@@ -36,4 +43,4 @@
 
 = Other tools =
 
-  * pdftk is a wonderful command line tool for basic manipulation
+  * [http://www.accesspdf.com/pdftk/ pdftk] is a wonderful command line tool for basic PDF manipulation.  It complements pdfrw extremely well, supporting many operations such as decryption and decompression that pdfrw cannot do.
