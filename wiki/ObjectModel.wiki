@@ -80,4 +80,4 @@ As you can see, it is quite easy to dig down into a PDF document.  But what abou
 >>> y.write('result.pdf')
 }}}
 
-That's all it takes to create a new PDF.  You still need to read the Adobe reference to figure out what needs to go _into_ the PDF, but at least you don't have to sweat actually building it and getting the file offsets right.
+That's all it takes to create a new PDF.  You still need to read the [http://www.adobe.com/devnet/acrobat/pdfs/pdf_reference_1-7.pdf Adobe PDF reference manual] to figure out what needs to go _into_ the PDF, but at least you don't have to sweat actually building it and getting the file offsets right.
