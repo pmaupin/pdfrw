@@ -150,15 +150,16 @@ class PdfWriter(object):
 
     def addpage(self, page):
         assert page.Type == PdfName.Page
-        self.pagearray.append(IndirectPdfDict(page))
-
-        # If the page inherits its resources,
-        # make sure we include them in the output
-        inheritable = page.inheritable
-        page.Resources = inheritable.Resources
-        page.MediaBox = inheritable.MediaBox
-        page.CropBox = inheritable.CropBox
-        page.Rotate = inheritable.Rotate
+        inheritable = page.inheritable # searches for resources
+        self.pagearray.append(
+            IndirectPdfDict(
+                page,
+                Resources = inheritable.Resources,
+                MediaBox = inheritable.MediaBox,
+                CropBox = inheritable.CropBox,
+                Rotate = inheritable.Rotate,
+            )
+        )
         return self
 
     addPage = addpage  # for compatibility with pyPdf
