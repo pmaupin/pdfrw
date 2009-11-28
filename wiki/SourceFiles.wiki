@@ -12,7 +12,7 @@ The [http://code.google.com/p/pdfrw/source/browse/trunk/pdfrw/__init__.py __init
 
 = Reading and writing =
 
-[http://code.google.com/p/pdfrw/source/browse/trunk/pdfrw/pdfreader.py pdfreader.py] contains the PdfReader class, which will read and parse a PDF file.  Similarly, [http://code.google.com/p/pdfrw/source/browse/trunk/pdfrw/pdfwriter.py pdfwriter.py] contains the PdfWriter class, which can create and output a PDF file.
+[http://code.google.com/p/pdfrw/source/browse/trunk/pdfrw/pdfreader.py pdfreader.py] contains the !PdfReader class, which will read and parse a PDF file.  Similarly, [http://code.google.com/p/pdfrw/source/browse/trunk/pdfrw/pdfwriter.py pdfwriter.py] contains the !PdfWriter class, which can create and output a PDF file.
 
 = Advanced features =
 
