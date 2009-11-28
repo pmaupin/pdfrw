@@ -1,0 +1,23 @@
+#summary pdfrw source files
+#labels Featured
+
+= Introduction =
+
+The pdfrw library is currently a single Python package with 7 sub-modules.
+The [http://code.google.com/p/pdfrw/source/browse/trunk/pdfrw/__init__.py __init__.py] module does the usual thing of importing a few major attributes from some of the submodules.
+
+= Basic types and low-level parsing =
+
+[http://code.google.com/p/pdfrw/source/browse/trunk/pdfrw/pdfobjects.py pdfobjects.py] contains classes that map directly to PDF file constructs.  [http://code.google.com/p/pdfrw/source/browse/trunk/pdfrw/pdftokens.py pdftokens.py] builds on this to parse PDF syntactical tokens.
+
+= Reading and writing =
+
+[http://code.google.com/p/pdfrw/source/browse/trunk/pdfrw/pdfreader.py pdfreader.py] contains the PdfReader class, which will read and parse a PDF file.  Similarly, [http://code.google.com/p/pdfrw/source/browse/trunk/pdfrw/pdfwriter.py pdfwriter.py] contains the PdfWriter class, which can create and output a PDF file.
+
+= Advanced features =
+
+[http://code.google.com/p/pdfrw/source/browse/trunk/pdfrw/pdfcompress.py pdfcompress.py] contains compression/decompression functions.
+ 
+[http://code.google.com/p/pdfrw/source/browse/trunk/pdfrw/pdf/buildxobj.py buildxobj.py] contains functions to build Form XObjects out of pages or rectangles on pages.
+
+[http://code.google.com/p/pdfrw/source/browse/trunk/pdfrw/toreportlab.py toreportlab.py] provides the makerl function, which will translate pdfrw objects into a format which can be used with [http://www.reportlab.org/ reportlab].  It is normally used in conjunction with buildxobj, to be able to reuse parts of existing PDFs when using reportlab.
