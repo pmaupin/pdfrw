@@ -144,13 +144,21 @@ class FormatObjects(object):
 class PdfWriter(object):
 
     def __init__(self, version='1.3', compress=True):
-        self.pagearray = pagearray = PdfArray()
+        self.pagearray = PdfArray()
         self.compress = compress
         self.version = version
 
     def addpage(self, page):
         assert page.Type == PdfName.Page
         self.pagearray.append(IndirectPdfDict(page))
+
+        # If the page inherits its resources,
+        # make sure we include them in the output
+        inheritable = page.inheritable
+        page.Resources = inheritable.Resources
+        page.MediaBox = inheritable.MediaBox
+        page.CropBox = inheritable.CropBox
+        page.Rotate = inheritable.Rotate
         return self
 
     addPage = addpage  # for compatibility with pyPdf
@@ -161,21 +169,26 @@ class PdfWriter(object):
         return self
 
     def write(self, fname):
-        pagearray = self.pagearray
-        pagedict = IndirectPdfDict(
-            Type = PdfName.Pages,
-            Count = PdfObject(len(pagearray)),
-            Kids = pagearray
+
+        # Create the basic object structure of the PDF file
+        trailer = PdfDict(
+            Root = IndirectPdfDict(
+                Type = PdfName.Catalog,
+                Pages = IndirectPdfDict(
+                    Type = PdfName.Pages,
+                    Count = PdfObject(len(self.pagearray)),
+                    Kids = self.pagearray
+                )
+            )
         )
-        for page in pagearray:
+
+        # Make all the pages point back to the page dictionary
+        pagedict = trailer.Root.Pages
+        for page in pagedict.Kids:
             page.Parent = pagedict
-        rootdict = IndirectPdfDict(
-            Type = PdfName.Catalog,
-            Pages = pagedict
-        )
 
-        trailer = PdfDict(Root=rootdict)
-
+        # Dump the data.  We either have a filename or a preexisting
+        # file object.
         preexisting = hasattr(fname, 'write')
         f = preexisting and fname or open(fname, 'wb')
         FormatObjects.dump(f, trailer, self.version, self.compress)
