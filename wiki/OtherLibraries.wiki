@@ -1,6 +1,6 @@
 #summary Other PDF manipulation libraries and tools
 
-= Pure Python =
+== Pure Python ==
 
   * [http://www.reportlab.org/ reportlab]
 
@@ -37,11 +37,11 @@
     and much more full-featured than the open source
     options.
 
-= non-pure-Python libraries =
+== non-pure-Python libraries ==
 
   * [https://launchpad.net/poppler-python/ pyPoppler] can read PDF files.
   * [http://www.cairographics.org/pycairo/ pycairo] can write PDF files.
 
-= Other tools =
+== Other tools ==
 
   * [http://www.accesspdf.com/pdftk/ pdftk] is a wonderful command line tool for basic PDF manipulation.  It complements pdfrw extremely well, supporting many operations such as decryption and decompression that pdfrw cannot do.
