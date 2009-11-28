@@ -25,16 +25,16 @@ def get4(allpages):
     stream = []
     xobjdict = PdfDict()
     for index, page in enumerate(pages):
-        x = x_inc * (index & 1)
-        y = y_inc * (index <= 1)
+        x = x_inc * (index & 1) / 2.0
+        y = y_inc * (index <= 1) / 2.0
         index = '/P%s' % index
-        stream.append('q 1 0 0 1 %s %s cm %s Do Q\n' % (x, y, index))
+        stream.append('q 0.5 0 0 0.5 %s %s cm %s Do Q\n' % (x, y, index))
         xobjdict[index] = page
 
     return PdfDict(
         Type = PdfName.Page,
         Contents = PdfDict(stream=''.join(stream)),
-        MediaBox = PdfArray([0, 0, x_inc * 2, y_inc * 2]),
+        MediaBox = PdfArray([0, 0, x_inc, y_inc]),
         Resources = PdfDict(XObject = xobjdict),
     )
 

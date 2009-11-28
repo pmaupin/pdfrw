@@ -25,16 +25,17 @@ def addpage(canvas, allpages):
     pages = allpages[:4]
     del allpages[:4]
 
-    x_inc = max(page.BBox[2] for page in pages)
-    y_inc = max(page.BBox[3] for page in pages)
+    x_max = max(page.BBox[2] for page in pages)
+    y_max = max(page.BBox[3] for page in pages)
 
-    canvas.setPageSize((2 * x_inc, 2 * y_inc))
+    canvas.setPageSize((x_max, y_max))
 
     for index, page in enumerate(pages):
-        x = x_inc * (index & 1)
-        y = y_inc * (index <= 1)
+        x = x_max * (index & 1) / 2.0
+        y = y_max * (index <= 1) / 2.0
         canvas.saveState()
         canvas.translate(x, y)
+        canvas.scale(0.5, 0.5)
         canvas.doForm(makerl(canvas, page))
         canvas.restoreState()
     canvas.showPage()
