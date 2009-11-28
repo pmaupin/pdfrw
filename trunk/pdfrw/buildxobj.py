@@ -88,12 +88,14 @@ def _cache_xobj(contents, resources, mbox, bbox):
         cachedict = contents.private.xobj_cachedict = {}
     result = cachedict.get(bbox)
     if result is None:
-        func = mbox == bbox and _get_fullpage or _get_subpage
-        result = func(contents, resources, mbox, bbox)
-        result.Type = PdfName.XObject
-        result.Subtype = PdfName.Form
-        result.FormType = 1
-        result.BBox = PdfArray(bbox)
+        func = (_get_fullpage, _get_subpage)[mbox != bbox]
+        result = PdfDict(
+            func(contents, resources, mbox, bbox),
+            Type = PdfName.XObject,
+            Subtype = PdfName.Form,
+            FormType = 1,
+            BBox = PdfArray(bbox),
+        )
         cachedict[bbox] = result
     return result
 
