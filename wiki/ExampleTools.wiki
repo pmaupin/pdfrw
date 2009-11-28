@@ -27,7 +27,7 @@ A printer with a fancy printer and/or a full-up copy of Acrobat can easily turn 
 
 But that assumes several things, including that the personnel know how to operate the hardware and software.  booklet.py lets you turn your PDF into a preformatted booklet, to give them fewer chances to mess it up.
 
-=== http://code.google.com/p/pdfrw/source/browse/trunk/examples/rl1/4up.py ===
+=== http://code.google.com/p/pdfrw/source/browse/trunk/examples/rl1/booklet.py ===
 
 Same example, using reportlab for PDF output.
 
