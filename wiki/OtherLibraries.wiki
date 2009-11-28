@@ -37,6 +37,16 @@
     and much more full-featured than the open source
     options.
 
+  * [http://www.unixuser.org/~euske/python/pdfminer/index.html pdfminer]
+
+    This looks like a useful, actively-developed program.  It is quite
+    large, but then, it is trying to actively comprehend a full PDF
+    document.  From the website:
+
+       "PDFMiner is a suite of programs that help extracting and analyzing text data of PDF documents. Unlike other PDF-related tools, it allows to obtain the exact location of texts in a page, as well as other extra information such as font information or ruled lines. It includes a PDF converter that can transform PDF files into other text formats (such as HTML). It has an extensible PDF parser that can be used for other purposes instead of text analysis."
+
+
+
 == non-pure-Python libraries ==
 
   * [https://launchpad.net/poppler-python/ pyPoppler] can read PDF files.
