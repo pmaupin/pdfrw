@@ -37,9 +37,10 @@
     and much more full-featured than the open source
     options.
 
-= non-Python libraries =
+= non-pure-Python libraries =
 
-  * pyPoppler apparently works quite well for displaying PDF files.
+  * [https://launchpad.net/poppler-python/ pyPoppler] can read PDF files.
+  * [http://www.cairographics.org/pycairo/ pycairo] can write PDF files.
 
 = Other tools =
 
