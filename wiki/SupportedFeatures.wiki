@@ -1,11 +1,11 @@
 #summary Supported PDF file features.
 #labels Featured
 
-= Introduction =
+== Introduction ==
 
 The definitive [http://www.adobe.com/devnet/acrobat/pdfs/pdf_reference_1-7.pdf PDF manual] is 1310 pages long.  For the most part, pdfrw tries to be agnostic about the contents of PDF files, and support them as containers, but to do useful work, something a little higher-level is required.
 
-= Missing features =
+== Missing features ==
 
 Even as a pure PDF container library, pdfrw comes up a bit short.
 It does not currently support:
@@ -16,7 +16,7 @@ It does not currently support:
 
 [http://www.accesspdf.com/pdftk/ pdftk] is a wonderful command-line tool that can convert your PDFs to remove encryption and compression.
 
-= Higher-level capabilities =
+== Higher-level capabilities ==
 
 Although pdftk is mostly a PDF file container library, it supports the following features:
 
