@@ -40,7 +40,6 @@ def make_pdf(outfn, xobjpairs):
     for xobjlist in xobjpairs:
         x = y = 0
         for xobj in xobjlist:
-            makerl(canvas, xobj)
             x += xobj.BBox[2]
             y = max(y, xobj.BBox[3])
 
@@ -57,7 +56,7 @@ def make_pdf(outfn, xobjpairs):
         for xobj in xobjlist:
             canvas.saveState()
             canvas.translate(x, y)
-            canvas.doForm(xobj.rl_xobj_name)
+            canvas.doForm(makerl(canvas, xobj))
             canvas.restoreState()
             x += xobj.BBox[2]
         canvas.showPage()
