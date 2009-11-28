@@ -1,4 +1,5 @@
 #summary Supported PDF file features.
+#labels Featured
 
 = Introduction =
 
