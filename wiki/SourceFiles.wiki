@@ -17,7 +17,7 @@ The [http://code.google.com/p/pdfrw/source/browse/trunk/pdfrw/__init__.py __init
 == Advanced features ==
 
 [http://code.google.com/p/pdfrw/source/browse/trunk/pdfrw/pdfcompress.py pdfcompress.py] contains compression/decompression functions.
- 
+
 [http://code.google.com/p/pdfrw/source/browse/trunk/pdfrw/buildxobj.py buildxobj.py] contains functions to build Form XObjects out of pages or rectangles on pages.
 
 [http://code.google.com/p/pdfrw/source/browse/trunk/pdfrw/toreportlab.py toreportlab.py] provides the makerl function, which will translate pdfrw objects into a format which can be used with [http://www.reportlab.org/ reportlab].  It is normally used in conjunction with buildxobj, to be able to reuse parts of existing PDFs when using reportlab.
