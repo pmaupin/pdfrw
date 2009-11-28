@@ -5,9 +5,13 @@
 
 The examples directory has a few scripts which use the library.
 
-= examples/subset.py =
+= http://code.google.com/p/pdfrw/source/browse/trunk/examples/subset.py =
 
 A tiny example which will extract a subset of pages from a PDF file.
+
+= http://code.google.com/p/pdfrw/source/browse/trunk/examples/rl1/subset.py =
+
+Same example, using reportlab for PDF output.
 
 = examples/booklet.py =
 
