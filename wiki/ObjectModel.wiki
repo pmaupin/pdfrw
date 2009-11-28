@@ -22,10 +22,11 @@ have a global mechanism for locating indirect objects, and they all have two ref
 numbers (a reference number and a "generation" number, in case you wanted to append
 to the PDF file rather than just rewriting the whole thing).
 
-pdfrw automatically handles indirect references on reading in a PDF file.  It creates objects which have an 'indirect' attribute which is set True for indirect objects.  When writing a PDF file, if you have created arbitrary data, you just need to make sure that circular references are broken up by having at least one object in every cycle have a true 'indirect' attribute.
+pdfrw automatically handles indirect references on reading in a PDF file.  When pdfrw
+encounters an indirect PDF file object, the corresponding Python object it creates
+will have an 'indirect' attribute with a value of True.  When writing a PDF file, if you have created arbitrary data, you just need to make sure that circular references are broken up by putting an attribute named 'indirect' which evaluates to True on at least one object in every cycle.
 
-Another object that doesn't quite map to regular Python is a "stream" which is
-a dictionary with an associated unformatted data block.  pdfrw handles streams by placing a special attribute on a subclassed dictionary.
+Another PDF file object that doesn't quite map to regular Python is a "stream".  Streams are dictionaries which each have an associated unformatted data block.  pdfrw handles streams by placing a special attribute on a subclassed dictionary.
 
 == Usage Model ==
 
