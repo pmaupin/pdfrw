@@ -11,6 +11,7 @@ sixth edition, for PDF version 1.7, dated November 2006.
 '''
 
 import re
+import weakref
 from pdfobjects import PdfString, PdfObject
 
 class _PrimitiveTokens(object):
@@ -99,12 +100,19 @@ class PdfTokens(object):
     delimiterset = _PrimitiveTokens.delimiterset
     whiteordelim = whitespaceset | delimiterset
 
-    cached_strings = {}
+    cached_strings_by_file = weakref.WeakKeyDictionary()
 
     def __init__(self, fdata, startloc=0, strip_comments=True, streamlen=None):
+        ''' This class may be used to iterate over the same file multiple
+            times.  To reduce memory overhead, strings are cached for reuse,
+            on a per-file basis. Unfortunately, Python strings cannot be
+            weakly referenced.  So fdata should be an instance of the WeakrefStr
+            class.
+        '''
         self.primitive = _PrimitiveTokens(fdata, startloc, streamlen)
         self.fdata = fdata
         self.strip_comments = strip_comments
+        self.cached_strings = self.cached_strings_by_file.setdefault(fdata, {})
 
     @property
     def floc(self):
