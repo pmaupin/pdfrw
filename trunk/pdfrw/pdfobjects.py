@@ -35,6 +35,7 @@ class PdfName(object):
 PdfName = PdfName()
 
 class PdfString(str):
+    indirect = False
     unescape_dict = {'\\b':'\b', '\\f':'\f', '\\n':'\n',
                      '\\r':'\r', '\\t':'\t',
                      '\\\r\n': '', '\\\r':'', '\\\n':'',
@@ -84,6 +85,18 @@ class PdfString(str):
 
         else:
             return self.decode_hex(remap, twobytes)
+
+    @classmethod
+    def encode(cls, source, usehex=False):
+        assert not usehex, "Not supported yet"
+        if isinstance(source, unicode):
+            source = source.encode('utf-8')
+        else:
+            source = str(source)
+        source = source.replace('\\', '\\\\')
+        source = source.replace('(', '\\(')
+        source = source.replace(')', '\\)')
+        return cls('(' +source + ')')
 
 class PdfDict(dict):
     indirect = False
