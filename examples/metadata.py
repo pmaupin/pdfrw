@@ -30,11 +30,10 @@ writer = PdfWriter()
 for inpfn in inputs:
     writer.addpages(PdfReader(inpfn, decompress=False).pages)
 
-trailer = writer.trailer
-trailer.Info = IndirectPdfDict(
+writer.trailer.Info = IndirectPdfDict(
     Title = 'your title goes here',
     Author = 'your name goes here',
     Subject = 'what is it all about?',
     Creator = 'some script goes here',
 )
-writer.write(outfn, trailer)
+writer.write(outfn)
