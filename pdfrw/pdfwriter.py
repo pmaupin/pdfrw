@@ -18,7 +18,7 @@ addpage() assumes that the pages are part of a valid
 tree/forest of PDF objects.
 '''
 
-from pdfobjects import PdfName, PdfArray, PdfDict, IndirectPdfDict, PdfObject
+from pdfobjects import PdfName, PdfArray, PdfDict, IndirectPdfDict, PdfObject, PdfString
 from pdfcompress import compress
 
 debug = False
@@ -102,6 +102,8 @@ class FormatObjects(object):
             if stream is not None:
                 result = '%s\nstream\n%s\nendstream' % (result, stream)
             return result
+        elif isinstance(obj, basestring) and not hasattr(obj, 'indirect'):
+            return PdfString.encode(obj)
         else:
             return str(obj)
 
@@ -169,8 +171,8 @@ class PdfWriter(object):
             self.addpage(page)
         return self
 
-    def write(self, fname):
-
+    @property
+    def trailer(self):
         # Create the basic object structure of the PDF file
         trailer = PdfDict(
             Root = IndirectPdfDict(
@@ -182,11 +184,15 @@ class PdfWriter(object):
                 )
             )
         )
-
         # Make all the pages point back to the page dictionary
         pagedict = trailer.Root.Pages
         for page in pagedict.Kids:
             page.Parent = pagedict
+        return trailer
+
+    def write(self, fname, trailer=None):
+        if trailer is None:
+            trailer = self.trailer
 
         # Dump the data.  We either have a filename or a preexisting
         # file object.
