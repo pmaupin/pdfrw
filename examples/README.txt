@@ -8,6 +8,8 @@ print_two.py  -- this is used when printing two cut-down copies on a single shee
 
 booklet.py -- Converts a PDF into a booklet.
 
+metadata.py -- Concatenates multiple PDFs, adds metadata.
+
 rl1/subset.py -- Same as subset.py, using reportlab for output.  Simplest reportlab example.
 
 rl1/4up.py -- Same as 4up.py, using reportlab for output.  Next simplest reportlab example.
