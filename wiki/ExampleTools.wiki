@@ -30,11 +30,15 @@ But that assumes several things, including that the personnel know how to operat
   Same example, using reportlab for PDF output.
     http://code.google.com/p/pdfrw/source/browse/trunk/examples/rl1/booklet.py
 
-== Adding metadata ==
+== Adding or modifying metadata ==
 
 The metadata example will accept multiple input files on the command line, concatenate them and output them to output.pdf, after adding some nonsensical metadata to the output PDF file:
 
   http://code.google.com/p/pdfrw/source/browse/trunk/examples/metadata.py
+
+The alter.py example alters a single metadata item in a PDF, and writes the result to a new PDF:
+
+  http://code.google.com/p/pdfrw/source/browse/trunk/examples/alter.py
 
 == Rotating and doubling -- print_two ==
 
