@@ -145,12 +145,15 @@ class FormatObjects(object):
 
 class PdfWriter(object):
 
+    _trailer = None
+
     def __init__(self, version='1.3', compress=True):
         self.pagearray = PdfArray()
         self.compress = compress
         self.version = version
 
     def addpage(self, page):
+        self._trailer = None
         assert page.Type == PdfName.Page
         inheritable = page.inheritable # searches for resources
         self.pagearray.append(
@@ -188,11 +191,11 @@ class PdfWriter(object):
         pagedict = trailer.Root.Pages
         for page in pagedict.Kids:
             page.Parent = pagedict
+        self._trailer = trailer
         return trailer
 
     def write(self, fname, trailer=None):
-        if trailer is None:
-            trailer = self.trailer
+        trailer = trailer or self._trailer or self.trailer
 
         # Dump the data.  We either have a filename or a preexisting
         # file object.
