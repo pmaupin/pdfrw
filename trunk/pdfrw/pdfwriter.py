@@ -174,8 +174,11 @@ class PdfWriter(object):
             self.addpage(page)
         return self
 
-    @property
-    def trailer(self):
+    def _get_trailer(self):
+        trailer = self._trailer
+        if trailer is not None:
+            return trailer
+
         # Create the basic object structure of the PDF file
         trailer = PdfDict(
             Root = IndirectPdfDict(
@@ -194,8 +197,13 @@ class PdfWriter(object):
         self._trailer = trailer
         return trailer
 
+    def _set_trailer(self, trailer):
+        self._trailer = trailer
+
+    trailer = property(_get_trailer, _set_trailer)
+
     def write(self, fname, trailer=None):
-        trailer = trailer or self._trailer or self.trailer
+        trailer = trailer or self.trailer
 
         # Dump the data.  We either have a filename or a preexisting
         # file object.

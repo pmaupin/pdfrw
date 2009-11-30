@@ -172,20 +172,19 @@ class PdfReader(PdfDict):
                 f.close()
 
         assert fdata is not None
-        self.fdata = fdata = WeakrefStr(fdata)
+        self.private.fdata = fdata = WeakrefStr(fdata)
 
-        self.indirect_objects = {}
-        self.special = {'<<': self.readdict, '[': self.readarray}
+        self.private.indirect_objects = {}
+        self.private.special = {'<<': self.readdict, '[': self.readarray}
 
         startloc, source = self.readxref(fdata)
         self.parsexref(source)
         assert source.next() == '<<'
         self.update(self.readdict(source))
         assert source.next() == 'startxref' and source.floc > startloc
-        self.pages = self.readpages(self.Root.Pages)
+        self.private.pages = self.readpages(self.Root.Pages)
         if decompress:
             self.uncompress()
-        del self['/special'], self['/fdata']
 
         # For compatibility with pyPdf
         self.numPages = len(self.pages)
