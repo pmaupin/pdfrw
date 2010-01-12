@@ -105,7 +105,7 @@ def _makearray(rldoc, pdfobj):
         rlobj = rldoc.Reference(rlobj)
     pdfobj.derived_rl_obj = rlobj
 
-    mylist = rlobj.sequence
+    mylist = rlarray.sequence
     for value in pdfobj:
         mylist.append(makerl_recurse(rldoc, value))
 
