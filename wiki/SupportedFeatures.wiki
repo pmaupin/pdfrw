@@ -18,7 +18,7 @@ It does not currently support:
 
 == Higher-level capabilities ==
 
-Although pdftk is mostly a PDF file container library, it supports the following features:
+Although pdfrw is mostly a PDF file container library, it supports the following features:
 
   * PDF pages.  pdfrw knows enough to find the pages in PDF files you read in, and to write a set of pages back out to a new PDF file.
   * Form XObjects.  pdfrw can take any page or rectangle on a page, and convert it to a Form XObject, suitable for use inside another PDF file.
