@@ -162,11 +162,16 @@ class PdfTokens(object):
             return PdfString(''.join(tokens))
 
         def normal_data(token):
-            if token[0] in whitespaceset:
-                return
-            tokens = [token]
-            primitive.coalesce(tokens)
-            return PdfObject(''.join(tokens))
+
+            # Obscure optimization -- we can get here with
+            # whitespace or regular character data.  If we get
+            # here with whitespace, then there won't be an additional
+            # token queued up in the primitive object, otherwise there
+            # will...
+            if primitive_tokens:     #if token[0] not in whitespaceset:
+                tokens = [token]
+                primitive.coalesce(tokens)
+                return PdfObject(''.join(tokens))
 
         def name_string(token):
             tokens = [token]
@@ -215,10 +220,11 @@ class PdfTokens(object):
         self.fdata = fdata
         self.strip_comments = strip_comments
         self.tokens = tokens = []
-        whitespaceset = _PrimitiveTokens.whitespaceset
         self.iterator = iterator = MyIterator()
         self.next = iterator.next
         primitive_next = primitive.next
+        primitive_tokens = primitive.tokens
+        whitespaceset = _PrimitiveTokens.whitespaceset
 
     def floc(self):
         return self.primitive.floc() - sum([len(x) for x in self.tokens])
