@@ -42,33 +42,37 @@ class _PrimitiveTokens(object):
     del delimiter_pattern, pattern
 
     def __init__(self, fdata, startloc):
+
+        class MyIterator(object):
+            def next():
+                if not tokens:
+                    startloc = self.startloc
+                    match = next_match()
+                    if match is not None:
+                        start = match.start()
+                        end = match.end()
+                        tokens.append(fdata[start:end])
+                        if start > startloc:
+                            tokens.append(fdata[startloc:start])
+                        self.startloc = end
+                    else:
+                        s = fdata[startloc:]
+                        if s:
+                            tokens.append(s)
+                    if not tokens:
+                        raise StopIteration
+                return tokens.pop()
+            next = staticmethod(next)
+
+        next_match = self.re_func(fdata, startloc).next
         self.fdata = fdata
         self.startloc = startloc
-        self.next_match = self.re_func(fdata, startloc).next
-        self.tokens = []
+        self.tokens = tokens = []
+        self.iterator = iterator = MyIterator()
+        self.next = iterator.next
 
     def __iter__(self):
-        return self
-
-    def next(self):
-        tokens = self.tokens
-        if not tokens:
-            fdata = self.fdata
-            startloc = self.startloc
-            match = self.next_match()
-            if match is not None:
-                start, end = match.start(), match.end()
-                tokens.append(fdata[start:end])
-                if start > startloc:
-                    tokens.append(fdata[startloc:start])
-                self.startloc = end
-            else:
-                s = fdata[startloc:]
-                if s:
-                    tokens.append(s)
-            if not tokens:
-                raise StopIteration
-        return tokens.pop()
+        return self.iterator
 
     def coalesce(self, result):
         ''' This function coalesces tokens together up until
@@ -102,7 +106,7 @@ class PdfTokens(object):
         self.whitespaceset = _PrimitiveTokens.whitespaceset
 
     def floc(self):
-        return self.primitive.floc()
+        return self.primitive.floc() - sum([len(x) for x in self.tokens])
     floc = property(floc)
 
     def comment(self, token):
