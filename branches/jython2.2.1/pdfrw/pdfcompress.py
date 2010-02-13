@@ -8,6 +8,9 @@ using the flate (zlib) algorithm.  Maybe more later, but it's
 not a priority for me...
 '''
 
+from __future__ import generators
+from sets import Set as set
+
 import zlib
 from pdfobjects import PdfDict, PdfName
 

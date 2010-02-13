@@ -10,6 +10,8 @@ sixth edition, for PDF version 1.7, dated November 2006.
 
 '''
 
+from __future__ import generators
+from sets import Set as set
 import re
 import weakref
 from pdfobjects import PdfString, PdfObject
@@ -28,7 +30,7 @@ class _PrimitiveTokens(object):
 
     # In addition to the delimiters, we also use '\', which
     # is special in some contexts in PDF.
-    delimiter_pattern = '\\\\|' + '|\\'.join(delimiterset)
+    delimiter_pattern = '\\\\|\\' + '|\\'.join(delimiterset)
 
     # Dictionary delimiters are '<<' and '>>'.  Look for
     # these before the single variety.
@@ -90,9 +92,9 @@ class _PrimitiveTokens(object):
         while self.peek()[0] not in stopset:
             yield self.tokens.pop()
 
-    @property
     def floc(self):
-        return self.startloc - sum(len(x) for x in self.tokens)
+        return self.startloc - sum([len(x) for x in self.tokens])
+    floc = property(floc)
 
 class PdfTokens(object):
 
@@ -114,9 +116,9 @@ class PdfTokens(object):
         self.strip_comments = strip_comments
         self.cached_strings = self.cached_strings_by_file.setdefault(fdata, {})
 
-    @property
     def floc(self):
         return self.primitive.floc
+    floc = property(floc)
 
     def comment(self, token):
         whitespaceset = self.whitespaceset
@@ -165,12 +167,12 @@ class PdfTokens(object):
         if token[0] in self.whitespaceset:
             return
         tokens = [token]
-        tokens.extend(self.primitive.readuntil(self.whiteordelim))
+        tokens.extend(list(self.primitive.readuntil(self.whiteordelim)))
         return PdfObject(''.join(tokens))
 
     def name_string(self, token):
         tokens = [token]
-        tokens.extend(self.primitive.readuntil(self.whiteordelim))
+        tokens.extend(list(self.primitive.readuntil(self.whiteordelim)))
         token = ''.join(tokens)
         if '#' in token:
             substrs = token.split('#')

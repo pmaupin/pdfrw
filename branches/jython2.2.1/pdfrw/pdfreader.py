@@ -55,7 +55,6 @@ class PdfReader(PdfDict):
         obj.indirect = True
         return obj
 
-    @staticmethod
     def readstream(obj, source):
         ''' Read optional stream following a dictionary
             object.
@@ -79,6 +78,7 @@ class PdfReader(PdfDict):
         source = PdfTokens(fdata, endstream)
         endit = source.multiple(2)
         assert endit == 'endstream endobj'.split(), endit
+    readstream = staticmethod(readstream)
 
     def readarray(self, source, setobj=lambda x:None, original=None):
         special = self.special
@@ -119,7 +119,6 @@ class PdfReader(PdfDict):
 
         return result
 
-    @staticmethod
     def readxref(fdata):
         startloc = fdata.rfind('startxref')
         xrefinfo = list(PdfTokens(fdata, startloc, False))
@@ -128,6 +127,7 @@ class PdfReader(PdfDict):
         assert xrefinfo[1].isdigit(), xrefinfo[1]
         assert xrefinfo[2].rstrip() == '%%EOF', repr(xrefinfo[2])
         return startloc, PdfTokens(fdata, int(xrefinfo[1]))
+    readxref = staticmethod(readxref)
 
     def parsexref(self, source):
         tok = source.next()
@@ -195,4 +195,4 @@ class PdfReader(PdfDict):
         return self.pages[pagenum]
 
     def uncompress(self):
-        uncompress(x[1] for x in self.indirect_objects.itervalues())
+        uncompress([x[1] for x in self.indirect_objects.itervalues()])
