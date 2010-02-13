@@ -51,25 +51,27 @@ class _PrimitiveTokens(object):
                     if match is not None:
                         start = match.start()
                         end = match.end()
-                        tokens.append(fdata[start:end])
+                        tappend(fdata[start:end])
                         if start > startloc:
-                            tokens.append(fdata[startloc:start])
+                            tappend(fdata[startloc:start])
                         self.startloc = end
                     else:
                         s = fdata[startloc:]
                         if s:
-                            tokens.append(s)
+                            tappend(s)
                     if not tokens:
                         raise StopIteration
-                return tokens.pop()
+                return tpop()
             next = staticmethod(next)
 
-        next_match = self.re_func(fdata, startloc).next
         self.fdata = fdata
         self.startloc = startloc
         self.tokens = tokens = []
         self.iterator = iterator = MyIterator()
         self.next = iterator.next
+        next_match = self.re_func(fdata, startloc).next
+        tappend = tokens.append
+        tpop = tokens.pop
 
     def __iter__(self):
         return self.iterator
