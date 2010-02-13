@@ -97,13 +97,28 @@ class _PrimitiveTokens(object):
 
 class PdfTokens(object):
 
-
     def __init__(self, fdata, startloc=0, strip_comments=True):
+
+        class MyIterator(object):
+            def next():
+                while not tokens:
+                    token = primitive_next()
+                    token = get_dispatch(token, normal_data)(self, token)
+                    if token:
+                        return token
+                return tokens.pop()
+            next = staticmethod(next)
+
         self.primitive = _PrimitiveTokens(fdata, startloc)
         self.fdata = fdata
         self.strip_comments = strip_comments
-        self.tokens = []
+        self.tokens = tokens = []
         self.whitespaceset = _PrimitiveTokens.whitespaceset
+        self.iterator = iterator = MyIterator()
+        self.next = iterator.next
+        primitive_next = self.primitive.next
+        get_dispatch = self.dispatchers.get
+        normal_data = self.normal_data
 
     def floc(self):
         return self.primitive.floc() - sum([len(x) for x in self.tokens])
@@ -193,16 +208,8 @@ class PdfTokens(object):
     }
 
     def __iter__(self):
-        return self
-
-    def next(self):
-        tokens = self.tokens
-        while not tokens:
-            token = self.primitive.next()
-            token = self.dispatchers.get(token, self.normal_data)(self, token)
-            if token:
-                return token
-        return tokens.pop()
+        return self.iterator
 
     def multiple(self, count):
-        return [self.next() for i in range(count)]
+        next = self.next
+        return [next() for i in range(count)]
