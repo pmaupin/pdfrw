@@ -50,38 +50,31 @@ class _PrimitiveTokens(object):
     def __iter__(self):
         return self
 
-    def readchunk(self):
-        fdata = self.fdata
-        startloc = self.startloc
-        tokens = self.tokens = []
-        match = self.next_match()
-        if match is not None:
-            start, end = match.start(), match.end()
-            tokens.append(fdata[start:end])
-            if start > startloc:
-                tokens.append(fdata[startloc:start])
-            self.startloc = end
-        else:
-            s = fdata[startloc:]
-            if s:
-                tokens.append(s)
-        return tokens
-
     def next(self):
         tokens = self.tokens
         if not tokens:
-            tokens = self.readchunk()
+            fdata = self.fdata
+            startloc = self.startloc
+            match = self.next_match()
+            if match is not None:
+                start, end = match.start(), match.end()
+                tokens.append(fdata[start:end])
+                if start > startloc:
+                    tokens.append(fdata[startloc:start])
+                self.startloc = end
+            else:
+                s = fdata[startloc:]
+                if s:
+                    tokens.append(s)
             if not tokens:
                 raise StopIteration
         return tokens.pop()
 
     def peek(self):
-        tokens = self.tokens
-        if not tokens:
-            tokens = self.readchunk()
-            if not tokens:
-                return '\n'        # Pretend like we have additional whitespace
-        return tokens[-1]
+        for token in self:
+            self.tokens.append(token)
+            return token
+        return '\n'
 
     def readuntil(self, stopset, result):
         while self.peek()[0] not in stopset:
