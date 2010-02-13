@@ -83,9 +83,6 @@ class _PrimitiveTokens(object):
                 return '\n'        # Pretend like we have additional whitespace
         return tokens[-1]
 
-    def push(self, what):
-        self.tokens.append(what)
-
     def readuntil(self, stopset, result):
         while self.peek()[0] not in stopset:
             result.append(self.tokens.pop())
@@ -104,6 +101,7 @@ class PdfTokens(object):
         self.primitive = _PrimitiveTokens(fdata, startloc)
         self.fdata = fdata
         self.strip_comments = strip_comments
+        self.tokens = []
 
     def floc(self):
         return self.primitive.floc
@@ -149,7 +147,7 @@ class PdfTokens(object):
             if token == '>':
                 break
         while tokens[-2] == '>>':
-            self.primitive.push(tokens.pop(-2))
+            self.tokens.append(tokens.pop(-2))
         return PdfString(''.join(tokens))
 
     def normal_data(self, dummy, token):
@@ -196,11 +194,13 @@ class PdfTokens(object):
         return self
 
     def next(self):
-        while 1:
+        tokens = self.tokens
+        while not tokens:
             token = self.primitive.next()
             token = self.dispatchers.get(token, self.normal_data)(self, token)
             if token:
                 return token
+        return tokens.pop()
 
     def multiple(self, count):
         return [self.next() for i in range(count)]
