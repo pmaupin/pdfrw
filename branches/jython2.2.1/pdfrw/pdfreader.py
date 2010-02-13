@@ -65,8 +65,8 @@ class PdfReader(PdfDict):
 
         assert isinstance(obj, PdfDict)
         assert tok == 'stream', tok
-        floc = source.floc
         fdata = source.fdata
+        floc = fdata.rfind(tok, 0, source.floc) + len(tok)
         ch = fdata[floc]
         if ch == '\r':
             floc += 1

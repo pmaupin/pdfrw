@@ -82,17 +82,35 @@ class _PrimitiveTokens(object):
             All of the coalesced tokens will either be non-matches,
             or will be a matched backslash.  We distinguish the
             non-matches by the fact that next() will have left
-            a following match inside self.tokens.
+            a following match inside self.tokens for the actual match.
         '''
         tokens = self.tokens
-        for token in self:
-            # If it is a non-match or a backslash, take it
-            if tokens or token == '\\':
-                result.append(token)
-            else:
-                # push it back for next time and get out
-                tokens.append(token)
+        whitespace = self.whitespaceset
+
+        # Optimized path for usual case -- regular data (not a name string),
+        # with no escape character, and followed by whitespace.
+
+        if tokens:
+            token = tokens.pop()
+            if token != '\\':
+                if token[0] not in whitespace:
+                    tokens.append(token)
                 return
+            result.append(token)
+
+        # Non-optimized path.  Either start of a name string received,
+        # or we just had one escape.
+
+        for token in self:
+            if tokens:
+                result.append(token)
+                token = tokens.pop()
+            if token != '\\':
+                if token[0] not in whitespace:
+                    tokens.append(token)
+                return
+            result.append(token)
+
 
     def floc(self):
         return self.startloc - sum([len(x) for x in self.tokens])
