@@ -95,11 +95,11 @@ class FormatObjects(object):
             if self.compress and obj.stream:
                 compress([obj])
             myarray = []
-            dictinfo = obj.items()
-            dictinfo.sort()
-            for key, value in dictinfo:
+            dictkeys = [str(x) for x in obj.keys()]
+            dictkeys.sort()
+            for key in dictkeys:
                 myarray.append(key)
-                myarray.append(self.add(value, visited))
+                myarray.append(self.add(obj[key], visited))
             result = self.format_array(myarray, '<<%s>>')
             stream = obj.stream
             if stream is not None:
