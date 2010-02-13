@@ -70,34 +70,39 @@ class _PrimitiveTokens(object):
                 raise StopIteration
         return tokens.pop()
 
-    def peek(self):
+    def coalesce(self, result):
+        ''' This function coalesces tokens together up until
+            the next delimiter or whitespace.
+            All of the coalesced tokens will either be non-matches,
+            or will be a matched backslash.  We distinguish the
+            non-matches by the fact that next() will have left
+            a following match inside self.tokens.
+        '''
+        tokens = self.tokens
         for token in self:
-            self.tokens.append(token)
-            return token
-        return '\n'
-
-    def readuntil(self, stopset, result):
-        while self.peek()[0] not in stopset:
-            result.append(self.tokens.pop())
+            # If it is a non-match or a backslash, take it
+            if tokens or token == '\\':
+                result.append(token)
+            else:
+                # push it back for next time and get out
+                tokens.append(token)
+                return
 
     def floc(self):
         return self.startloc - sum([len(x) for x in self.tokens])
-    floc = property(floc)
 
 class PdfTokens(object):
 
-    whitespaceset = _PrimitiveTokens.whitespaceset
-    delimiterset = _PrimitiveTokens.delimiterset
-    whiteordelim = whitespaceset | delimiterset
 
     def __init__(self, fdata, startloc=0, strip_comments=True):
         self.primitive = _PrimitiveTokens(fdata, startloc)
         self.fdata = fdata
         self.strip_comments = strip_comments
         self.tokens = []
+        self.whitespaceset = _PrimitiveTokens.whitespaceset
 
     def floc(self):
-        return self.primitive.floc
+        return self.primitive.floc()
     floc = property(floc)
 
     def comment(self, token):
@@ -147,12 +152,12 @@ class PdfTokens(object):
         if token[0] in self.whitespaceset:
             return
         tokens = [token]
-        self.primitive.readuntil(self.whiteordelim, tokens)
+        self.primitive.coalesce(tokens)
         return PdfObject(''.join(tokens))
 
     def name_string(self, token):
         tokens = [token]
-        self.primitive.readuntil(self.whiteordelim, tokens)
+        self.primitive.coalesce(tokens)
         token = ''.join(tokens)
         if '#' in token:
             substrs = token.split('#')
