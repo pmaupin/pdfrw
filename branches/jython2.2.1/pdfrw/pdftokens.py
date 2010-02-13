@@ -41,13 +41,13 @@ class _PrimitiveTokens(object):
     del whitespace_pattern, dictdelim_pattern
     del delimiter_pattern, pattern
 
-    def __init__(self, fdata, startloc):
+    def __init__(self, fdata):
 
         class MyIterator(object):
             def next():
                 if not tokens:
                     startloc = self.startloc
-                    match = next_match()
+                    match = next_match[0]()
                     if match is not None:
                         start = match.start()
                         end = match.end()
@@ -65,13 +65,16 @@ class _PrimitiveTokens(object):
             next = staticmethod(next)
 
         self.fdata = fdata
-        self.startloc = startloc
         self.tokens = tokens = []
         self.iterator = iterator = MyIterator()
         self.next = iterator.next
-        next_match = self.re_func(fdata, startloc).next
+        self.next_match = next_match = [None]
         tappend = tokens.append
         tpop = tokens.pop
+
+    def setstart(self, startloc):
+        self.startloc = startloc
+        self.next_match[0] = self.re_func(self.fdata, startloc).next
 
     def __iter__(self):
         return self.iterator
@@ -216,7 +219,9 @@ class PdfTokens(object):
                 return tokens.pop()
             next = staticmethod(next)
 
-        self.primitive = primitive = _PrimitiveTokens(fdata, startloc)
+        self.primitive = primitive = _PrimitiveTokens(fdata)
+        self.setstart = primitive.setstart
+        primitive.setstart(startloc)
         self.fdata = fdata
         self.strip_comments = strip_comments
         self.tokens = tokens = []
