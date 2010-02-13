@@ -13,16 +13,6 @@ from sets import Set as set
 
 import re
 
-class WeakrefStr(object):
-    ''' A string class that can be weakly referenced.
-    '''
-    def __init__(self, s):
-        self.s = s
-    def __getitem__(self, index):
-        return self.s[index]
-    def __getattr__(self, attrname):
-        return getattr(self.s, attrname)
-
 class PdfObject(str):
     indirect = False
 

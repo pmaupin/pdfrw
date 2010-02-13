@@ -13,7 +13,6 @@ sixth edition, for PDF version 1.7, dated November 2006.
 from __future__ import generators
 from sets import Set as set
 import re
-import weakref
 from pdfobjects import PdfString, PdfObject
 
 class _PrimitiveTokens(object):
@@ -38,35 +37,34 @@ class _PrimitiveTokens(object):
 
     pattern = '(%s|%s|%s)' % (whitespace_pattern,
                     dictdelim_pattern, delimiter_pattern)
-    re_func = re.compile(pattern).split
+    re_func = re.compile(pattern).finditer
     del whitespace_pattern, dictdelim_pattern
     del delimiter_pattern, pattern
 
-    # Use re to split this many characters at a time.
-    # Should not be smaller than a few hundred, to hold
-    # the maximum name string.
-    chunksize = 2000
-
-    def __init__(self, fdata, startloc, streamlen=None):
-        self.startloc = startloc
+    def __init__(self, fdata, startloc):
         self.fdata = fdata
+        self.startloc = startloc
+        self.next_match = self.re_func(fdata, startloc).next
         self.tokens = []
-        if streamlen is None:
-            self.endloc = 2000000000
-        else:
-            self.endloc = startloc + streamlen
 
     def __iter__(self):
         return self
 
     def readchunk(self):
-        fdata, startloc = self.fdata, self.startloc
-        endloc = min(startloc + self.chunksize, self.endloc)
-        chunk = self.fdata[startloc:endloc]
-        tokens = self.tokens = [x for x in self.re_func(chunk) if x]
-        startloc += len(chunk)
-        self.startloc = startloc - (len(tokens) > 1 and len(tokens.pop()))
-        tokens.reverse()
+        fdata = self.fdata
+        startloc = self.startloc
+        tokens = self.tokens = []
+        match = self.next_match()
+        if match is not None:
+            start, end = match.start(), match.end()
+            tokens.append(fdata[start:end])
+            if start > startloc:
+                tokens.append(fdata[startloc:start])
+            self.startloc = end
+        else:
+            s = fdata[startloc:]
+            if s:
+                tokens.append(s)
         return tokens
 
     def next(self):
@@ -88,9 +86,9 @@ class _PrimitiveTokens(object):
     def push(self, what):
         self.tokens.append(what)
 
-    def readuntil(self, stopset):
+    def readuntil(self, stopset, result):
         while self.peek()[0] not in stopset:
-            yield self.tokens.pop()
+            result.append(self.tokens.pop())
 
     def floc(self):
         return self.startloc - sum([len(x) for x in self.tokens])
@@ -102,19 +100,10 @@ class PdfTokens(object):
     delimiterset = _PrimitiveTokens.delimiterset
     whiteordelim = whitespaceset | delimiterset
 
-    cached_strings_by_file = weakref.WeakKeyDictionary()
-
-    def __init__(self, fdata, startloc=0, strip_comments=True, streamlen=None):
-        ''' This class may be used to iterate over the same file multiple
-            times.  To reduce memory overhead, strings are cached for reuse,
-            on a per-file basis. Unfortunately, Python strings cannot be
-            weakly referenced.  So fdata should be an instance of the WeakrefStr
-            class.
-        '''
-        self.primitive = _PrimitiveTokens(fdata, startloc, streamlen)
+    def __init__(self, fdata, startloc=0, strip_comments=True):
+        self.primitive = _PrimitiveTokens(fdata, startloc)
         self.fdata = fdata
         self.strip_comments = strip_comments
-        self.cached_strings = self.cached_strings_by_file.setdefault(fdata, {})
 
     def floc(self):
         return self.primitive.floc
@@ -167,12 +156,12 @@ class PdfTokens(object):
         if token[0] in self.whitespaceset:
             return
         tokens = [token]
-        tokens.extend(list(self.primitive.readuntil(self.whiteordelim)))
+        self.primitive.readuntil(self.whiteordelim, tokens)
         return PdfObject(''.join(tokens))
 
     def name_string(self, token):
         tokens = [token]
-        tokens.extend(list(self.primitive.readuntil(self.whiteordelim)))
+        self.primitive.readuntil(self.whiteordelim, tokens)
         token = ''.join(tokens)
         if '#' in token:
             substrs = token.split('#')
@@ -211,7 +200,7 @@ class PdfTokens(object):
             token = self.primitive.next()
             token = self.dispatchers.get(token, self.normal_data)(self, token)
             if token:
-                return self.cached_strings.setdefault(token, token)
+                return token
 
     def multiple(self, count):
         return [self.next() for i in range(count)]

@@ -11,7 +11,7 @@ of the object.
 '''
 
 from pdftokens import PdfTokens
-from pdfobjects import PdfDict, PdfArray, PdfName, WeakrefStr
+from pdfobjects import PdfDict, PdfArray, PdfName
 from pdfcompress import uncompress
 
 class PdfReader(PdfDict):
@@ -172,7 +172,7 @@ class PdfReader(PdfDict):
                 f.close()
 
         assert fdata is not None
-        self.private.fdata = fdata = WeakrefStr(fdata)
+        self.private.fdata = fdata
 
         self.private.indirect_objects = {}
         self.private.special = {'<<': self.readdict, '[': self.readarray}
