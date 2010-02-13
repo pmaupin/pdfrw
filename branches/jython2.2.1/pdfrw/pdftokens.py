@@ -99,113 +99,110 @@ class PdfTokens(object):
 
     def __init__(self, fdata, startloc=0, strip_comments=True):
 
+        def comment(token):
+            tokens = [token]
+            for token in primitive:
+                tokens.append(token)
+                if token[0] in whitespaceset and ('\n' in token or '\r' in token):
+                    break
+            return not strip_comments and ''.join(tokens)
+
+        def single(token):
+            return token
+
+        def regular_string(token):
+            def escaped():
+                escaped = False
+                i = -2
+                while tokens[i] == '\\':
+                    escaped = not escaped
+                    i -= 1
+                return escaped
+
+            tokens = [token]
+            nestlevel = 1
+            for token in primitive:
+                tokens.append(token)
+                if token in '()' and not escaped():
+                    nestlevel += token == '(' or -1
+                    if not nestlevel:
+                        break
+            else:
+                assert 0, "Unexpected end of token stream"
+            return PdfString(''.join(tokens))
+
+        def hex_string(token):
+            tokens = [token]
+            for token in primitive:
+                tokens.append(token)
+                if token == '>':
+                    break
+            while tokens[-2] == '>>':
+                tokens.append(tokens.pop(-2))
+            return PdfString(''.join(tokens))
+
+        def normal_data(token):
+            if token[0] in whitespaceset:
+                return
+            tokens = [token]
+            primitive.coalesce(tokens)
+            return PdfObject(''.join(tokens))
+
+        def name_string(token):
+            tokens = [token]
+            primitive.coalesce(tokens)
+            token = ''.join(tokens)
+            if '#' in token:
+                substrs = token.split('#')
+                substrs.reverse()
+                tokens = [substrs.pop()]
+                while substrs:
+                    s = substrs.pop()
+                    tokens.append(chr(int(s[:2], 16)))
+                    tokens.append(s[2:])
+                token = ''.join(tokens)
+            return PdfObject(token)
+
+        def broken(token):
+            assert 0, token
+
+        dispatch = {
+            '(': regular_string,
+            ')': broken,
+            '<': hex_string,
+            '>': broken,
+            '[': single,
+            ']': single,
+            '{': single,
+            '}': single,
+            '/': name_string,
+            '%' : comment,
+            '<<': single,
+            '>>': single,
+        }.get
+
         class MyIterator(object):
             def next():
                 while not tokens:
                     token = primitive_next()
-                    token = get_dispatch(token, normal_data)(self, token)
+                    token = dispatch(token, normal_data)(token)
                     if token:
                         return token
                 return tokens.pop()
             next = staticmethod(next)
 
-        self.primitive = _PrimitiveTokens(fdata, startloc)
+        self.primitive = primitive = _PrimitiveTokens(fdata, startloc)
         self.fdata = fdata
         self.strip_comments = strip_comments
         self.tokens = tokens = []
-        self.whitespaceset = _PrimitiveTokens.whitespaceset
+        whitespaceset = _PrimitiveTokens.whitespaceset
         self.iterator = iterator = MyIterator()
         self.next = iterator.next
-        primitive_next = self.primitive.next
-        get_dispatch = self.dispatchers.get
-        normal_data = self.normal_data
+        primitive_next = primitive.next
 
     def floc(self):
         return self.primitive.floc() - sum([len(x) for x in self.tokens])
     floc = property(floc)
-
-    def comment(self, token):
-        whitespaceset = self.whitespaceset
-        tokens = [token]
-        for token in self.primitive:
-            tokens.append(token)
-            if token[0] in whitespaceset and ('\n' in token or '\r' in token):
-                break
-        return not self.strip_comments and ''.join(tokens)
-
-    def single(self, token):
-        return token
-
-    def regular_string(self, token):
-        def escaped():
-            escaped = False
-            i = -2
-            while tokens[i] == '\\':
-                escaped = not escaped
-                i -= 1
-            return escaped
-
-        tokens = [token]
-        nestlevel = 1
-        for token in self.primitive:
-            tokens.append(token)
-            if token in '()' and not escaped():
-                nestlevel += token == '(' or -1
-                if not nestlevel:
-                    break
-        else:
-            assert 0, "Unexpected end of token stream"
-        return PdfString(''.join(tokens))
-
-    def hex_string(self, token):
-        tokens = [token]
-        for token in self.primitive:
-            tokens.append(token)
-            if token == '>':
-                break
-        while tokens[-2] == '>>':
-            self.tokens.append(tokens.pop(-2))
-        return PdfString(''.join(tokens))
-
-    def normal_data(self, dummy, token):
-        if token[0] in self.whitespaceset:
-            return
-        tokens = [token]
-        self.primitive.coalesce(tokens)
-        return PdfObject(''.join(tokens))
-
-    def name_string(self, token):
-        tokens = [token]
-        self.primitive.coalesce(tokens)
-        token = ''.join(tokens)
-        if '#' in token:
-            substrs = token.split('#')
-            substrs.reverse()
-            tokens = [substrs.pop()]
-            while substrs:
-                s = substrs.pop()
-                tokens.append(chr(int(s[:2], 16)))
-                tokens.append(s[2:])
-            token = ''.join(tokens)
-        return PdfObject(token)
-
-    def broken(self, token):
-        assert 0, token
-
-    dispatchers = {
-        '(': regular_string,
-        ')': broken,
-        '<': hex_string,
-        '>': broken,
-        '[': single,
-        ']': single,
-        '{': single,
-        '}': single,
-        '/': name_string,
-        '%' : comment,
-        '<<': single,
-        '>>': single,
-    }
 
     def __iter__(self):
         return self.iterator
