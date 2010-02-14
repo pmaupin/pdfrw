@@ -30,13 +30,18 @@ But that assumes several things, including that the personnel know how to operat
   Same example, using reportlab for PDF output.
     http://code.google.com/p/pdfrw/source/browse/trunk/examples/rl1/booklet.py
 
-== Merging data from two PDFs -- watermark ==
+== Watermarking PDFs ==
 
 The watermark demo takes two PDFs, and creates a merged PDF using one of
-the source PDFs to watermark every page of the other source PDF:
+the source PDFs to place a watermark on top of every page of the other source PDF:
 
   http://code.google.com/p/pdfrw/source/browse/trunk/examples/watermark.py
 
+A different approach uses a preexisting PDF as a background watermark for
+pages created programmatically with reportlab.  This demo was contributed by
+user asannes:
+
+    http://code.google.com/p/pdfrw/source/browse/trunk/examples/rl1/platypus_pdf_template.py
 
 == Adding or modifying metadata ==
 
