@@ -8,17 +8,14 @@ objects are arrays and dicts.  Either of these can be
 indirect or not, and dicts could have an associated
 stream.
 '''
-import re
+from __future__ import generators
 
-class WeakrefStr(object):
-    ''' A string class that can be weakly referenced.
-    '''
-    def __init__(self, s):
-        self.s = s
-    def __getitem__(self, index):
-        return self.s[index]
-    def __getattr__(self, attrname):
-        return getattr(self.s, attrname)
+try:
+    set
+except NameError:
+    from sets import Set as set
+
+import re
 
 class PdfObject(str):
     indirect = False
@@ -77,7 +74,7 @@ class PdfString(str):
         chars = data[1::2]
         other = data[0::2]
         assert other[0] == '<' and other[-1] == '>' and ''.join(other) == '<>', self
-        return ''.join(remap(int(x, 16)) for x in chars)
+        return ''.join([remap(int(x, 16)) for x in chars])
 
     def decode(self, remap=chr, twobytes=False):
         if self.startswith('('):
@@ -86,7 +83,6 @@ class PdfString(str):
         else:
             return self.decode_hex(remap, twobytes)
 
-    @classmethod
     def encode(cls, source, usehex=False):
         assert not usehex, "Not supported yet"
         if isinstance(source, unicode):
@@ -97,6 +93,7 @@ class PdfString(str):
         source = source.replace('(', '\\(')
         source = source.replace(')', '\\)')
         return cls('(' +source + ')')
+    encode = classmethod(encode)
 
 class PdfDict(dict):
     indirect = False
@@ -145,7 +142,6 @@ class PdfDict(dict):
                 assert key.startswith('/'), (key, value)
                 yield key, value
 
-    @property
     def inheritable(self):
         ''' Search through ancestors as needed for inheritable
             dictionary items
@@ -169,8 +165,8 @@ class PdfDict(dict):
                     if mydict is None:
                         return
         return Search(self)
+    inheritable = property(inheritable)
 
-    @property
     def private(self):
         ''' Allows setting private metadata for use in
             processing (not sent to PDF file)
@@ -181,6 +177,7 @@ class PdfDict(dict):
         result = Private()
         result.__dict__ = self.__dict__
         return result
+    private = property(private)
 
 class IndirectPdfDict(PdfDict):
     indirect = True

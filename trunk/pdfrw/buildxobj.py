@@ -66,10 +66,10 @@ def getrects(inheritable, pageinfo):
         the desired pageinfo rectangle, return the page's
         media box and the calculated boundary (clip) box.
     '''
-    mbox = tuple(float(x) for x in inheritable.MediaBox)
+    mbox = tuple([float(x) for x in inheritable.MediaBox])
     vrect = pageinfo.viewrect
     if vrect is None:
-        cbox = tuple(float(x) for x in (inheritable.CropBox or mbox))
+        cbox = tuple([float(x) for x in (inheritable.CropBox or mbox)])
     else:
         mleft, mbot, mright, mtop = mbox
         x, y, w, h = vrect
