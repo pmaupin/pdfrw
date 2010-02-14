@@ -18,6 +18,11 @@ addpage() assumes that the pages are part of a valid
 tree/forest of PDF objects.
 '''
 
+try:
+    set
+except NameError:
+    from sets import Set as set
+
 from pdfobjects import PdfName, PdfArray, PdfDict, IndirectPdfDict, PdfObject, PdfString
 from pdfcompress import compress
 
@@ -62,10 +67,9 @@ class FormatObjects(object):
             objlist[objnum-1] = self.format_obj(obj)
         return '%s 0 R' % objnum
 
-    @staticmethod
     def format_array(myarray, formatter):
         # Format array data into semi-readable ASCII
-        if sum(len(x) for x in myarray) <= 70:
+        if sum([len(x) for x in myarray]) <= 70:
             return formatter % ' '.join(myarray)
         bigarray = []
         count = 1000000
@@ -77,7 +81,8 @@ class FormatObjects(object):
                 count = 0
             count += lenx + 1
             subarray.append(x)
-        return formatter % '\n  '.join(' '.join(x) for x in bigarray)
+        return formatter % '\n  '.join([' '.join(x) for x in bigarray])
+    format_array = staticmethod(format_array)
 
     def format_obj(self, obj, visited=None):
         ''' format PDF object data into semi-readable ASCII.
@@ -94,9 +99,13 @@ class FormatObjects(object):
             if self.compress and obj.stream:
                 compress([obj])
             myarray = []
-            for key, value in sorted(obj.iteritems()):
+            # Jython 2.2.1 has a bug which segfaults when
+            # sorting subclassed strings, so we un-subclass them.
+            dictkeys = [str(x) for x in obj.iterkeys()]
+            dictkeys.sort()
+            for key in dictkeys:
                 myarray.append(key)
-                myarray.append(self.add(value, visited))
+                myarray.append(self.add(obj[key], visited))
             result = self.format_array(myarray, '<<%s>>')
             stream = obj.stream
             if stream is not None:
@@ -107,7 +116,6 @@ class FormatObjects(object):
         else:
             return str(obj)
 
-    @classmethod
     def dump(cls, f, trailer, version='1.3', compress=True):
         self = cls()
         self.compress = compress
@@ -141,7 +149,7 @@ class FormatObjects(object):
         for x in offsets:
             f.write('%010d %05d %s\r\n' % x)
         f.write('trailer\n\n%s\nstartxref\n%s\n%%%%EOF\n' % (trailer, offset))
-
+    dump = classmethod(dump)
 
 class PdfWriter(object):
 

@@ -10,8 +10,14 @@ sixth edition, for PDF version 1.7, dated November 2006.
 
 '''
 
+from __future__ import generators
+
+try:
+    set
+except NameError:
+    from sets import Set as set
+
 import re
-import weakref
 from pdfobjects import PdfString, PdfObject
 
 class _PrimitiveTokens(object):
@@ -28,7 +34,7 @@ class _PrimitiveTokens(object):
 
     # In addition to the delimiters, we also use '\', which
     # is special in some contexts in PDF.
-    delimiter_pattern = '\\\\|' + '|\\'.join(delimiterset)
+    delimiter_pattern = '\\\\|\\' + '|\\'.join(delimiterset)
 
     # Dictionary delimiters are '<<' and '>>'.  Look for
     # these before the single variety.
@@ -36,180 +42,207 @@ class _PrimitiveTokens(object):
 
     pattern = '(%s|%s|%s)' % (whitespace_pattern,
                     dictdelim_pattern, delimiter_pattern)
-    re_func = re.compile(pattern).split
+    re_func = re.compile(pattern).finditer
     del whitespace_pattern, dictdelim_pattern
     del delimiter_pattern, pattern
 
-    # Use re to split this many characters at a time.
-    # Should not be smaller than a few hundred, to hold
-    # the maximum name string.
-    chunksize = 2000
+    def __init__(self, fdata):
 
-    def __init__(self, fdata, startloc, streamlen=None):
-        self.startloc = startloc
+        class MyIterator(object):
+            def next():
+                if not tokens:
+                    startloc = self.startloc
+                    match = next_match[0]()
+                    if match is not None:
+                        start = match.start()
+                        end = match.end()
+                        tappend(fdata[start:end])
+                        if start > startloc:
+                            tappend(fdata[startloc:start])
+                        self.startloc = end
+                    else:
+                        s = fdata[startloc:]
+                        if s:
+                            tappend(s)
+                    if not tokens:
+                        raise StopIteration
+                return tpop()
+            next = staticmethod(next)
+
         self.fdata = fdata
-        self.tokens = []
-        if streamlen is None:
-            self.endloc = 2000000000
-        else:
-            self.endloc = startloc + streamlen
+        self.tokens = tokens = []
+        self.iterator = iterator = MyIterator()
+        self.next = iterator.next
+        self.next_match = next_match = [None]
+        tappend = tokens.append
+        tpop = tokens.pop
+
+    def setstart(self, startloc):
+        self.startloc = startloc
+        self.next_match[0] = self.re_func(self.fdata, startloc).next
 
     def __iter__(self):
-        return self
+        return self.iterator
 
-    def readchunk(self):
-        fdata, startloc = self.fdata, self.startloc
-        endloc = min(startloc + self.chunksize, self.endloc)
-        chunk = self.fdata[startloc:endloc]
-        tokens = self.tokens = [x for x in self.re_func(chunk) if x]
-        startloc += len(chunk)
-        self.startloc = startloc - (len(tokens) > 1 and len(tokens.pop()))
-        tokens.reverse()
-        return tokens
-
-    def next(self):
+    def coalesce(self, result):
+        ''' This function coalesces tokens together up until
+            the next delimiter or whitespace.
+            All of the coalesced tokens will either be non-matches,
+            or will be a matched backslash.  We distinguish the
+            non-matches by the fact that next() will have left
+            a following match inside self.tokens for the actual match.
+        '''
         tokens = self.tokens
-        if not tokens:
-            tokens = self.readchunk()
-            if not tokens:
-                raise StopIteration
-        return tokens.pop()
+        whitespace = self.whitespaceset
 
-    def peek(self):
-        tokens = self.tokens
-        if not tokens:
-            tokens = self.readchunk()
-            if not tokens:
-                return '\n'        # Pretend like we have additional whitespace
-        return tokens[-1]
+        # Optimized path for usual case -- regular data (not a name string),
+        # with no escape character, and followed by whitespace.
 
-    def push(self, what):
-        self.tokens.append(what)
+        if tokens:
+            token = tokens.pop()
+            if token != '\\':
+                if token[0] not in whitespace:
+                    tokens.append(token)
+                return
+            result.append(token)
 
-    def readuntil(self, stopset):
-        while self.peek()[0] not in stopset:
-            yield self.tokens.pop()
+        # Non-optimized path.  Either start of a name string received,
+        # or we just had one escape.
 
-    @property
+        for token in self:
+            if tokens:
+                result.append(token)
+                token = tokens.pop()
+            if token != '\\':
+                if token[0] not in whitespace:
+                    tokens.append(token)
+                return
+            result.append(token)
+
+
     def floc(self):
-        return self.startloc - sum(len(x) for x in self.tokens)
+        return self.startloc - sum([len(x) for x in self.tokens])
 
 class PdfTokens(object):
 
-    whitespaceset = _PrimitiveTokens.whitespaceset
-    delimiterset = _PrimitiveTokens.delimiterset
-    whiteordelim = whitespaceset | delimiterset
+    def __init__(self, fdata, startloc=0, strip_comments=True):
 
-    cached_strings_by_file = weakref.WeakKeyDictionary()
+        def comment(token):
+            tokens = [token]
+            for token in primitive:
+                tokens.append(token)
+                if token[0] in whitespaceset and ('\n' in token or '\r' in token):
+                    break
+            return not strip_comments and ''.join(tokens)
 
-    def __init__(self, fdata, startloc=0, strip_comments=True, streamlen=None):
-        ''' This class may be used to iterate over the same file multiple
-            times.  To reduce memory overhead, strings are cached for reuse,
-            on a per-file basis. Unfortunately, Python strings cannot be
-            weakly referenced.  So fdata should be an instance of the WeakrefStr
-            class.
-        '''
-        self.primitive = _PrimitiveTokens(fdata, startloc, streamlen)
+        def single(token):
+            return token
+
+        def regular_string(token):
+            def escaped():
+                escaped = False
+                i = -2
+                while tokens[i] == '\\':
+                    escaped = not escaped
+                    i -= 1
+                return escaped
+
+            tokens = [token]
+            nestlevel = 1
+            for token in primitive:
+                tokens.append(token)
+                if token in '()' and not escaped():
+                    nestlevel += token == '(' or -1
+                    if not nestlevel:
+                        break
+            else:
+                assert 0, "Unexpected end of token stream"
+            return PdfString(''.join(tokens))
+
+        def hex_string(token):
+            tokens = [token]
+            for token in primitive:
+                tokens.append(token)
+                if token == '>':
+                    break
+            while tokens[-2] == '>>':
+                tokens.append(tokens.pop(-2))
+            return PdfString(''.join(tokens))
+
+        def normal_data(token):
+
+            # Obscure optimization -- we can get here with
+            # whitespace or regular character data.  If we get
+            # here with whitespace, then there won't be an additional
+            # token queued up in the primitive object, otherwise there
+            # will...
+            if primitive_tokens:     #if token[0] not in whitespaceset:
+                tokens = [token]
+                primitive.coalesce(tokens)
+                return PdfObject(''.join(tokens))
+
+        def name_string(token):
+            tokens = [token]
+            primitive.coalesce(tokens)
+            token = ''.join(tokens)
+            if '#' in token:
+                substrs = token.split('#')
+                substrs.reverse()
+                tokens = [substrs.pop()]
+                while substrs:
+                    s = substrs.pop()
+                    tokens.append(chr(int(s[:2], 16)))
+                    tokens.append(s[2:])
+                token = ''.join(tokens)
+            return PdfObject(token)
+
+        def broken(token):
+            assert 0, token
+
+        dispatch = {
+            '(': regular_string,
+            ')': broken,
+            '<': hex_string,
+            '>': broken,
+            '[': single,
+            ']': single,
+            '{': single,
+            '}': single,
+            '/': name_string,
+            '%' : comment,
+            '<<': single,
+            '>>': single,
+        }.get
+
+        class MyIterator(object):
+            def next():
+                while not tokens:
+                    token = primitive_next()
+                    token = dispatch(token, normal_data)(token)
+                    if token:
+                        return token
+                return tokens.pop()
+            next = staticmethod(next)
+
+        self.primitive = primitive = _PrimitiveTokens(fdata)
+        self.setstart = primitive.setstart
+        primitive.setstart(startloc)
         self.fdata = fdata
         self.strip_comments = strip_comments
-        self.cached_strings = self.cached_strings_by_file.setdefault(fdata, {})
+        self.tokens = tokens = []
+        self.iterator = iterator = MyIterator()
+        self.next = iterator.next
+        primitive_next = primitive.next
+        primitive_tokens = primitive.tokens
+        whitespaceset = _PrimitiveTokens.whitespaceset
 
-    @property
     def floc(self):
-        return self.primitive.floc
-
-    def comment(self, token):
-        whitespaceset = self.whitespaceset
-        tokens = [token]
-        for token in self.primitive:
-            tokens.append(token)
-            if token[0] in whitespaceset and ('\n' in token or '\r' in token):
-                break
-        return not self.strip_comments and ''.join(tokens)
-
-    def single(self, token):
-        return token
-
-    def regular_string(self, token):
-        def escaped():
-            escaped = False
-            i = -2
-            while tokens[i] == '\\':
-                escaped = not escaped
-                i -= 1
-            return escaped
-
-        tokens = [token]
-        nestlevel = 1
-        for token in self.primitive:
-            tokens.append(token)
-            if token in '()' and not escaped():
-                nestlevel += token == '(' or -1
-                if not nestlevel:
-                    break
-        else:
-            assert 0, "Unexpected end of token stream"
-        return PdfString(''.join(tokens))
-
-    def hex_string(self, token):
-        tokens = [token]
-        for token in self.primitive:
-            tokens.append(token)
-            if token == '>':
-                break
-        while tokens[-2] == '>>':
-            self.primitive.push(tokens.pop(-2))
-        return PdfString(''.join(tokens))
-
-    def normal_data(self, dummy, token):
-        if token[0] in self.whitespaceset:
-            return
-        tokens = [token]
-        tokens.extend(self.primitive.readuntil(self.whiteordelim))
-        return PdfObject(''.join(tokens))
-
-    def name_string(self, token):
-        tokens = [token]
-        tokens.extend(self.primitive.readuntil(self.whiteordelim))
-        token = ''.join(tokens)
-        if '#' in token:
-            substrs = token.split('#')
-            substrs.reverse()
-            tokens = [substrs.pop()]
-            while substrs:
-                s = substrs.pop()
-                tokens.append(chr(int(s[:2], 16)))
-                tokens.append(s[2:])
-            token = ''.join(tokens)
-        return PdfObject(token)
-
-    def broken(self, token):
-        assert 0, token
-
-    dispatchers = {
-        '(': regular_string,
-        ')': broken,
-        '<': hex_string,
-        '>': broken,
-        '[': single,
-        ']': single,
-        '{': single,
-        '}': single,
-        '/': name_string,
-        '%' : comment,
-        '<<': single,
-        '>>': single,
-    }
+        return self.primitive.floc() - sum([len(x) for x in self.tokens])
+    floc = property(floc)
 
     def __iter__(self):
-        return self
-
-    def next(self):
-        while 1:
-            token = self.primitive.next()
-            token = self.dispatchers.get(token, self.normal_data)(self, token)
-            if token:
-                return self.cached_strings.setdefault(token, token)
+        return self.iterator
 
     def multiple(self, count):
-        return [self.next() for i in range(count)]
+        next = self.next
+        return [next() for i in range(count)]
