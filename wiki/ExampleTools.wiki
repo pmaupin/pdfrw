@@ -30,6 +30,14 @@ But that assumes several things, including that the personnel know how to operat
   Same example, using reportlab for PDF output.
     http://code.google.com/p/pdfrw/source/browse/trunk/examples/rl1/booklet.py
 
+== Merging data from two PDFs -- watermark ==
+
+The watermark demo takes two PDFs, and creates a merged PDF using one of
+the source PDFs to watermark every page of the other source PDF:
+
+  http://code.google.com/p/pdfrw/source/browse/trunk/examples/watermark.py
+
+
 == Adding or modifying metadata ==
 
 The metadata example will accept multiple input files on the command line, concatenate them and output them to output.pdf, after adding some nonsensical metadata to the output PDF file:
