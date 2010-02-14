@@ -9,7 +9,11 @@ not a priority for me...
 '''
 
 from __future__ import generators
-from sets import Set as set
+
+try:
+    set
+except NameError:
+    from sets import Set as set
 
 import zlib
 from pdfobjects import PdfDict, PdfName

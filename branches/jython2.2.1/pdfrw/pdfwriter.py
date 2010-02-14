@@ -18,7 +18,11 @@ addpage() assumes that the pages are part of a valid
 tree/forest of PDF objects.
 '''
 
-from sets import Set as set
+try:
+    set
+except NameError:
+    from sets import Set as set
+
 from pdfobjects import PdfName, PdfArray, PdfDict, IndirectPdfDict, PdfObject, PdfString
 from pdfcompress import compress
 

@@ -11,7 +11,12 @@ sixth edition, for PDF version 1.7, dated November 2006.
 '''
 
 from __future__ import generators
-from sets import Set as set
+
+try:
+    set
+except NameError:
+    from sets import Set as set
+
 import re
 from pdfobjects import PdfString, PdfObject
 

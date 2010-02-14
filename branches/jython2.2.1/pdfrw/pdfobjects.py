@@ -9,7 +9,11 @@ indirect or not, and dicts could have an associated
 stream.
 '''
 from __future__ import generators
-from sets import Set as set
+
+try:
+    set
+except NameError:
+    from sets import Set as set
 
 import re
 
