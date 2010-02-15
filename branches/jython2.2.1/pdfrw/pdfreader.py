@@ -10,6 +10,11 @@ document pages are stored in a list in the pages attribute
 of the object.
 '''
 
+try:
+    set
+except NameError:
+    from sets import Set as set
+
 from pdftokens import PdfTokens
 from pdfobjects import PdfDict, PdfArray, PdfName
 from pdfcompress import uncompress
@@ -19,6 +24,25 @@ class PdfReader(PdfDict):
     class unresolved:
         # Used as a placeholder until we have an object.
         pass
+
+    def deferred_object(self, objnum, gennum):
+        class Deferred(object):
+            pass
+        result = Deferred()
+        result.info = objnum, gennum
+        self.deferred.append(result)
+        return result
+
+    def expand_deferred(self):
+        missing = set()
+        for obj in list(self.deferred):
+            deferred_again, newobj = self.readindirect(*obj.info)
+            if deferred_again:
+                missing.add(obj.info)
+            else:
+                obj.parent[obj.index] = newobj
+        if missing:
+            print "Objects missing from PDF file: %s" % sorted(missing)
 
     def readindirect(self, objnum, gennum):
         ''' Read an indirect object.  If it has already
@@ -36,9 +60,12 @@ class PdfReader(PdfDict):
             return obj
 
         fdata, objnum, gennum = self.fdata, int(objnum), int(gennum)
-        record = self.indirect_objects[fdata, objnum, gennum]
+        try:
+            record = self.indirect_objects[fdata, objnum, gennum]
+        except KeyError:
+            return True, self.deferred_object(objnum, gennum)
         if record[1] is not self.unresolved:
-            return record[1]
+            return False, record[1]
 
         # Read the object header and validate it
         source = PdfTokens(fdata, record[0])
@@ -53,7 +80,7 @@ class PdfReader(PdfDict):
         obj = self.special.get(obj, ordinary)(source, setobj, obj)
         self.readstream(obj, source)
         obj.indirect = True
-        return obj
+        return False, obj
 
     def readstream(obj, source):
         ''' Read optional stream following a dictionary
@@ -88,11 +115,15 @@ class PdfReader(PdfDict):
         for value in source:
             if value == ']':
                 break
+            deferred = False
             if value in special:
                 value = special[value](source)
             elif value == 'R':
                 generation = result.pop()
-                value = self.readindirect(result.pop(), generation)
+                deferred, value = self.readindirect(result.pop(), generation)
+            if deferred:
+                value.parent = result
+                value.index = len(result)
             result.append(value)
         return result
 
@@ -106,6 +137,7 @@ class PdfReader(PdfDict):
             assert tok.startswith('/'), (tok, source.multiple(10))
             key = tok
             value = source.next()
+            deferred = False
             if value in special:
                 value = special[value](source)
                 tok = source.next()
@@ -113,8 +145,11 @@ class PdfReader(PdfDict):
                 tok = source.next()
                 if value.isdigit() and tok.isdigit():
                     assert source.next() == 'R'
-                    value = self.readindirect(value, tok)
+                    deferred, value = self.readindirect(value, tok)
                     tok = source.next()
+            if deferred:
+                value.parent = result
+                value.index = key
             result[key] = value
 
         return result
@@ -172,16 +207,28 @@ class PdfReader(PdfDict):
                 f.close()
 
         assert fdata is not None
+        fdata = fdata.rstrip('\00')
         self.private.fdata = fdata
 
         self.private.indirect_objects = {}
         self.private.special = {'<<': self.readdict, '[': self.readarray}
+        self.private.deferred = deferred = []
 
         startloc, source = self.readxref(fdata)
-        self.parsexref(source)
-        assert source.next() == '<<'
-        self.update(self.readdict(source))
-        assert source.next() == 'startxref' and source.floc > startloc
+        while 1:
+            self.parsexref(source)
+            assert source.next() == '<<'
+            self.update(self.readdict(source))
+            token = source.next()
+            assert token == 'startxref' # and source.floc > startloc, (token, source.floc, startloc)
+            if self.Prev is None:
+                break
+            source = PdfTokens(fdata, int(self.Prev))
+            self.Prev = None
+
+        if deferred:
+            self.expand_deferred()
+
         self.private.pages = self.readpages(self.Root.Pages)
         if decompress:
             self.uncompress()
