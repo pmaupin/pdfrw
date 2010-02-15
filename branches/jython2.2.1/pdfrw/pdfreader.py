@@ -101,7 +101,7 @@ class PdfReader(PdfDict):
         return startstream
     readstream = staticmethod(readstream)
 
-    def expand_deferred(self):
+    def expand_deferred(self, source):
         deferredset = self.deferred
         obj_offsets = self.obj_offsets
         specialget = self.special.get
@@ -118,7 +118,7 @@ class PdfReader(PdfDict):
 
             # Read the object header and validate it
             objnum, gennum = key
-            source = PdfTokens(fdata, offset)
+            source.setstart(offset)
             objid = source.multiple(3)
             assert int(objid[0]) == objnum, objid
             assert int(objid[1]) == gennum, objid
@@ -143,7 +143,7 @@ class PdfReader(PdfDict):
         for obj, startstream in streams:
             endstream = startstream + int(obj.Length)
             obj._stream = fdata[startstream:endstream]
-            source = PdfTokens(fdata, endstream)
+            source.setstart(endstream)
             endit = source.multiple(2)
             assert endit == 'endstream endobj'.split(), endit
 
@@ -224,12 +224,10 @@ class PdfReader(PdfDict):
             assert token == 'startxref' # and source.floc > startloc, (token, source.floc, startloc)
             if self.Prev is None:
                 break
-            source = PdfTokens(fdata, int(self.Prev))
+            source.setstart(int(self.Prev))
             self.Prev = None
 
-        if deferred:
-            self.expand_deferred()
-
+        self.expand_deferred(source)
         self.private.pages = self.readpages(self.Root.Pages)
         if decompress:
             self.uncompress()
