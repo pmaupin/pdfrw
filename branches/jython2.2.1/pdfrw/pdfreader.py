@@ -24,7 +24,8 @@ class PdfReader(PdfDict):
     class DeferredObject(object):
         pass
 
-    def readindirect(self, objnum, gennum, parent, index, Deferred=DeferredObject):
+    def readindirect(self, objnum, gennum, parent, index,
+                     Deferred=DeferredObject, int=int, isinstance=isinstance):
         ''' Read an indirect object.  If it has already
             been read, return it from the cache.
         '''
@@ -40,43 +41,49 @@ class PdfReader(PdfDict):
             result.usedby.append((parent, index))
         return result
 
-    def readarray(self, source):
-        special = self.special
+    def readarray(self, source, PdfArray=PdfArray, len=len):
+        specialget = self.special.get
         result = PdfArray()
+        pop = result.pop
+        append = result.append
 
         for value in source:
-            if value == ']':
-                break
-            if value in special:
-                value = special[value](source)
-            elif value == 'R':
-                generation = result.pop()
-                value = self.readindirect(result.pop(), generation, result, len(result))
-            result.append(value)
+            if value in ']R':
+                if value == ']':
+                    break
+                generation = pop()
+                value = self.readindirect(pop(), generation, result, len(result))
+            else:
+                func = specialget(value)
+                if func is not None:
+                    value = func(source)
+            append(value)
         return result
 
-    def readdict(self, source):
-        special = self.special
+    def readdict(self, source, PdfDict=PdfDict):
+        specialget = self.special.get
         result = PdfDict()
+        next = source.next
 
-        tok = source.next()
+        tok = next()
         while tok != '>>':
             assert tok.startswith('/'), (tok, source.multiple(10))
             key = tok
-            value = source.next()
-            if value in special:
-                value = special[value](source)
-                tok = source.next()
+            value = next()
+            func = specialget(value)
+            if func is not None:
+                value = func(source)
+                tok = next()
             else:
-                tok = source.next()
+                tok = next()
                 if value.isdigit() and tok.isdigit():
-                    assert source.next() == 'R'
+                    assert next() == 'R'
                     value = self.readindirect(value, tok, result, key)
-                    tok = source.next()
+                    tok = next()
             result[key] = value
         return result
 
-    def findstream(obj, source):
+    def findstream(obj, source, PdfDict=PdfDict, isinstance=isinstance, len=len):
         ''' Figure out if there is a content stream
             following an object, and return the start
             pointer to the content stream if so.
@@ -176,24 +183,24 @@ class PdfReader(PdfDict):
         return startloc, PdfTokens(fdata, int(xrefinfo[1]))
     findxref = staticmethod(findxref)
 
-    def parsexref(self, source):
+    def parsexref(self, source, int=int, range=range):
         ''' Parse (one of) the cross-reference file section(s)
         '''
         fdata = self.fdata
-        obj_offsets = self.obj_offsets
-        tok = source.next()
+        setdefault = self.obj_offsets.setdefault
+        next = source.next
+        tok = next()
         assert tok == 'xref', tok
         while 1:
-            tok = source.next()
+            tok = next()
             if tok == 'trailer':
                 break
             startobj = int(tok)
-            for objnum in range(startobj, startobj + int(source.next())):
-                offset = int(source.next())
-                generation = int(source.next())
-                if source.next() == 'n':
-                    objid = objnum, generation
-                    obj_offsets.setdefault(objid, offset)
+            for objnum in range(startobj, startobj + int(next())):
+                offset = int(next())
+                generation = int(next())
+                if next() == 'n':
+                    setdefault((objnum, generation), offset)
 
     def readpages(self, node, pagename=PdfName.Page, pagesname=PdfName.Pages):
         # PDFs can have arbitrarily nested Pages/Page
