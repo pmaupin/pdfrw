@@ -51,7 +51,7 @@ class _PrimitiveTokens(object):
         class MyIterator(object):
             def next():
                 if not tokens:
-                    startloc = self.startloc
+                    startloc = next_startloc[0]
                     match = next_match[0]()
                     if match is not None:
                         start = match.start()
@@ -59,7 +59,7 @@ class _PrimitiveTokens(object):
                         tappend(fdata[start:end])
                         if start > startloc:
                             tappend(fdata[startloc:start])
-                        self.startloc = end
+                        next_startloc[0] = end
                     else:
                         s = fdata[startloc:]
                         if s:
@@ -103,14 +103,19 @@ class _PrimitiveTokens(object):
                 rappend(token)
 
         def setstart(startloc):
-            self.startloc = startloc
-            next_match[0] = re_func(fdata, startloc).next
+            while tokens:
+                tpop()
+            old_loc = next_startloc[0]
+            if old_loc != startloc:
+                next_startloc[0] = startloc
+                next_match[0] = re_func(fdata, startloc).next
 
         self.fdata = fdata
         self.tokens = tokens = []
         self.iterator = iterator = MyIterator()
         self.next = iterator.next
         self.next_match = next_match = [None]
+        self.startloc = next_startloc = [0]
         self.coalesce = coalesce
         self.setstart = setstart
         tappend = tokens.append
@@ -122,7 +127,7 @@ class _PrimitiveTokens(object):
         return self.iterator
 
     def floc(self):
-        return self.startloc - sum([len(x) for x in self.tokens])
+        return self.startloc[0] - sum([len(x) for x in self.tokens])
 
 class PdfTokens(object):
 

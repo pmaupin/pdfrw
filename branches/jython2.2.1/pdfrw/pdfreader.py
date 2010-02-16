@@ -24,7 +24,7 @@ class PdfReader(PdfDict):
     class DeferredObject(object):
         pass
 
-    def readindirect(self, objnum, gennum, parent, index,
+    def findindirect(self, objnum, gennum, parent, index,
                      Deferred=DeferredObject, int=int, isinstance=isinstance):
         ''' Read an indirect object.  If it has already
             been read, return it from the cache.
@@ -36,7 +36,6 @@ class PdfReader(PdfDict):
             result.key = key
             result.usedby = []
             self.indirect_objects[key] = result
-            self.deferred.add(result)
         if isinstance(result, Deferred):
             result.usedby.append((parent, index))
         return result
@@ -52,7 +51,7 @@ class PdfReader(PdfDict):
                 if value == ']':
                     break
                 generation = pop()
-                value = self.readindirect(pop(), generation, result, len(result))
+                value = self.findindirect(pop(), generation, result, len(result))
             else:
                 func = specialget(value)
                 if func is not None:
@@ -78,7 +77,7 @@ class PdfReader(PdfDict):
                 tok = next()
                 if value.isdigit() and tok.isdigit():
                     assert next() == 'R'
-                    value = self.readindirect(value, tok, result, key)
+                    value = self.findindirect(value, tok, result, key)
                     tok = next()
             result[key] = value
         return result
@@ -109,45 +108,50 @@ class PdfReader(PdfDict):
         return startstream
     findstream = staticmethod(findstream)
 
-    def expand_deferred(self, source):
-        ''' Un-defer all the deferred objects.
+    def read_all_indirect(self, source, int=int,
+                isinstance=isinstance, DeferredObject=DeferredObject):
+        ''' Read all the indirect objects from the file.
+            Sort them into file order before reading -- this helps
+            to reduce the number of instantiations of re.finditer objects
+            inside the tokenizer.
         '''
-        deferredset = self.deferred
-        obj_offsets = self.obj_offsets
+
+        obj_offsets = self.obj_offsets.iteritems()
+        obj_offsets = [(offset, key) for (key, offset) in obj_offsets]
+        obj_offsets.sort()
+        setstart = source.setstart
+        next = source.next
+        multiple = source.multiple
         specialget = self.special.get
         indirect_objects = self.indirect_objects
+        indirectget = indirect_objects.get
         findstream = self.findstream
-        fdata = self.fdata
-        DeferredObject = self.DeferredObject
         streams = []
-        streamending = 'endstream endobj'.split()
 
-        while deferredset:
-            deferred = deferredset.pop()
-            key = deferred.key
-            offset = obj_offsets[key]
-
+        for offset, key in obj_offsets:
             # Read the object header and validate it
             objnum, gennum = key
-            source.setstart(offset)
-            objid = source.multiple(3)
+            setstart(offset)
+            objid = multiple(3)
             assert int(objid[0]) == objnum, objid
             assert int(objid[1]) == gennum, objid
             assert objid[2] == 'obj', objid
 
             # Read the object, and call special code if it starts
             # an array or dictionary
-            obj = source.next()
+            obj = next()
             func = specialget(obj)
             if func is not None:
                 obj = func(source)
 
-            # Replace occurences of the deferred object
-            # with the real thing.
-            deferred.value = obj
+            # Replace any occurences of the deferred object
+            # with the real thing, then insert our object
+            deferred = indirectget(key)
+            if deferred is not None:
+                deferred.value = obj
+                for parent, index in deferred.usedby:
+                    parent[index] = obj
             indirect_objects[key] = obj
-            for parent, index in deferred.usedby:
-                parent[index] = obj
 
             # Mark the object as indirect, and
             # add it to the list of streams if it starts a stream
@@ -159,11 +163,13 @@ class PdfReader(PdfDict):
         # Once we've read ALL the indirect objects, including
         # stream lengths, we can update the stream objects with
         # the stream information.
+        streamending = 'endstream endobj'.split()
+        fdata = self.fdata
         for obj, startstream in streams:
             endstream = startstream + int(obj.Length)
             obj._stream = fdata[startstream:endstream]
-            source.setstart(endstream)
-            assert source.multiple(2) == streamending
+            setstart(endstream)
+            assert multiple(2) == streamending
 
         # We created the top dict by merging other dicts,
         # so now we need to fix up the indirect objects there.
@@ -231,7 +237,6 @@ class PdfReader(PdfDict):
 
         self.private.indirect_objects = {}
         self.private.special = {'<<': self.readdict, '[': self.readarray}
-        self.private.deferred = deferred = set()
         self.private.obj_offsets = {}
 
         startloc, source = self.findxref(fdata)
@@ -252,7 +257,7 @@ class PdfReader(PdfDict):
             source.setstart(int(self.Prev))
             self.Prev = None
 
-        self.expand_deferred(source)
+        self.read_all_indirect(source)
         self.private.pages = self.readpages(self.Root.Pages)
         if decompress:
             self.uncompress()
