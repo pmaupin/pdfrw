@@ -119,7 +119,7 @@ def FormatObjects(f, trailer, version='1.3', compress=True,
         elif isinstance(obj, basestring) and not hasattr(obj, 'indirect'):
             return encode(obj)
         else:
-            return str(obj)
+            return str(getattr(obj, 'encoded', obj))
 
     indirect_dict = {}
     indirect_dict_get = indirect_dict.get

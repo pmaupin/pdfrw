@@ -263,7 +263,7 @@ class PdfReader(PdfDict):
             self.uncompress()
 
         # For compatibility with pyPdf
-        self.numPages = len(self.pages)
+        self.private.numPages = len(self.pages)
 
 
     # For compatibility with pyPdf

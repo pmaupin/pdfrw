@@ -191,16 +191,18 @@ class PdfTokens(object):
             tokens = [token]
             coalesce(tokens)
             token = join(tokens)
-            if '#' in token:
-                substrs = token.split('#')
-                substrs.reverse()
-                tokens = [substrs.pop()]
-                while substrs:
-                    s = substrs.pop()
-                    tokens.append(chr(int(s[:2], 16)))
-                    tokens.append(s[2:])
-                token = join(tokens)
-            return PdfObj(token)
+            if '#' not in token:
+                return PdfObj(token)
+            substrs = token.split('#')
+            substrs.reverse()
+            tokens = [substrs.pop()]
+            while substrs:
+                s = substrs.pop()
+                tokens.append(chr(int(s[:2], 16)))
+                tokens.append(s[2:])
+            result = PdfObj(join(tokens))
+            result.encoded = token
+            return result
 
         def broken(token):
             assert 0, token
