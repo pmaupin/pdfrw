@@ -172,6 +172,7 @@ class PdfReader(PdfDict):
                 f.close()
 
         assert fdata is not None
+        fdata = fdata.rstrip('\00')
         self.private.fdata = fdata
 
         self.private.indirect_objects = {}
@@ -187,7 +188,7 @@ class PdfReader(PdfDict):
             self.uncompress()
 
         # For compatibility with pyPdf
-        self.numPages = len(self.pages)
+        self.private.numPages = len(self.pages)
 
 
     # For compatibility with pyPdf
