@@ -157,7 +157,7 @@ def docxobj(pageinfo, doc=None, allow_compressed=True):
     elif pageinfo.doc is not None:
         doc = pageinfo.doc
     else:
-        doc = pageinfo.doc = PdfReader(pageinfo.docname)
+        doc = pageinfo.doc = PdfReader(pageinfo.docname, decompress = not allow_compressed)
     assert isinstance(doc, PdfReader)
 
     sourcepage = doc.pages[(pageinfo.page or 1) - 1]
