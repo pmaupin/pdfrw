@@ -34,7 +34,7 @@ class _PrimitiveTokens(object):
 
     # In addition to the delimiters, we also use '\', which
     # is special in some contexts in PDF.
-    delimiter_pattern = '\\\\|\\' + '|\\'.join(delimiterset)
+    delimiter_pattern = '\\\\|\\' + '|\\'.join(delimiterset) + '|$'
 
     # Dictionary delimiters are '<<' and '>>'.  Look for
     # these before the single variety.
@@ -131,7 +131,7 @@ class PdfTokens(object):
             tokens = [token]
             for token in primitive:
                 tokens.append(token)
-                if token[0] in whitespaceset and ('\n' in token or '\r' in token):
+                if token == '' or (token[0] in whitespaceset and ('\n' in token or '\r' in token)):
                     break
             return not strip_comments and ''.join(tokens)
 
