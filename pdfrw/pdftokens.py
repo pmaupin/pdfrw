@@ -52,16 +52,17 @@ class _PrimitiveTokens(object):
             def next():
                 if not tokens:
                     startloc = self.startloc
-                    match = next_match[0]()
-                    if match is not None:
+                    for match in next_match[0]:
                         start = match.start()
                         end = match.end()
                         tappend(fdata[start:end])
                         if start > startloc:
                             tappend(fdata[startloc:start])
                         self.startloc = end
+                        break
                     else:
                         s = fdata[startloc:]
+                        self.startloc = len(fdata)
                         if s:
                             tappend(s)
                     if not tokens:
@@ -79,7 +80,7 @@ class _PrimitiveTokens(object):
 
     def setstart(self, startloc):
         self.startloc = startloc
-        self.next_match[0] = self.re_func(self.fdata, startloc).next
+        self.next_match[0] = self.re_func(self.fdata, startloc)
 
     def __iter__(self):
         return self.iterator
