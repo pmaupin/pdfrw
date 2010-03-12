@@ -77,7 +77,21 @@ class PdfReader(PdfDict):
         obj._stream = fdata[startstream:endstream]
         source = PdfTokens(fdata, endstream)
         endit = source.multiple(2)
-        assert endit == 'endstream endobj'.split(), endit
+        if endit != 'endstream endobj'.split():
+            # /Length attribute is broken, try to read stream
+            # anyway disregarding the specified value
+            # TODO: issue warning here once we have some kind of
+            # logging
+            endstream = fdata.index('endstream', startstream)
+            if fdata[endstream-2:endstream] == '\r\n':
+                endstream -= 2
+            elif fdata[endstream-1] in ['\n', '\r']:
+                endstream -= 1
+            source = PdfTokens(fdata, endstream)
+            endit = source.multiple(2)
+            assert endit == 'endstream endobj'.split()
+            obj.Length = str(endstream-startstream)
+            obj._stream = fdata[startstream:endstream]
     readstream = staticmethod(readstream)
 
     def readarray(self, source, setobj=lambda x:None, original=None):
