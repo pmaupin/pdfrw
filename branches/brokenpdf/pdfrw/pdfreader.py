@@ -66,7 +66,7 @@ class PdfReader(PdfDict):
         assert isinstance(obj, PdfDict)
         assert tok == 'stream', tok
         fdata = source.fdata
-        floc = fdata.rfind(tok, 0, source.floc) + len(tok)
+        floc = fdata.rindex(tok, 0, source.floc) + len(tok)
         ch = fdata[floc]
         if ch == '\r':
             floc += 1
@@ -134,7 +134,7 @@ class PdfReader(PdfDict):
         return result
 
     def readxref(fdata):
-        startloc = fdata.rfind('startxref')
+        startloc = fdata.rindex('startxref')
         xrefinfo = list(PdfTokens(fdata, startloc, False))
         assert len(xrefinfo) == 3, xrefinfo
         assert xrefinfo[0] == 'startxref', xrefinfo[0]
