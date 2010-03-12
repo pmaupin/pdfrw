@@ -30,6 +30,9 @@ def uncompress(mylist, warnings=set()):
         ftype = obj.Filter
         if ftype is None:
             continue
+        if isinstance(ftype, list) and len(ftype) == 1:
+            # todo: multiple filters
+            ftype = ftype[0]
         parms = obj.DecodeParms
         if ftype != flate or parms is not None:
             msg = 'Not decompressing: cannot use filter %s with parameters %s' % (repr(ftype), repr(parms))
