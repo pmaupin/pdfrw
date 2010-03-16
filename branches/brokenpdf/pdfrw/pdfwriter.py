@@ -25,8 +25,7 @@ except NameError:
 
 from pdfobjects import PdfName, PdfArray, PdfDict, IndirectPdfDict, PdfObject, PdfString
 from pdfcompress import compress
-
-debug = False
+from log import log
 
 class FormatObjects(object):
     ''' FormatObjects performs the actual formatting and disk write.
@@ -60,8 +59,7 @@ class FormatObjects(object):
         if objnum is None:
             objlist = self.objlist
             objnum = len(objlist) + 1
-            if debug:
-                print '  Object', objnum, '\r',
+            log.debug('  Object ' + str(objnum) + ' \r\n')
             objlist.append(None)
             self.indirect_dict[objid] = objnum
             objlist[objnum-1] = self.format_obj(obj)
@@ -222,7 +220,8 @@ class PdfWriter(object):
             f.close()
 
 if __name__ == '__main__':
-    debug = True
+    import logging
+    log.setLevel(logging.DEBUG)
     import pdfreader
     x = pdfreader.PdfReader('source.pdf')
     y = PdfWriter()

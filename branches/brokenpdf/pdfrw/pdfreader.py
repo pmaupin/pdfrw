@@ -14,6 +14,8 @@ from pdftokens import PdfTokens
 from pdfobjects import PdfDict, PdfArray, PdfName
 from pdfcompress import uncompress
 
+from log import log
+
 class PdfReader(PdfDict):
 
     class unresolved:
@@ -82,8 +84,7 @@ class PdfReader(PdfDict):
         except:
             # perhaps the /Length attribute is broken,
             # try to read stream anyway disregarding the specified value
-            # TODO: issue warning here once we have some kind of
-            # logging
+            log.warning('incorrect obj stream /Length parameter')
             endstream = fdata.index('endstream', startstream)
             if fdata[endstream-2:endstream] == '\r\n':
                 endstream -= 2

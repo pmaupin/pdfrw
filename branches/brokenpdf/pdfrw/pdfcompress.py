@@ -18,6 +18,7 @@ except NameError:
 import zlib
 from pdfobjects import PdfDict, PdfName
 
+from log import log
 
 def streamobjects(mylist):
     for obj in mylist:
@@ -38,7 +39,7 @@ def uncompress(mylist, warnings=set()):
             msg = 'Not decompressing: cannot use filter %s with parameters %s' % (repr(ftype), repr(parms))
             if msg not in warnings:
                 warnings.add(msg)
-                print msg
+                log.warning(msg)
         else:
             obj.stream = zlib.decompress(obj.stream)
             obj.Filter = None
