@@ -76,10 +76,12 @@ class PdfReader(PdfDict):
         endstream = startstream + int(obj.Length)
         obj._stream = fdata[startstream:endstream]
         source = PdfTokens(fdata, endstream)
-        endit = source.multiple(2)
-        if endit != 'endstream endobj'.split():
-            # /Length attribute is broken, try to read stream
-            # anyway disregarding the specified value
+        try:
+            endit = source.multiple(2)
+            assert endit == 'endstream endobj'.split()
+        except:
+            # perhaps the /Length attribute is broken,
+            # try to read stream anyway disregarding the specified value
             # TODO: issue warning here once we have some kind of
             # logging
             endstream = fdata.index('endstream', startstream)
