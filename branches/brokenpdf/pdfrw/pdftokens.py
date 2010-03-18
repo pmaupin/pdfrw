@@ -18,6 +18,7 @@ except NameError:
     from sets import Set as set
 
 import re
+from pdferrors import PdfUnexpectedTokenError, PdfUnexpectedEOFError
 from pdfobjects import PdfString, PdfObject
 
 class _PrimitiveTokens(object):
@@ -156,7 +157,7 @@ class PdfTokens(object):
                     if not nestlevel:
                         break
             else:
-                assert 0, "Unexpected end of token stream"
+                raise PdfUnexpectedEOFError(self.fdata)
             return PdfString(''.join(tokens))
 
         def hex_string(token):
@@ -197,7 +198,7 @@ class PdfTokens(object):
             return PdfObject(token)
 
         def broken(token):
-            assert 0, token
+            raise PdfUnexpectedTokenError(self.fdata, self.floc, token)
 
         dispatch = {
             '(': regular_string,

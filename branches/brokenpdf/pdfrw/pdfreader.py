@@ -10,6 +10,7 @@ document pages are stored in a list in the pages attribute
 of the object.
 '''
 
+from pdferrors import PdfUnexpectedTokenError, PdfStructureError, PdfInputError
 from pdftokens import PdfTokens
 from pdfobjects import PdfDict, PdfArray, PdfName
 from pdfcompress import uncompress
@@ -45,9 +46,11 @@ class PdfReader(PdfDict):
         # Read the object header and validate it
         source = PdfTokens(fdata, record[0])
         objid = source.multiple(3)
-        assert int(objid[0]) == objnum, objid
-        assert int(objid[1]) == gennum, objid
-        assert objid[2] == 'obj', objid
+        if not (
+                int(objid[0]) == objnum and
+                int(objid[1]) == gennum and
+                objid[2] == 'obj'):
+            raise PdfStructureError(fdata, 0, 'Invalid header', objid)
 
         # Read the object, and call special code if it starts
         # an array or dictionary
@@ -80,8 +83,9 @@ class PdfReader(PdfDict):
         source = PdfTokens(fdata, endstream)
         try:
             endit = source.multiple(2)
-            assert endit == 'endstream endobj'.split()
-        except:
+            if endit != 'endstream endobj'.split():
+                raise PdfUnexpectedTokenError(fdata, endstream, endit[0])
+        except PdfInputError:
             # perhaps the /Length attribute is broken,
             # try to read stream anyway disregarding the specified value
             log.warning('incorrect obj stream /Length parameter')
@@ -92,7 +96,8 @@ class PdfReader(PdfDict):
                 endstream -= 1
             source = PdfTokens(fdata, endstream)
             endit = source.multiple(2)
-            assert endit == 'endstream endobj'.split()
+            if endit != 'endstream endobj'.split():
+                raise
             obj.Length = str(endstream-startstream)
             obj._stream = fdata[startstream:endstream]
     readstream = staticmethod(readstream)
@@ -139,16 +144,19 @@ class PdfReader(PdfDict):
     def readxref(fdata):
         startloc = fdata.rindex('startxref')
         xrefinfo = list(PdfTokens(fdata, startloc, False))
-        assert len(xrefinfo) == 3, xrefinfo
-        assert xrefinfo[0] == 'startxref', xrefinfo[0]
-        assert xrefinfo[1].isdigit(), xrefinfo[1]
-        assert xrefinfo[2].rstrip() == '%%EOF', repr(xrefinfo[2])
+        if not (
+                len(xrefinfo) == 3 and
+                xrefinfo[0] == 'startxref' and
+                xrefinfo[1].isdigit() and
+                xrefinfo[2].rstrip() == '%%EOF'):
+            raise PdfStructureError(fdata, startloc, 'Invalid trailer', xrefinfo)
         return startloc, PdfTokens(fdata, int(xrefinfo[1]))
     readxref = staticmethod(readxref)
 
     def parsexref(self, source):
         tok = source.next()
-        assert tok == 'xref', tok
+        if tok != 'xref':
+            raise PdfStructureError(source.fdata, source.floc, 'Invalid xref', tok)
         while 1:
             tok = source.next()
             if tok == 'trailer':
@@ -197,9 +205,15 @@ class PdfReader(PdfDict):
 
         startloc, source = self.readxref(fdata)
         self.parsexref(source)
-        assert source.next() == '<<'
+        tok = source.next()
+        if tok != '<<':
+            raise PdfStructureError(source.fdata, source.floc, 'Invalid xref', tok)
         self.update(self.readdict(source))
-        assert source.next() == 'startxref' and source.floc > startloc
+        tok = source.next()
+        if tok != 'startxref':
+            raise PdfStructureError(source.fdata, source.floc, 'Invalid xref', tok)
+        if source.floc == startloc:
+            raise PdfStructureError(source.fdata, source.floc, 'Empty xref', tok)
         self.private.pages = self.readpages(self.Root.Pages)
         if decompress:
             self.uncompress()

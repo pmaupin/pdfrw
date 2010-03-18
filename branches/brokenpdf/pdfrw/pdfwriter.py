@@ -23,6 +23,7 @@ try:
 except NameError:
     from sets import Set as set
 
+from pdferrors import PdfOutputError, PdfCircularReferenceError
 from pdfobjects import PdfName, PdfArray, PdfDict, IndirectPdfDict, PdfObject, PdfString
 from pdfcompress import compress
 from log import log
@@ -45,8 +46,8 @@ class FormatObjects(object):
             indirect = getattr(obj, 'indirect', False)
 
         if not indirect:
-            assert objid not in visited, \
-                'Circular reference encountered in non-indirect object %s' % repr(obj)
+            if objid in visited:
+                raise PdfCircularReferenceError(obj)
             visited.add(objid)
             result = self.format_obj(obj, visited)
             visited.remove(objid)
@@ -160,7 +161,8 @@ class PdfWriter(object):
 
     def addpage(self, page):
         self._trailer = None
-        assert page.Type == PdfName.Page
+        if page.Type != PdfName.Page:
+            raise PdfOutputError('Expected %s, found %s' % (PdfName.Page, page.Type))
         inheritable = page.inheritable # searches for resources
         self.pagearray.append(
             IndirectPdfDict(
