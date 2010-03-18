@@ -197,6 +197,8 @@ class PdfReader(PdfDict):
                 f.close()
 
         assert fdata is not None
+        if fdata[:5] != '%PDF-':
+            raise PdfStructureError(fdata, 0, 'Invalid PDF header', fdata.split(None, 1)[0][:20])
         fdata = fdata.rstrip('\00')
         self.private.fdata = fdata
 
