@@ -88,7 +88,7 @@ class PdfReader(PdfDict):
         except PdfInputError:
             # perhaps the /Length attribute is broken,
             # try to read stream anyway disregarding the specified value
-            log.warning('incorrect obj stream /Length parameter')
+            log.error('incorrect obj stream /Length parameter')
             endstream = fdata.index('endstream', startstream)
             if fdata[endstream-2:endstream] == '\r\n':
                 endstream -= 2
