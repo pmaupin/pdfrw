@@ -41,7 +41,9 @@ def uncompress(mylist, warnings=set()):
                 warnings.add(msg)
                 log.warning(msg)
         else:
-            obj.stream = zlib.decompress(obj.stream)
+            dco = zlib.decompressobj()
+            obj.stream = dco.decompress(obj.stream)
+            assert not dco.unused_data and not dco.unconsumed_tail
             obj.Filter = None
 
 def compress(mylist):
