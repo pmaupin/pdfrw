@@ -18,7 +18,7 @@ except NameError:
     from sets import Set as set
 
 import re
-from pdferrors import PdfUnexpectedTokenError, PdfUnexpectedEOFError
+from pdferrors import PdfUnexpectedTokenError, PdfUnexpectedEOFError, PdfInvalidCharacterError
 from pdfobjects import PdfString, PdfObject
 
 class _PrimitiveTokens(object):
@@ -192,7 +192,10 @@ class PdfTokens(object):
                 tokens = [substrs.pop()]
                 while substrs:
                     s = substrs.pop()
-                    tokens.append(chr(int(s[:2], 16)))
+                    try:
+                        tokens.append(chr(int(s[:2], 16)))
+                    except ValueError:
+                        raise PdfInvalidCharacterError(self.fdata, self.floc, s[:2])
                     tokens.append(s[2:])
                 token = ''.join(tokens)
             return PdfObject(token)

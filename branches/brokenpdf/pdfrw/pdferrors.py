@@ -33,6 +33,11 @@ class PdfStructureError(PdfInputError):
         self.msg = msg
         self.what = what
 
+class PdfInvalidCharacterError(PdfInputError):
+    def __init__(self, fdata, loc, chars):
+        PdfInputError.__init__(self, fdata, loc, 'Char(s): %s' % chars)
+        self.chars = chars
+
 class PdfUnexpectedTokenError(PdfInputError):
     def __init__(self, fdata, loc, token):
         PdfInputError.__init__(self, fdata, loc, 'Token: %s' % token)
