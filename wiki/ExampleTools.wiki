@@ -5,7 +5,7 @@
 
 The examples directory has a few scripts which use the library.
 
-== Simplest scripts -- subset and 4up ==
+== Simplest scripts -- subset, 4up, and poster ==
 
 A tiny example which will extract a subset of pages from a PDF file:
   http://code.google.com/p/pdfrw/source/browse/trunk/examples/subset.py
@@ -18,6 +18,9 @@ An example which converts a PDF into a 4-up PDF:
 
   Same example, using reportlab for PDF output:
     http://code.google.com/p/pdfrw/source/browse/trunk/examples/rl1/4up.py
+
+An example which upsizes a letter-sized PDF to a 48 x 36" poster:
+  http://code.google.com/p/pdfrw/source/browse/trunk/examples/poster.py
 
 == Slightly more complicated -- booklet ==
 
