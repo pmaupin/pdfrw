@@ -61,7 +61,23 @@ class ViewInfo(object):
             assert hasattr(self, key), key
             setattr(self, key, value)
 
-def getrects(inheritable, pageinfo):
+
+def get_rotation(inheritable):
+    ''' Return clockwise rotation code:
+          0 = unrotated
+          1 = 90 degrees
+          2 = 180 degrees
+          3 = 270 degrees
+    '''
+    try:
+        rotate = int(inheritable.Rotate) % 360
+    except (ValueError, TypeError):
+        return 0
+    if rotate % 90 != 0:
+        return 0
+    return rotate / 90
+
+def getrects(inheritable, pageinfo, rotation):
     ''' Given the inheritable attributes of a page and
         the desired pageinfo rectangle, return the page's
         media box and the calculated boundary (clip) box.
@@ -73,6 +89,10 @@ def getrects(inheritable, pageinfo):
     else:
         mleft, mbot, mright, mtop = mbox
         x, y, w, h = vrect
+        if rotation & 1:  # Rotate 90 degrees CCW because we started 90 degrees CW
+            x, y, w, h = mright - mleft - (y + h), x, h, w
+        if rotation & 2:  # Rotate 180 degrees CCW because we started 180 degrees CW
+            x, y = mright - mleft - (x + w), mtop - mbot - (y + h)
         cleft = mleft + x
         ctop = mtop - y
         cright = cleft + w
@@ -80,7 +100,7 @@ def getrects(inheritable, pageinfo):
         cbox = max(mleft, cleft), max(mbot, cbot), min(mright, cright), min(mtop, ctop)
     return mbox, cbox
 
-def _cache_xobj(contents, resources, mbox, bbox):
+def _cache_xobj(contents, resources, mbox, bbox, rotation):
     ''' Return a cached Form XObject, or create a new one and cache it.
     '''
     cachedict = contents.xobj_cachedict
@@ -90,23 +110,30 @@ def _cache_xobj(contents, resources, mbox, bbox):
     if result is None:
         func = (_get_fullpage, _get_subpage)[mbox != bbox]
         result = PdfDict(
-            func(contents, resources, mbox, bbox),
+            func(contents, resources, mbox, bbox, rotation),
             Type = PdfName.XObject,
             Subtype = PdfName.Form,
             FormType = 1,
             BBox = PdfArray(bbox),
         )
+        if rotation:
+            matrix = [1, 0, 0, 1, 0, 0]
+            if rotation & 2:
+                matrix[:4] = (-i for i in matrix[:4])
+            if rotation & 1:
+                matrix[:4] = matrix[1], -matrix[0], matrix[3], matrix[2]
+            result.Matrix = PdfArray(matrix)
         cachedict[bbox] = result
     return result
 
-def _get_fullpage(contents, resources, mbox, bbox):
+def _get_fullpage(contents, resources, mbox, bbox, rotation):
     ''' fullpage is easy.  Just copy the contents,
         set up the resources, and let _cache_xobj handle the
         rest.
     '''
     return PdfDict(contents, Resources=resources)
 
-def _get_subpage(contents, resources, mbox, bbox):
+def _get_subpage(contents, resources, mbox, bbox, rotation):
     ''' subpages *could* be as easy as full pages, but we
         choose to complicate life by creating a Form XObject
         for the page, and then one that references it for
@@ -117,7 +144,7 @@ def _get_subpage(contents, resources, mbox, bbox):
         stream = '/FullPage Do\n',
         Resources = PdfDict(
             XObject = PdfDict(
-                FullPage = _cache_xobj(contents, resources, mbox, mbox)
+                FullPage = _cache_xobj(contents, resources, mbox, mbox, 0)
             )
         )
     )
@@ -128,15 +155,16 @@ def pagexobj(page, viewinfo=ViewInfo(), allow_compressed=True):
     '''
     inheritable = page.inheritable
     resources = inheritable.Resources
-    mbox, bbox = getrects(inheritable, viewinfo)
+    rotation = get_rotation(inheritable)
+    mbox, bbox = getrects(inheritable, viewinfo, rotation)
     contents = page.Contents
     # Make sure the only attribute is length
     # All the filters must have been executed
     assert int(contents.Length) == len(contents.stream)
     if not allow_compressed:
         assert len([x for x in contents.iteritems()]) == 1
+    return _cache_xobj(contents, resources, mbox, bbox, rotation)
 
-    return _cache_xobj(contents, resources, mbox, bbox)
 
 
 def docxobj(pageinfo, doc=None, allow_compressed=True):
