@@ -61,7 +61,6 @@ class ViewInfo(object):
             assert hasattr(self, key), key
             setattr(self, key, value)
 
-
 def get_rotation(inheritable):
     ''' Return clockwise rotation code:
           0 = unrotated
@@ -76,6 +75,13 @@ def get_rotation(inheritable):
     if rotate % 90 != 0:
         return 0
     return rotate / 90
+
+def rotate_point(point, rotation):
+    if rotation & 1:
+        point = point[1], -point[0]
+    if rotation & 2:
+        point = -point[0], -point[1]
+    return point
 
 def getrects(inheritable, pageinfo, rotation):
     ''' Given the inheritable attributes of a page and
@@ -100,13 +106,16 @@ def getrects(inheritable, pageinfo, rotation):
         cbox = max(mleft, cleft), max(mbot, cbot), min(mright, cright), min(mtop, ctop)
     return mbox, cbox
 
+
 def _cache_xobj(contents, resources, mbox, bbox, rotation):
     ''' Return a cached Form XObject, or create a new one and cache it.
+        Adds private members x, y, w, h
     '''
     cachedict = contents.xobj_cachedict
     if cachedict is None:
         cachedict = contents.private.xobj_cachedict = {}
-    result = cachedict.get(bbox)
+    cachekey = mbox, bbox, rotation
+    result = cachedict.get(cachekey)
     if result is None:
         func = (_get_fullpage, _get_subpage)[mbox != bbox]
         result = PdfDict(
@@ -116,14 +125,17 @@ def _cache_xobj(contents, resources, mbox, bbox, rotation):
             FormType = 1,
             BBox = PdfArray(bbox),
         )
+        rect = bbox
         if rotation:
-            matrix = [1, 0, 0, 1, 0, 0]
-            if rotation & 2:
-                matrix[:4] = (-i for i in matrix[:4])
-            if rotation & 1:
-                matrix[:4] = matrix[1], -matrix[0], matrix[3], matrix[2]
-            result.Matrix = PdfArray(matrix)
-        cachedict[bbox] = result
+            matrix = rotate_point((1, 0), rotation) + rotate_point((0, 1), rotation)
+            result.Matrix = PdfArray(matrix + (0, 0))
+            rect = rotate_point(rect[:2], rotation) + rotate_point(rect[2:], rotation)
+
+        result.private.x = min(rect[0], rect[2])
+        result.private.y = min(rect[1], rect[3])
+        result.private.w = abs(rect[0] - rect[2])
+        result.private.h = abs(rect[1] - rect[3])
+        cachedict[cachekey] = result
     return result
 
 def _get_fullpage(contents, resources, mbox, bbox, rotation):
