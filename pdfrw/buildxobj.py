@@ -15,7 +15,11 @@ Reference for syntax: "Parameters for opening PDF files" from SDK 8.1
 
         supported 'page=xxx', 'viewrect=<left>,<top>,<width>,<height>'
 
+        Also supported by this, but not by Adobe:
+            'rotate=xxx'  where xxx in [0, 90, 180, 270]
+
         Units are in points
+
 
 Reference for content:   Adobe PDF reference, sixth edition, version 1.7
 
@@ -35,6 +39,7 @@ class ViewInfo(object):
     docname = None
     page = None
     viewrect = None
+    rotate = None
 
     def __init__(self, pageinfo='', **kw):
         pageinfo=pageinfo.split('#',1)
@@ -49,7 +54,7 @@ class ViewInfo(object):
             key, value = item.split('=')
             key = key.strip()
             value = value.replace(',', ' ').split()
-            if key == 'page':
+            if key in ('page', 'rotate'):
                 assert len(value) == 1
                 setattr(self, key, int(value[0]))
             elif key == 'viewrect':
@@ -61,7 +66,7 @@ class ViewInfo(object):
             assert hasattr(self, key), key
             setattr(self, key, value)
 
-def get_rotation(inheritable):
+def get_rotation(rotate):
     ''' Return clockwise rotation code:
           0 = unrotated
           1 = 90 degrees
@@ -69,7 +74,7 @@ def get_rotation(inheritable):
           3 = 270 degrees
     '''
     try:
-        rotate = int(inheritable.Rotate) % 360
+        rotate = int(rotate)
     except (ValueError, TypeError):
         return 0
     if rotate % 90 != 0:
@@ -175,8 +180,9 @@ def pagexobj(page, viewinfo=ViewInfo(), allow_compressed=True):
     '''
     inheritable = page.inheritable
     resources = inheritable.Resources
-    rotation = get_rotation(inheritable)
+    rotation = get_rotation(inheritable.Rotate)
     mbox, bbox = getrects(inheritable, viewinfo, rotation)
+    rotation += get_rotation(viewinfo.rotate)
     contents = page.Contents
     # Make sure the only attribute is length
     # All the filters must have been executed
