@@ -83,6 +83,15 @@ def rotate_point(point, rotation):
         point = -point[0], -point[1]
     return point
 
+def rotate_rect(rect, rotation):
+    ''' Rotate both points within the rectangle, then normalize
+        the rectangle by returning the new lower left, then new
+        upper right.
+    '''
+    rect = rotate_point(rect[:2], rotation) + rotate_point(rect[2:], rotation)
+    return (min(rect[0], rect[2]), min(rect[1], rect[3]),
+            max(rect[0], rect[2]), max(rect[1], rect[3]))
+
 def getrects(inheritable, pageinfo, rotation):
     ''' Given the inheritable attributes of a page and
         the desired pageinfo rectangle, return the page's
@@ -93,17 +102,16 @@ def getrects(inheritable, pageinfo, rotation):
     if vrect is None:
         cbox = tuple([float(x) for x in (inheritable.CropBox or mbox)])
     else:
-        mleft, mbot, mright, mtop = mbox
+        # Rotate the media box to match what the user sees,
+        # figure out the clipping box, then rotate back
+        mleft, mbot, mright, mtop = rotate_rect(mbox, rotation)
         x, y, w, h = vrect
-        if rotation & 1:  # Rotate 90 degrees CCW because we started 90 degrees CW
-            x, y, w, h = mright - mleft - (y + h), x, h, w
-        if rotation & 2:  # Rotate 180 degrees CCW because we started 180 degrees CW
-            x, y = mright - mleft - (x + w), mtop - mbot - (y + h)
         cleft = mleft + x
         ctop = mtop - y
         cright = cleft + w
         cbot = ctop - h
         cbox = max(mleft, cleft), max(mbot, cbot), min(mright, cright), min(mtop, ctop)
+        cbox = rotate_rect(cbox, -rotation)
     return mbox, cbox
 
 
@@ -129,12 +137,12 @@ def _cache_xobj(contents, resources, mbox, bbox, rotation):
         if rotation:
             matrix = rotate_point((1, 0), rotation) + rotate_point((0, 1), rotation)
             result.Matrix = PdfArray(matrix + (0, 0))
-            rect = rotate_point(rect[:2], rotation) + rotate_point(rect[2:], rotation)
+            rect = rotate_rect(rect, rotation)
 
-        result.private.x = min(rect[0], rect[2])
-        result.private.y = min(rect[1], rect[3])
-        result.private.w = abs(rect[0] - rect[2])
-        result.private.h = abs(rect[1] - rect[3])
+        result.private.x = rect[0]
+        result.private.y = rect[1]
+        result.private.w = rect[2] - rect[0]
+        result.private.h = rect[3] - rect[1]
         cachedict[cachekey] = result
     return result
 
