@@ -25,8 +25,8 @@ except NameError:
 
 from pdfobjects import PdfName, PdfArray, PdfDict, IndirectPdfDict, PdfObject, PdfString
 from pdfcompress import compress as do_compress
-
-debug = False
+from pdferrors import PdfOutputError, PdfCircularReferenceError
+from pdflog import log
 
 
 def FormatObjects(f, trailer, version='1.3', compress=True,
@@ -54,8 +54,8 @@ def FormatObjects(f, trailer, version='1.3', compress=True,
             indirect = getattr(obj, 'indirect', False)
 
         if not indirect:
-            assert objid not in visited, \
-                'Circular reference encountered in non-indirect object %s' % repr(obj)
+            if objid in visited:
+                raise PdfCircularReferenceError(obj)
             visiting(objid)
             result = format_obj(obj)
             leaving(objid)
@@ -67,8 +67,7 @@ def FormatObjects(f, trailer, version='1.3', compress=True,
         # add it to the indirect object list.
         if objnum is None:
             objnum = len(objlist) + 1
-            #if debug:
-            #    print '  Object', objnum, '\r',
+            log.debug('  Object %s', objnum)
             objlist_append(None)
             indirect_dict[objid] = objnum
             objlist[objnum-1] = format_obj(obj)
@@ -172,7 +171,9 @@ class PdfWriter(object):
 
     def addpage(self, page):
         self._trailer = None
-        assert page.Type == PdfName.Page
+        if page.Type != PdfName.Page:
+            raise PdfOutputError('Bad /Type:  Expected %s, found %s'
+                                  % (PdfName.Page, page.Type))
         inheritable = page.inheritable # searches for resources
         self.pagearray.append(
             IndirectPdfDict(
@@ -232,7 +233,8 @@ class PdfWriter(object):
             f.close()
 
 if __name__ == '__main__':
-    debug = True
+    import logging
+    log.setLevel(logging.DEBUG)
     import pdfreader
     x = pdfreader.PdfReader('source.pdf')
     y = PdfWriter()
