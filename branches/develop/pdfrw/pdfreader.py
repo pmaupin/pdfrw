@@ -17,7 +17,7 @@ except NameError:
 
 from pdferrors import PdfUnexpectedTokenError, PdfStructureError, PdfInputError
 from pdftokens import PdfTokens
-from pdfobjects import PdfDict, PdfArray, PdfName
+from pdfobjects import PdfDict, PdfArray, PdfName, PdfObject
 from pdfcompress import uncompress
 
 from pdflog import log
@@ -85,6 +85,12 @@ class PdfReader(PdfDict):
             result[key] = value
         return result
 
+    def empty_obj(self, source, PdfObject=PdfObject):
+        fdata = source.fdata
+        floc = fdata.rindex('endobj', 0, source.floc)
+        source.setstart(floc) # Back up
+        return PdfObject('')
+
     def findstream(obj, source, PdfDict=PdfDict, isinstance=isinstance, len=len):
         ''' Figure out if there is a content stream
             following an object, and return the start
@@ -98,7 +104,7 @@ class PdfReader(PdfDict):
         if tok == 'endobj':
             return  # No stream
 
-        assert isinstance(obj, PdfDict)
+        assert isinstance(obj, PdfDict), (type(obj), obj)
         assert tok == 'stream', tok
         fdata = source.fdata
         floc = fdata.rindex(tok, 0, source.floc) + len(tok)
@@ -265,7 +271,8 @@ class PdfReader(PdfDict):
         self.private.fdata = fdata
 
         self.private.indirect_objects = {}
-        self.private.special = {'<<': self.readdict, '[': self.readarray}
+        self.private.special = {'<<': self.readdict, '[': self.readarray,
+                                'endobj': self.empty_obj}
         self.private.obj_offsets = {}
 
         startloc, source = self.findxref(fdata)
