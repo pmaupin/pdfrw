@@ -38,7 +38,7 @@ class PdfString(str):
                      '\\\r\n': '', '\\\r':'', '\\\n':'',
                      '\\\\':'\\', '\\':'',
                     }
-    unescape_pattern = r'(\\b|\\f|\\n|\\r|\\t|\\\r\n|\\\r|\\\n|\\[0-9]+|\\)'
+    unescape_pattern = r'(\\\\|\\b|\\f|\\n|\\r|\\t|\\\r\n|\\\r|\\\n|\\[0-9]+|\\)'
     unescape_func = re.compile(unescape_pattern).split
 
     hex_pattern = '([a-fA-F0-9][a-fA-F0-9]|[a-fA-F0-9])'
