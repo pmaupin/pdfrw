@@ -142,10 +142,15 @@ class PdfReader(PdfDict):
             objnum, gennum = key
             setstart(offset)
             objid = multiple(3)
-            if (int(objid[0]) != objnum or
-                int(objid[1]) != gennum or
-                objid[2] != 'obj'):
-                raise PdfStructureError(self.fdata, 0, 'Invalid header', objid)
+            try:
+                ok = objid[2] == 'obj'
+                ok = ok and int(objid[0]) == objnum
+                ok = ok and int(objid[1]) == gennum
+                if not ok:
+                    raise PdfStructureError
+            except:
+                log.warning("Did not find PDF object '%d %d obj' at file offset %d" % (objnum, gennum, offset))
+                continue
 
             # Read the object, and call special code if it starts
             # an array or dictionary
