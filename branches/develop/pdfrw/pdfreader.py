@@ -145,7 +145,7 @@ class PdfReader(PdfDict):
             if (int(objid[0]) != objnum or
                 int(objid[1]) != gennum or
                 objid[2] != 'obj'):
-                raise PdfStructureError(fdata, 0, 'Invalid header', objid)
+                raise PdfStructureError(self.fdata, 0, 'Invalid header', objid)
 
             # Read the object, and call special code if it starts
             # an array or dictionary
@@ -238,7 +238,7 @@ class PdfReader(PdfDict):
             for objnum in range(startobj, startobj + int(next())):
                 offset = int(next())
                 generation = int(next())
-                if next() == 'n':
+                if next() == 'n' and offset != 0:
                     setdefault((objnum, generation), offset)
 
     def readpages(self, node, pagename=PdfName.Page, pagesname=PdfName.Pages):
