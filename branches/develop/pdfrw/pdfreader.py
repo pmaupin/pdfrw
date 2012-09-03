@@ -24,6 +24,8 @@ from pdflog import log
 
 class PdfReader(PdfDict):
 
+    warned_bad_stream = False
+
     class DeferredObject(object):
         pass
 
@@ -91,7 +93,7 @@ class PdfReader(PdfDict):
         source.setstart(floc) # Back up
         return PdfObject('')
 
-    def findstream(obj, source, PdfDict=PdfDict, isinstance=isinstance, len=len):
+    def findstream(self, obj, tok, source, PdfDict=PdfDict, isinstance=isinstance, len=len):
         ''' Figure out if there is a content stream
             following an object, and return the start
             pointer to the content stream if so.
@@ -100,9 +102,6 @@ class PdfReader(PdfDict):
             know how long it is, because Length might
             be an indirect object.)
         '''
-        tok = source.next()
-        if tok == 'endobj':
-            return  # No stream
 
         assert isinstance(obj, PdfDict), (type(obj), obj)
         assert tok == 'stream', tok
@@ -111,11 +110,15 @@ class PdfReader(PdfDict):
         ch = fdata[floc]
         if ch == '\r':
             floc += 1
-            ch = fdata[floc]
+            ch = '\n'
+            if ch != fdata[floc]:
+                floc -= 1
+                if not self.warned_bad_stream:
+                    log.warning("foo stream terminated by \\r without \\n at file location %s" % floc)
+                    self.private.warned_bad_stream = True
         assert ch == '\n'
         startstream = floc + 1
         return startstream
-    findstream = staticmethod(findstream)
 
     def read_all_indirect(self, source, int=int,
                 isinstance=isinstance, DeferredObject=DeferredObject):
@@ -171,9 +174,9 @@ class PdfReader(PdfDict):
             # Mark the object as indirect, and
             # add it to the list of streams if it starts a stream
             obj.indirect = True
-            startstream = findstream(obj, source)
-            if startstream is not None:
-                streams.append((obj, startstream))
+            tok = source.next()
+            if tok != 'endobj':
+                streams.append((obj, findstream(obj, tok, source)))
 
         # Once we've read ALL the indirect objects, including
         # stream lengths, we can update the stream objects with
