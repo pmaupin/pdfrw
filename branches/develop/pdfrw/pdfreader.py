@@ -15,9 +15,12 @@ try:
 except NameError:
     from sets import Set as set
 
+from pdferrors import PdfUnexpectedTokenError, PdfStructureError, PdfInputError
 from pdftokens import PdfTokens
 from pdfobjects import PdfDict, PdfArray, PdfName
 from pdfcompress import uncompress
+
+from pdflog import log
 
 class PdfReader(PdfDict):
 
@@ -98,7 +101,7 @@ class PdfReader(PdfDict):
         assert isinstance(obj, PdfDict)
         assert tok == 'stream', tok
         fdata = source.fdata
-        floc = fdata.rfind(tok, 0, source.floc) + len(tok)
+        floc = fdata.rindex(tok, 0, source.floc) + len(tok)
         ch = fdata[floc]
         if ch == '\r':
             floc += 1
@@ -133,9 +136,10 @@ class PdfReader(PdfDict):
             objnum, gennum = key
             setstart(offset)
             objid = multiple(3)
-            assert int(objid[0]) == objnum, objid
-            assert int(objid[1]) == gennum, objid
-            assert objid[2] == 'obj', objid
+            if (int(objid[0]) != objnum or
+                int(objid[1]) != gennum or
+                objid[2] != 'obj'):
+                raise PdfStructureError(fdata, 0, 'Invalid header', objid)
 
             # Read the object, and call special code if it starts
             # an array or dictionary
@@ -169,7 +173,26 @@ class PdfReader(PdfDict):
             endstream = startstream + int(obj.Length)
             obj._stream = fdata[startstream:endstream]
             setstart(endstream)
-            assert multiple(2) == streamending
+            try:
+                endit = source.multiple(2)
+                if endit != streamending:
+                    raise PdfUnexpectedTokenError(fdata, endstream, endit[0])
+            except PdfInputError:
+                # perhaps the /Length attribute is broken,
+                # try to read stream anyway disregarding the specified value
+                log.error('incorrect obj stream /Length parameter')
+                endstream = fdata.index('endstream', startstream)
+                if fdata[endstream-2:endstream] == '\r\n':
+                    endstream -= 2
+                elif fdata[endstream-1] in ['\n', '\r']:
+                    endstream -= 1
+                setstart(endstream)
+                endit = source.multiple(2)
+                if endit != streamending:
+                    raise
+                obj.Length = str(endstream-startstream)
+                obj._stream = fdata[startstream:endstream]
+
 
         # We created the top dict by merging other dicts,
         # so now we need to fix up the indirect objects there.
@@ -181,11 +204,14 @@ class PdfReader(PdfDict):
         ''' Find the cross reference section at the end of a file
         '''
         startloc = fdata.rfind('startxref')
+        if startloc < 0:
+            raise PdfStructureError(fdata, 0, 'Trailer not found')
         xrefinfo = list(PdfTokens(fdata, startloc, False))
-        assert len(xrefinfo) == 3, xrefinfo
-        assert xrefinfo[0] == 'startxref', xrefinfo[0]
-        assert xrefinfo[1].isdigit(), xrefinfo[1]
-        assert xrefinfo[2].rstrip() == '%%EOF', repr(xrefinfo[2])
+        if (len(xrefinfo) != 3 or
+            xrefinfo[0] != 'startxref' or
+            not xrefinfo[1].isdigit() or
+            xrefinfo[2].rstrip() != '%%EOF'):
+                raise PdfStructureError(fdata, startloc, 'Invalid trailer', xrefinfo)
         return startloc, PdfTokens(fdata, int(xrefinfo[1]))
     findxref = staticmethod(findxref)
 
@@ -196,7 +222,8 @@ class PdfReader(PdfDict):
         setdefault = self.obj_offsets.setdefault
         next = source.next
         tok = next()
-        assert tok == 'xref', tok
+        if tok != 'xref':
+            raise PdfStructureError(source.fdata, source.floc, 'Invalid xref', tok)
         while 1:
             tok = next()
             if tok == 'trailer':
@@ -232,6 +259,8 @@ class PdfReader(PdfDict):
                 f.close()
 
         assert fdata is not None
+        if not fdata.startswith('%PDF-'):
+            raise PdfStructureError(fdata, 0, 'Invalid PDF header', fdata[:20])
         fdata = fdata.rstrip('\00')
         self.private.fdata = fdata
 
@@ -243,7 +272,9 @@ class PdfReader(PdfDict):
         while 1:
             # Loop through all the cross-reference tables
             self.parsexref(source)
-            assert source.next() == '<<'
+            tok = source.next()
+            if tok != '<<':
+                raise PdfStructureError(source.fdata, source.floc, 'Invalid xref', tok)
             # Do not overwrite preexisting entries
             newdict = self.readdict(source).copy()
             newdict.update(self)
@@ -251,7 +282,8 @@ class PdfReader(PdfDict):
 
             # Loop if any previously-written tables.
             token = source.next()
-            assert token == 'startxref' # and source.floc > startloc, (token, source.floc, startloc)
+            if token != 'startxref':
+                raise PdfStructureError(source.fdata, source.floc, 'Invalid xref', token)
             if self.Prev is None:
                 break
             source.setstart(int(self.Prev))
