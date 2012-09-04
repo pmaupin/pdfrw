@@ -30,6 +30,7 @@ Reference for content:   Adobe PDF reference, sixth edition, version 1.7
 
 from pdfobjects import PdfDict, PdfArray, PdfName
 from pdfreader import PdfReader
+from pdflog import log
 
 class ViewInfo(object):
     ''' Instantiate ViewInfo with a uri, and it will parse out
