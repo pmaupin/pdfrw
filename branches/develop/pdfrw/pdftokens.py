@@ -174,7 +174,7 @@ class PdfTokens(object):
                 if token == '>':
                     break
             while tokens[-2] == '>>':
-                tokens.append(tokens.pop(-2))
+                primitive.tokens.append(tokens.pop(-2))
             return PdfString(join(tokens))
 
         def normal_data(token):

@@ -275,7 +275,16 @@ class PdfReader(PdfDict):
         assert fdata is not None
         if not fdata.startswith('%PDF-'):
             raise PdfStructureError(fdata, 0, 'Invalid PDF header', fdata[:20])
-        fdata = fdata.rstrip('\00')
+
+        endloc = fdata.rfind('%%EOF')
+        if endloc < 0:
+            raise PdfStructureError(fdata, len(fdata)-20, 'EOF mark not found')
+        endloc += 6
+        junk = fdata[endloc:]
+        fdata = fdata[:endloc]
+        if junk.rstrip('\00').strip():
+            log.warning('Extra data at end of file')
+
         self.private.fdata = fdata
 
         self.private.indirect_objects = {}
