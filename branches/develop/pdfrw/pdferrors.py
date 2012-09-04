@@ -21,11 +21,15 @@ class PdfInputError(PdfError):
         self.loc = loc
         self.msg = ''
     def __str__(self):
-        show = repr(self.fdata[self.loc-PDF_ERROR_CONTEXT:self.loc+PDF_ERROR_CONTEXT])
+        fdata = self.fdata
+        loc = self.loc
+        show = repr(fdata[loc-PDF_ERROR_CONTEXT:loc+PDF_ERROR_CONTEXT])
         sep = ' ' if self.msg else ''
-        return "%s%snear byte %d, after %s: %s" % (self.msg, sep, self.loc,
-            repr(self.fdata[self.loc-PDF_ERROR_CONTEXT:self.loc]),
-            repr(self.fdata[self.loc:self.loc+PDF_ERROR_CONTEXT]))
+        line = fdata.count('\n', 0, loc) + 1
+        line += fdata.count('\r', 0, loc) - fdata.count('\r\n', 0, loc)
+        return "%s%snear byte %d (line %d), after %s: %s" % (self.msg, sep, loc, line,
+            repr(fdata[loc-PDF_ERROR_CONTEXT:loc]),
+            repr(fdata[loc:loc+PDF_ERROR_CONTEXT]))
 
 class PdfStructureError(PdfInputError):
     def __init__(self, fdata, loc, msg, what):
