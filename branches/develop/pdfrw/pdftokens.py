@@ -141,7 +141,7 @@ class PdfTokens(object):
                 tokens.append(token)
                 if token[0] in whitespaceset and ('\n' in token or '\r' in token):
                     break
-            return not strip_comments and join(tokens)
+            return not self.strip_comments and join(tokens)
 
         def single(token):
             return token

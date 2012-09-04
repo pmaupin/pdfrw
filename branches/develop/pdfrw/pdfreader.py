@@ -220,13 +220,16 @@ class PdfReader(PdfDict):
         startloc = fdata.rfind('startxref')
         if startloc < 0:
             raise PdfStructureError(fdata, 0, 'Trailer not found')
-        xrefinfo = list(PdfTokens(fdata, startloc, False))
+        source = PdfTokens(fdata, startloc, False)
+        xrefinfo = list(source)
         if (len(xrefinfo) != 3 or
             xrefinfo[0] != 'startxref' or
             not xrefinfo[1].isdigit() or
             xrefinfo[2].rstrip() != '%%EOF'):
                 raise PdfStructureError(fdata, startloc, 'Invalid trailer', xrefinfo)
-        return startloc, PdfTokens(fdata, int(xrefinfo[1]))
+        source.strip_comments = True
+        source.setstart(int(xrefinfo[1]))
+        return startloc, source
     findxref = staticmethod(findxref)
 
     def parsexref(self, source, int=int, range=range):
