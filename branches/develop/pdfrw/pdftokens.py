@@ -14,7 +14,6 @@ from old_pdftokens import PdfTokens as OldTokens
 from new_pdftokens import PdfTokens as NewTokens
 from pdflog import log
 
-
 class PdfTokens(object):
 
     def __init__(self, fdata, startloc=0, strip_comments=True):
@@ -28,12 +27,20 @@ class PdfTokens(object):
         self.old_setstart = old.setstart
         self.new_setstart = new.setstart
 
-    def next(self):
-        old = self.old_next()
-        new = self.new_next()
+    def next(self, Done=StopIteration):
+        try:
+            old = self.old_next()
+        except Done:
+            old = Done
+        try:
+            new = self.new_next()
+        except Done:
+            new = Done
         if old != new:
             log.warning('Tokens different: old = %s from %d; new = %s from %d' %
                         (repr(old), self.old.floc, repr(new), self.new.floc))
+        if old is Done:
+            raise Done
         return old
 
 
