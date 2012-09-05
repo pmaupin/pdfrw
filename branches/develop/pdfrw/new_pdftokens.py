@@ -94,104 +94,103 @@ class TokenGroup(object):
                     loc += len(lpop())
                 continue
 
-            if firstch == '/':
-                if '#' not in token:
-                    token = PdfObject(token)
-                else:
-                    loc += len(token)
-                    try:
-                        substrs = token.split('#')
-                        substrs.reverse()
-                        tokens = [substrs.pop()]
-                        while substrs:
-                            s = substrs.pop()
-                            tokens.append(chr(int(s[:2], 16)))
-                            tokens.append(s[2:])
-                        result = PdfObject(join(tokens))
-                        result.encoded = token
-                    except ValueError:
-                        raise pdferrors.PdfInvalidCharacterError(source, loc, token)
-                    yield loc, result
-                    continue
+            if firstch in '/<(%':
+                if firstch == '/':
+                    if '#' not in token:
+                        token = PdfObject(token)
+                    else:
+                        loc += len(token)
+                        try:
+                            substrs = token.split('#')
+                            substrs.reverse()
+                            tokens = [substrs.pop()]
+                            while substrs:
+                                s = substrs.pop()
+                                tokens.append(chr(int(s[:2], 16)))
+                                tokens.append(s[2:])
+                            result = PdfObject(join(tokens))
+                            result.encoded = token
+                        except ValueError:
+                            raise pdferrors.PdfInvalidCharacterError(source, loc, token)
+                        yield loc, result
+                        continue
 
-            elif firstch == '<':
-                token = PdfString(token)
-            elif firstch == '(':
-                toklist = [token]
-                lappend = toklist.append
-                nest = 1
-                while 1:
-                    while nest and raw:
-                        token = pop()
-                        lappend(token)
-                        firstch = token[0]
-                        nest += (firstch == '(') - (firstch == ')')
-                    if not nest:
-                        break
-                    if not raw:
-                        raw = getraw(source,start)
-                        pop = raw.pop
-                        if not raw:
-                            # Error here, maybe???
+                elif firstch == '<':
+                    if token[1:2] != '<':
+                        token = PdfString(token)
+                elif firstch == '(':
+                    toklist = [token]
+                    lappend = toklist.append
+                    nest = 1
+                    while 1:
+                        while nest and raw:
+                            token = pop()
+                            lappend(token)
+                            firstch = token[0]
+                            nest += (firstch == '(') - (firstch == ')')
+                        if not nest:
                             break
-                token = PdfString(join(toklist))
-            elif firstch == '%':
-                toklist = [token]
-                while raw and raw[-1][0] not in eol:
-                    toklist.append(pop())
-                token = join(toklist)
-                if strip_comments:
-                    loc += len(token)
-                    continue
+                        if not raw:
+                            raw = getraw(source,start)
+                            pop = raw.pop
+                            if not raw:
+                                # Error here, maybe???
+                                break
+                    token = PdfString(join(toklist))
+                elif firstch == '%':
+                    toklist = [token]
+                    while raw and raw[-1][0] not in eol:
+                        toklist.append(pop())
+                    token = join(toklist)
+                    if strip_comments:
+                        loc += len(token)
+                        continue
 
             loc += len(token)
             yield loc, token
 
 class PdfTokens(object):
 
-    def __init__(self, fdata, startloc=0, strip_comments=True):
+    def __init__(self, fdata, startloc=0, strip_comments=True,
+                       gettoks=TokenGroup.gettoks, bisect=bisect.bisect_left,
+                       len=len, islice=itertools.islice):
         self.fdata = fdata
         self.strip_comments = strip_comments
-        self.tokens = []
-        self.current = [(None, None)]
+        self.tokens = tokens = []
+        self.current = current = [0]
         self.setstart(startloc)
 
-    def setstart(self, startloc, gettoks=TokenGroup.gettoks, bisect=bisect.bisect_left, len=len, islice=itertools.islice):
-        current = self.current
-        tokens = self.tokens
-
-        ok = tokens and tokens[0][0] - len(tokens[0][1]) <= startloc < tokens[-1][0]
-        print "setstart", ok, startloc
-        if not ok:
-            tokens[:] = gettoks(self.fdata, startloc, self.strip_comments)
-
-        start = bisect(tokens, (startloc+1,))
-        begin = max(start-2,0)
-        print startloc, start, begin, tokens[begin:begin+4], tokens[0], tokens[-1]
-
         def iterator():
-            itokens = start > 0 and islice(tokens, start, None) or tokens
             while 1:
+                startloc = current[0]
+                ok = tokens and tokens[0][0] - len(tokens[0][1]) <= startloc < tokens[-1][0]
+                if ok:
+                    start = bisect(tokens, (startloc+1,))
+                    itokens = islice(tokens, start, None)
+                else:
+                    tokens[:] = gettoks(fdata, startloc, self.strip_comments)
+                    if not tokens:
+                        raise StopIteration
+                    itokens = tokens
+
                 for token in itokens:
-                    current[0] = token
+                    current[0] = token[0]
                     yield token[1]
-                tokens[:] = gettoks(self.fdata, current[0][0], self.strip_comments)
-                if not tokens:
-                    raise StopIteration
-                itokens = tokens
+
         iterator = iterator()
         self.iterator = iterator
-        self.mynext = iterator.next
+        self.next = iterator.next
+
+    def setstart(self, startloc):
+        self.current[0] = startloc
+        self.tokens[:] = []
 
     def floc(self):
-        return self.current[0][0]
+        return self.current[0]
     floc = property(floc)
 
     def __iter__(self):
         return self.iterator
-
-    def next(self):
-        return self.mynext()
 
     def multiple(self, count, islice=itertools.islice, list=list):
         return list(islice(self, count))
