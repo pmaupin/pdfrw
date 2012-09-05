@@ -93,6 +93,9 @@ class PdfReader(PdfDict):
         source.setstart(floc) # Back up
         return PdfObject('')
 
+    def badtoken(self, source):
+        raise PdfStructureError(source.fdata, source.floc - 2, 'Unexpected delimiter')
+
     def findstream(self, obj, tok, source, PdfDict=PdfDict, isinstance=isinstance, len=len):
         ''' Figure out if there is a content stream
             following an object, and return the start
@@ -291,8 +294,13 @@ class PdfReader(PdfDict):
         self.private.fdata = fdata
 
         self.private.indirect_objects = {}
-        self.private.special = {'<<': self.readdict, '[': self.readarray,
-                                'endobj': self.empty_obj}
+        self.private.special = {'<<': self.readdict,
+                                '[': self.readarray,
+                                'endobj': self.empty_obj,
+                                }
+        for tok in r'\ ( ) < > { } ] >> %'.split():
+            self.special[tok] = self.badtoken
+
         self.private.obj_offsets = {}
 
         startloc, source = self.findxref(fdata)
