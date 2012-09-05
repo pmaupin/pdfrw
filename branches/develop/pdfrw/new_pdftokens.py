@@ -44,7 +44,7 @@ class TokenGroup(object):
     # between comments and nested parentheses in literal strings.
     # If we're not doing a full line, we might do the comment
     # or string at the start, too.
-    p_normal_single = r'(?:[(%%]?[^\\%s%s]+|\\[^%s])+' % special
+    p_normal_single = r'[(%%]?(?:[^\\%s%s]+|\\[^%s])+' % special
     p_normal_multiple = r'[%s](?:[^\\%s]+|\\[^%s])*' % special
 
     # A hex string.  This one's easy.
@@ -68,7 +68,6 @@ class TokenGroup(object):
             end = ()
         else:
             end = end.end(),
-        print start, end
         result = findall(s, start, *end)
         result.reverse()
         return result
@@ -103,7 +102,6 @@ class TokenGroup(object):
                     try:
                         substrs = token.split('#')
                         substrs.reverse()
-                        print substrs
                         tokens = [substrs.pop()]
                         while substrs:
                             s = substrs.pop()
@@ -139,7 +137,7 @@ class TokenGroup(object):
                 token = PdfString(join(toklist))
             elif firstch == '%':
                 toklist = [token]
-                while raw[-1] not in eol:
+                while raw and raw[-1][0] not in eol:
                     toklist.append(pop())
                 token = join(toklist)
                 if strip_comments:
