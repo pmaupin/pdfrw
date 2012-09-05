@@ -158,10 +158,12 @@ class PdfTokens(object):
         self.strip_comments = strip_comments
         self.tokens = tokens = []
         self.current = current = [0]
+        self.restart = restart = [False]
         self.setstart(startloc)
 
         def iterator():
             while 1:
+                restart[0] = False
                 startloc = current[0]
                 ok = tokens and tokens[0][0] - len(tokens[0][1]) <= startloc < tokens[-1][0]
                 if ok:
@@ -172,18 +174,23 @@ class PdfTokens(object):
                     if not tokens:
                         raise StopIteration
                     itokens = tokens
-
+                    print ('Tokens from %d to %d' % (startloc, tokens[-1][0]))
                 for token in itokens:
                     current[0] = token[0]
                     yield token[1]
+                    if restart[0]:
+                        break
 
         iterator = iterator()
         self.iterator = iterator
         self.next = iterator.next
 
     def setstart(self, startloc):
-        self.current[0] = startloc
-        self.tokens[:] = []
+        old = self.current[0]
+        print 'setstart', old, startloc
+        if startloc != old:
+            self.current[0] = startloc
+            self.restart[0] = True
 
     def floc(self):
         return self.current[0]
