@@ -89,9 +89,9 @@ class TokenGroup(object):
                 loc += len(lpop())
                 while toklist:
                     token = lpop()
-                    loc += len(token)
-                    yield loc, PdfObject(token)
-                    loc += len(lpop())
+                    startloc = loc
+                    loc  += len(token) + len(lpop())
+                    yield startloc, loc, PdfObject(token)
                 continue
 
             if firstch in '/<(%':
@@ -99,7 +99,6 @@ class TokenGroup(object):
                     if '#' not in token:
                         token = PdfObject(token)
                     else:
-                        loc += len(token)
                         try:
                             substrs = token.split('#')
                             substrs.reverse()
@@ -112,7 +111,9 @@ class TokenGroup(object):
                             result.encoded = token
                         except ValueError:
                             raise pdferrors.PdfInvalidCharacterError(source, loc, token)
-                        yield loc, result
+                        startloc = loc
+                        loc  += len(token)
+                        yield startloc, loc, result
                         continue
 
                 elif firstch == '<':
@@ -146,8 +147,9 @@ class TokenGroup(object):
                         loc += len(token)
                         continue
 
-            loc += len(token)
-            yield loc, token
+            startloc = loc
+            loc  += len(token)
+            yield startloc, loc, token
 
 class PdfTokens(object):
 
@@ -157,27 +159,28 @@ class PdfTokens(object):
         self.fdata = fdata
         self.strip_comments = strip_comments
         self.tokens = tokens = []
-        self.current = current = [0]
+        self.current = current = [(0, 0)]
         self.restart = restart = [False]
         self.setstart(startloc)
 
         def iterator():
             while 1:
                 restart[0] = False
-                startloc = current[0]
-                ok = tokens and tokens[0][0] - len(tokens[0][1]) <= startloc < tokens[-1][0]
+                startloc = current[0][1]
+                ok = tokens and tokens[0][0] <= startloc <= tokens[-1][0]
                 if ok:
-                    start = bisect(tokens, (startloc+1,))
+                    start = bisect(tokens, (startloc, 0, ''))
                     itokens = islice(tokens, start, None)
+                    #print 'bisect', start, len(tokens), tokens, startloc
                 else:
                     tokens[:] = gettoks(fdata, startloc, self.strip_comments)
                     if not tokens:
                         raise StopIteration
                     itokens = tokens
-                    print ('Tokens from %d to %d' % (startloc, tokens[-1][0]))
+                    #print ('Tokens from %d to %d' % (startloc, tokens[-1][0]))
                 for token in itokens:
-                    current[0] = token[0]
-                    yield token[1]
+                    current[0] = token
+                    yield token[2]
                     if restart[0]:
                         break
 
@@ -186,14 +189,14 @@ class PdfTokens(object):
         self.next = iterator.next
 
     def setstart(self, startloc):
-        old = self.current[0]
-        print 'setstart', old, startloc
+        old = self.current[0][1]
+        #print 'setstart', old, startloc
         if startloc != old:
-            self.current[0] = startloc
+            self.current[0] = startloc,startloc
             self.restart[0] = True
 
     def floc(self):
-        return self.current[0]
+        return self.current[0][1]
     floc = property(floc)
 
     def __iter__(self):

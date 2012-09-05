@@ -15,8 +15,10 @@ try:
 except NameError:
     from sets import Set as set
 
+import gc
+
 from pdferrors import PdfUnexpectedTokenError, PdfStructureError, PdfInputError
-from pdftokens import PdfTokens
+from new_pdftokens import PdfTokens
 from pdfobjects import PdfDict, PdfArray, PdfName, PdfObject
 from pdfcompress import uncompress
 
@@ -263,72 +265,78 @@ class PdfReader(PdfDict):
             result.extend(self.readpages(node))
         return result
 
-    def __init__(self, fname=None, fdata=None, decompress=True):
+    def __init__(self, fname=None, fdata=None, decompress=True, disable_gc=True):
 
-        if fname is not None:
-            assert fdata is None
-            # Allow reading preexisting streams like pyPdf
-            if hasattr(fname, 'read'):
-                fdata = fname.read()
-            else:
-                f = open(fname, 'rb')
-                fdata = f.read()
-                f.close()
+        disable_gc = disable_gc and gc.isenabled()
+        try:
+            if disable_gc:
+                gc.disable()
+            if fname is not None:
+                assert fdata is None
+                # Allow reading preexisting streams like pyPdf
+                if hasattr(fname, 'read'):
+                    fdata = fname.read()
+                else:
+                    f = open(fname, 'rb')
+                    fdata = f.read()
+                    f.close()
 
-        assert fdata is not None
-        if not fdata.startswith('%PDF-'):
-            raise PdfStructureError(fdata, 0, 'Invalid PDF header', fdata[:20])
+            assert fdata is not None
+            if not fdata.startswith('%PDF-'):
+                raise PdfStructureError(fdata, 0, 'Invalid PDF header', fdata[:20])
 
-        endloc = fdata.rfind('%%EOF')
-        if endloc < 0:
-            raise PdfStructureError(fdata, len(fdata)-20, 'EOF mark not found')
-        endloc += 6
-        junk = fdata[endloc:]
-        fdata = fdata[:endloc]
-        if junk.rstrip('\00').strip():
-            log.warning('Extra data at end of file')
+            endloc = fdata.rfind('%%EOF')
+            if endloc < 0:
+                raise PdfStructureError(fdata, len(fdata)-20, 'EOF mark not found')
+            endloc += 6
+            junk = fdata[endloc:]
+            fdata = fdata[:endloc]
+            if junk.rstrip('\00').strip():
+                log.warning('Extra data at end of file')
 
-        self.private.fdata = fdata
+            self.private.fdata = fdata
 
-        self.private.indirect_objects = {}
-        self.private.special = {'<<': self.readdict,
-                                '[': self.readarray,
-                                'endobj': self.empty_obj,
-                                }
-        for tok in r'\ ( ) < > { } ] >> %'.split():
-            self.special[tok] = self.badtoken
+            self.private.indirect_objects = {}
+            self.private.special = {'<<': self.readdict,
+                                    '[': self.readarray,
+                                    'endobj': self.empty_obj,
+                                    }
+            for tok in r'\ ( ) < > { } ] >> %'.split():
+                self.special[tok] = self.badtoken
 
-        self.private.obj_offsets = {}
+            self.private.obj_offsets = {}
 
-        startloc, source = self.findxref(fdata)
-        while 1:
-            # Loop through all the cross-reference tables
-            self.parsexref(source)
-            tok = source.next()
-            if tok != '<<':
-                raise PdfStructureError(source.fdata, source.floc, 'Invalid xref', tok)
-            # Do not overwrite preexisting entries
-            newdict = self.readdict(source).copy()
-            newdict.update(self)
-            self.update(newdict)
+            startloc, source = self.findxref(fdata)
+            while 1:
+                # Loop through all the cross-reference tables
+                self.parsexref(source)
+                tok = source.next()
+                if tok != '<<':
+                    raise PdfStructureError(source.fdata, source.floc, 'Invalid xref', tok)
+                # Do not overwrite preexisting entries
+                newdict = self.readdict(source).copy()
+                newdict.update(self)
+                self.update(newdict)
 
-            # Loop if any previously-written tables.
-            token = source.next()
-            if token != 'startxref':
-                raise PdfStructureError(source.fdata, source.floc, 'Invalid xref', token)
-            if self.Prev is None:
-                break
-            source.setstart(int(self.Prev))
-            self.Prev = None
+                # Loop if any previously-written tables.
+                token = source.next()
+                if token != 'startxref':
+                    raise PdfStructureError(source.fdata, source.floc, 'Invalid xref', token)
+                if self.Prev is None:
+                    break
+                source.setstart(int(self.Prev))
+                self.Prev = None
 
-        self.read_all_indirect(source)
-        self.private.pages = self.readpages(self.Root.Pages)
-        if decompress:
-            self.uncompress()
+            self.read_all_indirect(source)
+            self.private.pages = self.readpages(self.Root.Pages)
+            if decompress:
+                self.uncompress()
 
-        # For compatibility with pyPdf
-        self.private.numPages = len(self.pages)
-
+            # For compatibility with pyPdf
+            self.private.numPages = len(self.pages)
+        finally:
+            if disable_gc:
+                gc.enable()
 
     # For compatibility with pyPdf
     def getPage(self, pagenum):
