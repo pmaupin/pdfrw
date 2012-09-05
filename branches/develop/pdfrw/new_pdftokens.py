@@ -56,7 +56,7 @@ class TokenGroup(object):
     pattern = '|'.join([p_name, p_hex_string, p_normal_single, p_normal_multiple, p_dictdelim, '.'])
     findall = re.compile(pattern).findall
 
-    ending_pattern = r'[%s]+\>\>[%s]*stream[%s]+' % (whitespace, whitespace, eol)
+    ending_pattern = r'\>\>[%s]*stream[%s]+' % (whitespace, eol)
     search = re.compile(ending_pattern).search
 
     # For splitting out simple tokens from whitespace
@@ -68,6 +68,7 @@ class TokenGroup(object):
             end = ()
         else:
             end = end.end(),
+        print start, end
         result = findall(s, start, *end)
         result.reverse()
         return result
@@ -98,20 +99,23 @@ class TokenGroup(object):
                 if '#' not in token:
                     token = PdfObject(token)
                 else:
-                    substrs = token.split('#')
-                    substrs.reverse()
-                    tokens = [substrs.pop()]
-                    while substrs:
-                        s = substrs.pop()
-                        tokens.append(chr(int(s[:2], 16)))
-                        try:
+                    loc += len(token)
+                    try:
+                        substrs = token.split('#')
+                        substrs.reverse()
+                        print substrs
+                        tokens = [substrs.pop()]
+                        while substrs:
+                            s = substrs.pop()
                             tokens.append(chr(int(s[:2], 16)))
-                        except ValueError:
-                            raise pdferrors.PdfInvalidCharacterError(source, loc, s[:2])
-                        tokens.append(s[2:])
-                    result = PdfObject(join(tokens))
-                    result.encoded = token
-                    token = result
+                            tokens.append(s[2:])
+                        result = PdfObject(join(tokens))
+                        result.encoded = token
+                    except ValueError:
+                        raise pdferrors.PdfInvalidCharacterError(source, loc, token)
+                    yield loc, result
+                    continue
+
             elif firstch == '<':
                 token = PdfString(token)
             elif firstch == '(':
@@ -163,9 +167,11 @@ class PdfTokens(object):
         if not ok:
             tokens[:] = gettoks(self.fdata, startloc, self.strip_comments)
 
+        start = bisect(tokens, (startloc+1,))
+        begin = max(start-2,0)
+        print startloc, start, begin, tokens[begin:begin+4], tokens[0], tokens[-1]
 
         def iterator():
-            start = bisect(tokens, (startloc+1,))
             itokens = start > 0 and islice(tokens, start, None) or tokens
             while 1:
                 for token in itokens:
