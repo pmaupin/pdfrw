@@ -159,6 +159,7 @@ class PdfTokens(object):
         tokens = self.tokens
 
         ok = tokens and tokens[0][0] - len(tokens[0][1]) <= startloc < tokens[-1][0]
+        print "setstart", ok, startloc
         if not ok:
             tokens[:] = gettoks(self.fdata, startloc, self.strip_comments)
 
@@ -176,7 +177,7 @@ class PdfTokens(object):
                 itokens = tokens
         iterator = iterator()
         self.iterator = iterator
-        self.next = iterator.next
+        self.mynext = iterator.next
 
     def floc(self):
         return self.current[0][0]
@@ -184,6 +185,9 @@ class PdfTokens(object):
 
     def __iter__(self):
         return self.iterator
+
+    def next(self):
+        return self.mynext()
 
     def multiple(self, count, islice=itertools.islice, list=list):
         return list(islice(self, count))

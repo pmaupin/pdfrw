@@ -39,6 +39,7 @@ class PdfTokens(object):
         if old != new:
             log.warning('Tokens different: old = %s from %d; new = %s from %d' %
                         (repr(old), self.old.floc, repr(new), self.new.floc))
+        print 'next', (old, new)
         if old is Done:
             raise Done
         return old
@@ -50,6 +51,7 @@ class PdfTokens(object):
         if old != new:
             log.warning('Multiples different: old = %s from %d; new = %s from %d' %
                         (old, self.old.floc, new, self.new.floc))
+        print 'multiple', (old, new)
         return old
 
     @property
@@ -62,6 +64,7 @@ class PdfTokens(object):
         return old
 
     def setstart(self, start):
+        print 'setstart', start
         self.old_setstart(start)
         self.new_setstart(start)
 
