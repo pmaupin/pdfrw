@@ -77,7 +77,7 @@ class PdfTokens(object):
         '''
         substrs = splitname(token)
         if '#' in join(substrs[::2]):
-            log.warning('Invalid name token: %s' % token)
+            log.warning('Invalid name token: %s' % repr(token))
             return token
         substrs[1::2] = (int(x, 16) for x in substrs[1::2])
         result = cacheobj(cache, join(substrs), constructor)
