@@ -21,7 +21,6 @@ from pdferrors import PdfUnexpectedTokenError, PdfStructureError, PdfInputError
 from new_pdftokens import PdfTokens
 from pdfobjects import PdfDict, PdfArray, PdfName, PdfObject
 from pdfcompress import uncompress
-
 from pdflog import log
 
 class PdfReader(PdfDict):

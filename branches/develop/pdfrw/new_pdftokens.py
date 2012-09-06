@@ -14,9 +14,13 @@ from __future__ import generators
 
 import re
 import itertools
-import pdferrors
 from pdfobjects import PdfString, PdfObject
 from pdflog import log
+
+def countlines(fdata, loc):
+    line = fdata.count('\n', 0, loc) + 1
+    line += fdata.count('\r', 0, loc) - fdata.count('\r\n', 0, loc)
+    return line
 
 class PdfTokens(object):
 
@@ -125,7 +129,8 @@ class PdfTokens(object):
                                 if not nest:
                                     break
                             if nest:
-                                raise pdferrors.PdfUnexpectedEOFError(fdata)
+                                log.error('Unterminated literal string on line %d' %
+                                    countlines(fdata, m_start))
                             token = PdfString(fdata[m_start:loc])
                             loc = match.end()
                             current[0] = loc
@@ -140,7 +145,7 @@ class PdfTokens(object):
                 current[0] = loc
                 prev[0] = m_start
                 yield token
-                if current[0] != loc:
+                if current[0] is not loc:
                     break
             else:
                 raise StopIteration
