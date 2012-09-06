@@ -16,28 +16,9 @@ import re
 import itertools
 import pdferrors
 from pdfobjects import PdfString, PdfObject
+from pdflog import log
 
-
-def fixname(token, PdfObject=PdfObject, join=''.join):
-    ''' Inside name tokens, a '#' character indicates that
-        the next two bytes are hex characters to be used
-        to form the 'real' character.
-    '''
-    try:
-        substrs = token.split('#')
-        substrs.reverse()
-        tokens = [substrs.pop()]
-        while substrs:
-            s = substrs.pop()
-            tokens.append(chr(int(s[:2], 16)))
-            tokens.append(s[2:])
-        result = PdfObject(join(tokens))
-        result.encoded = token
-        return result
-    except ValueError:
-        raise pdferrors.PdfInvalidCharacterError(source, m_start, token)
-
-class TokenGroup(object):
+class PdfTokens(object):
 
     # Table 3.1, page 50 of reference, defines whitespace
     eol = '\n\r'
@@ -73,8 +54,23 @@ class TokenGroup(object):
     findtok = re.compile('(%s)[%s]*' % (pattern, whitespace), re.DOTALL).finditer
     findparen = re.compile('(%s)[%s]*' % (p_literal_string_extend, whitespace), re.DOTALL).finditer
 
-    @staticmethod
-    def gettoks(source, loc, strip_comments, fixname=fixname,
+    def _fixname(token, PdfObject=PdfObject, join=''.join):
+        ''' Inside name tokens, a '#' character indicates that
+            the next two bytes are hex characters to be used
+            to form the 'real' character.
+        '''
+        substrs = token.split('#')
+        substrs.reverse()
+        tokens = [substrs.pop()]
+        while substrs:
+            s = substrs.pop()
+            tokens.append(chr(int(s[:2], 16)))
+            tokens.append(s[2:])
+        result = PdfObject(join(tokens))
+        result.encoded = token
+        return result
+
+    def _gettoks(self, startloc, fixname=_fixname,
                        delimiters=delimiters, findtok=findtok, findparen=findparen,
                        PdfString=PdfString, PdfObject=PdfObject):
         ''' Given a source data string and a location inside it,
@@ -85,13 +81,15 @@ class TokenGroup(object):
             The main complication here is the literal strings, which
             can contain nested parentheses.  In order to cope with these
             we can discard the current iterator and loop back to the
-            top to get a fresh one.  This is handled  by the changed_loc
-            local variable.
+            top to get a fresh one.
+
+            We could use re.search instead of re.finditer, but that's slower.
         '''
-        changed_loc = True
-        while changed_loc:
-            changed_loc = False
-            for match in findtok(source, loc):
+        fdata = self.fdata
+        current = self.current = [startloc]
+        prev = self.prev = [startloc]
+        while 1:
+            for match in findtok(fdata, current[0]):
                 m_start, loc = match.span()
                 token = match.group(1)
                 firstch = token[0]
@@ -101,7 +99,10 @@ class TokenGroup(object):
                     if firstch == '/':
                         # PDF Name
                         if '#' in token:
-                            token = fixname(token)
+                            try:
+                                token = fixname(token)
+                            except ValueError:
+                                log.warning('Invalid name token: %s' % token)
                         else:
                             token = PdfObject(token)
                     elif firstch == '<':
@@ -114,64 +115,54 @@ class TokenGroup(object):
                         # Nested parentheses are a bear, and if
                         # they are present, we exit the for loop
                         # and get back in with a new starting location.
-                        if source[match.end(1)-1] == ')':
+                        if fdata[match.end(1)-1] == ')':
                             token = PdfString(token)
                         else:
                             nest = 2
-                            for match in findparen(source, loc):
+                            for match in findparen(fdata, loc):
                                 loc = match.end(1)
-                                nest += 1 - (source[loc-1] == ')') * 2
+                                nest += 1 - (fdata[loc-1] == ')') * 2
                                 if not nest:
                                     break
                             if nest:
-                                raise pdferrors.PdfUnexpectedEOFError(source)
-                            token = PdfString(source[m_start:loc])
+                                raise pdferrors.PdfUnexpectedEOFError(fdata)
+                            token = PdfString(fdata[m_start:loc])
                             loc = match.end()
-                            changed_loc = True
-                            yield m_start, loc, token
+                            current[0] = loc
+                            prev[0] = m_start
+                            yield token
                             break
                     elif firstch == '%':
                         # Comment
-                        if strip_comments:
+                        if self.strip_comments:
                             continue
 
-                yield m_start, loc, token
-
-class PdfTokens(object):
+                current[0] = loc
+                prev[0] = m_start
+                yield token
+                if current[0] != loc:
+                    break
+            else:
+                raise StopIteration
 
     def __init__(self, fdata, startloc=0, strip_comments=True):
         self.fdata = fdata
         self.strip_comments = strip_comments
-        self.current = current = [(startloc, startloc)]
-
-        def iterator(gettoks=TokenGroup.gettoks):
-            while 1:
-                for token in gettoks(fdata, current[0][1], self.strip_comments):
-                    current[0] = token
-                    yield token[2]
-                    if current[0] is not token:
-                        # If client changed starting location,
-                        # break out of the for loop and start over
-                        break
-                else:
-                    raise StopIteration
-
-        iterator = iterator()
-        self.iterator = iterator
+        self.iterator = iterator = self._gettoks(startloc)
         self.next = iterator.next
 
     def setstart(self, startloc):
         ''' Change the starting location.
         '''
         current = self.current
-        if startloc != current[0][1]:
-            current[0] = startloc, startloc
+        if startloc != current[0]:
+            current[0] = startloc
 
     def floc(self):
         ''' Return the current file position
             (where the next token will be retrieved)
         '''
-        return self.current[0][1]
+        return self.current[0]
     floc = property(floc)
 
     def __iter__(self):
