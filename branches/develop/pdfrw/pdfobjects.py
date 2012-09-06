@@ -1,5 +1,5 @@
 # A part of pdfrw (pdfrw.googlecode.com)
-# Copyright (C) 2006-2009 Patrick Maupin, Austin, Texas
+# Copyright (C) 2006-2012 Patrick Maupin, Austin, Texas
 # MIT license -- See LICENSE.txt for details
 
 '''
@@ -18,20 +18,36 @@ except NameError:
 import re
 
 class PdfObject(str):
+    ''' A PdfObject is a textual representation of any PDF file object
+        other than an array, dict or string. It has an indirect attribute
+        which defaults to False.
+    '''
     indirect = False
 
 class PdfArray(list):
+    ''' A PdfArray maps the PDF file array object into a Python list.
+        It has an indirect attribute which defaults to False.
+    '''
     indirect = False
 
 class PdfName(object):
+    ''' PdfName is a simple way to get a PDF name from a string:
+
+                PdfName.FooBar == PdfObject('/FooBar')
+    '''
     def __getattr__(self, name):
         return self(name)
-    def __call__(self, name):
+    def __call__(self, name, PdfObject=PdfObject):
         return PdfObject('/' + name)
-
 PdfName = PdfName()
 
 class PdfString(str):
+    ''' A PdfString is an encoded string.  It has a decode
+        method to get the actual string data out, and there
+        is an encode class method to create such a string.
+        Like any PDF object, it could be indirect, but it
+        defaults to being a direct object.
+    '''
     indirect = False
     unescape_dict = {'\\b':'\b', '\\f':'\f', '\\n':'\n',
                      '\\r':'\r', '\\t':'\t',
@@ -96,6 +112,50 @@ class PdfString(str):
     encode = classmethod(encode)
 
 class PdfDict(dict):
+    ''' PdfDict objects are subclassed dictionaries with the following features:
+
+        - Every key in the dictionary starts with "/"
+
+        - A dictionary item can be deleted by assigning it to None
+
+        - Keys that (after the initial "/") conform to Python naming conventions
+          can also be accessed (set and retrieved) as attributes of the dictionary.
+          E.g.  mydict.Page is the same thing as mydict['/Page']
+
+        - Private attributes (not in the PDF space) can be set on the dictionary
+          object attribute dictionary by using the private attribute:
+
+                mydict.private.foo = 3
+                mydict.foo = 5
+                x = mydict.foo       # x will now contain 3
+                y = mydict['/foo']   # y will now contain 5
+
+          Most standard adobe dictionary keys start with an upper case letter,
+          so to avoid conflicts, it is best to start private attributes with
+          lower case letters.
+
+        - PdfDicts have the following read-only properties:
+
+            - private -- as discussed above, provides write access to dictionary's
+                         attributes
+            - inheritable -- this creates and returns a "view" attribute that
+                         will search through the object hierarchy for any desired
+                         attribute, such as /Rotate or /MediaBox
+
+        - PdfDicts also have the following special attributes:
+            - indirect is not stored in the PDF dictionary, but in the object's
+              attribute dictionary
+            - stream is also stored in the object's attribute dictionary
+              and will also update the stream length.
+            - _stream will store in the object's attribute dictionary without
+              updating the stream length.
+
+            It is possible, for example, to have a PDF name such as "/indirect"
+            or "/stream", but you cannot access such a name as an attribute:
+
+                mydict.indirect -- accesses object's attribute dictionary
+                mydict["/indirect"] -- accesses actual PDF dictionary
+    '''
     indirect = False
     stream = None
 
@@ -104,10 +164,10 @@ class PdfDict(dict):
                     _stream = ('stream', False),
                    )
 
-    def __setitem__(self, name, value):
+    def __setitem__(self, name, value, setter=dict.__setitem__):
         assert name.startswith('/'), name
         if value is not None:
-            dict.__setitem__(self, name, value)
+            setter(self, name, value)
         elif name in self:
             del self[name]
 
@@ -122,22 +182,22 @@ class PdfDict(dict):
         for key, value in kw.iteritems():
             setattr(self, key, value)
 
-    def __getattr__(self, name):
+    def __getattr__(self, name, PdfName=PdfName):
         return self.get(PdfName(name))
 
-    def __setattr__(self, name, value):
-        info = self._special.get(name)
+    def __setattr__(self, name, value, special=_special.get, PdfName=PdfName, vars=vars):
+        info = special(name)
         if info is None:
             self[PdfName(name)] = value
         else:
             name, setlen = info
-            self.__dict__[name] = value
+            vars(self)[name] = value
             if setlen:
                 notnone = value is not None
                 self.Length = notnone and PdfObject(len(value)) or None
 
-    def iteritems(self):
-        for key, value in dict.iteritems(self):
+    def iteritems(self, dictiter=dict.iteritems):
+        for key, value in dictiter(self):
             if value is not None:
                 assert key.startswith('/'), (key, value)
                 yield key, value
@@ -180,4 +240,8 @@ class PdfDict(dict):
     private = property(private)
 
 class IndirectPdfDict(PdfDict):
+    ''' IndirectPdfDict is a convenience class.  You could
+        create a direct PdfDict and then set indirect = True on it,
+        or you could just create an IndirectPdfDict.
+    '''
     indirect = True
