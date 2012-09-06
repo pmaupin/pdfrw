@@ -5,6 +5,9 @@ import sys
 import os
 import traceback
 import time
+import gc
+
+gc.disable()
 
 args = sys.argv[1:]
 if args:
@@ -39,7 +42,7 @@ try:
         except Exception:
             ok = False
             #print traceback.format_exc()[:2000]
-            #raise
+            raise
         else:
             ok = True
         elapsed = time.time() - start
@@ -49,6 +52,7 @@ try:
         (badfiles, goodfiles)[ok].append(fname)
         times.append((elapsed, fname))
 except KeyboardInterrupt:
+    raise
     pass
 
 print "Total = %s, good = %s, bad = %s" % (len(times), len(goodfiles), len(badfiles))
