@@ -48,6 +48,8 @@ class PdfReader(PdfDict):
         return result
 
     def readarray(self, source, PdfArray=PdfArray, len=len):
+        ''' Found a [ token.  Parse the tokens after that.
+        '''
         specialget = self.special.get
         result = PdfArray()
         pop = result.pop
@@ -67,6 +69,8 @@ class PdfReader(PdfDict):
         return result
 
     def readdict(self, source, PdfDict=PdfDict):
+        ''' Found a << token.  Parse the tokens after that.
+        '''
         specialget = self.special.get
         result = PdfDict()
         next = source.next
@@ -90,12 +94,17 @@ class PdfReader(PdfDict):
         return result
 
     def empty_obj(self, source, PdfObject=PdfObject):
+        ''' Some silly git put an empty object in the
+            file.  Back up so the caller sees the endobj.
+        '''
         fdata = source.fdata
         floc = fdata.rindex('endobj', 0, source.floc)
         source.setstart(floc) # Back up
         return PdfObject('')
 
     def badtoken(self, source):
+        ''' Didn't see that coming.
+        '''
         raise PdfStructureError(source.fdata, source.floc - 2, 'Unexpected delimiter')
 
     def findstream(self, obj, tok, source, PdfDict=PdfDict, isinstance=isinstance, len=len):
@@ -267,6 +276,7 @@ class PdfReader(PdfDict):
 
     def __init__(self, fname=None, fdata=None, decompress=True, disable_gc=True):
 
+        # Runs a lot faster with GC off.
         disable_gc = disable_gc and gc.isenabled()
         try:
             if disable_gc:
