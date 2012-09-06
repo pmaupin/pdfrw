@@ -45,7 +45,6 @@ class PdfTokens(object):
     # (Don't ask me why, but it hangs without the trailing ?.)
     p_literal_string_extend = r'(?:[^\\()]+|\\.)*[()]?'
 
-
     # A hex string.  This one's easy.
     p_hex_string = r'\<[%s0-9A-Fa-f]*\>' % whitespace
 
@@ -57,24 +56,35 @@ class PdfTokens(object):
     pattern = '|'.join([p_normal, p_name, p_hex_string, p_dictdelim, p_literal_string, p_comment, p_catchall])
     findtok = re.compile('(%s)[%s]*' % (pattern, whitespace), re.DOTALL).finditer
     findparen = re.compile('(%s)[%s]*' % (p_literal_string_extend, whitespace), re.DOTALL).finditer
+    splitname = re.compile(r'\#([0-9A-Fa-f]{2})').split
 
-    def _fixname(token, PdfObject=PdfObject, join=''.join):
+    def _cacheobj(cache, obj, constructor):
+        ''' This caching relies on the constructors
+            returning something that will compare as
+            equal to the original obj.  This works
+            fine with our PDF objects.
+        '''
+        result = cache.get(obj)
+        if result is None:
+            result = constructor(obj)
+            cache[result] = result
+        return result
+
+    def _fixname(cache, token, constructor, splitname=splitname, join=''.join, cacheobj=_cacheobj):
         ''' Inside name tokens, a '#' character indicates that
             the next two bytes are hex characters to be used
             to form the 'real' character.
         '''
-        substrs = token.split('#')
-        substrs.reverse()
-        tokens = [substrs.pop()]
-        while substrs:
-            s = substrs.pop()
-            tokens.append(chr(int(s[:2], 16)))
-            tokens.append(s[2:])
-        result = PdfObject(join(tokens))
+        substrs = splitname(token)
+        if '#' in join(substrs[::2]):
+            log.warning('Invalid name token: %s' % token)
+            return token
+        substrs[1::2] = (int(x, 16) for x in substrs[1::2])
+        result = cacheobj(cache, join(substrs), constructor)
         result.encoded = token
         return result
 
-    def _gettoks(self, startloc, fixname=_fixname,
+    def _gettoks(self, startloc, fixname=_fixname, cacheobj=_cacheobj,
                        delimiters=delimiters, findtok=findtok, findparen=findparen,
                        PdfString=PdfString, PdfObject=PdfObject):
         ''' Given a source data string and a location inside it,
@@ -90,62 +100,52 @@ class PdfTokens(object):
             We could use re.search instead of re.finditer, but that's slower.
         '''
         fdata = self.fdata
-        current = self.current = [startloc]
-        prev = self.prev = [startloc]
+        current = self.current = [(startloc, startloc)]
+        cache = {}
         while 1:
-            for match in findtok(fdata, current[0]):
-                m_start, loc = match.span()
+            for match in findtok(fdata, current[0][1]):
+                current[0] = tokspan = match.span()
                 token = match.group(1)
                 firstch = token[0]
                 if firstch not in delimiters:
-                    token = PdfObject(token)
+                    token = cacheobj(cache, token, PdfObject)
                 elif firstch in '/<(%':
                     if firstch == '/':
                         # PDF Name
-                        if '#' in token:
-                            try:
-                                token = fixname(token)
-                            except ValueError:
-                                log.warning('Invalid name token: %s' % token)
-                        else:
-                            token = PdfObject(token)
+                        token = (cacheobj, fixname)['#' in token](cache, token, PdfObject)
                     elif firstch == '<':
                         # << dict delim, or < hex string >
                         if token[1:2] != '<':
-                            token = PdfString(token)
+                            token = cacheobj(cache, token, PdfString)
                     elif firstch == '(':
                         # Literal string
                         # It's probably simple, but maybe not
                         # Nested parentheses are a bear, and if
                         # they are present, we exit the for loop
                         # and get back in with a new starting location.
-                        if fdata[match.end(1)-1] == ')':
-                            token = PdfString(token)
-                        else:
+                        if fdata[match.end(1)-1] != ')':
                             nest = 2
+                            m_start, loc = tokspan
                             for match in findparen(fdata, loc):
                                 loc = match.end(1)
                                 nest += 1 - (fdata[loc-1] == ')') * 2
                                 if not nest:
                                     break
-                            if nest:
+                            else:
                                 log.error('Unterminated literal string on line %d' %
                                     countlines(fdata, m_start))
-                            token = PdfString(fdata[m_start:loc])
-                            loc = match.end()
-                            current[0] = loc
-                            prev[0] = m_start
-                            yield token
-                            break
+                            token = fdata[m_start:loc]
+                            current[0] = m_start, match.end()
+                        token = cacheobj(cache, token, PdfString)
                     elif firstch == '%':
                         # Comment
                         if self.strip_comments:
                             continue
+                    else:
+                        assert 0  # Should never get here
 
-                current[0] = loc
-                prev[0] = m_start
                 yield token
-                if current[0] is not loc:
+                if current[0] is not tokspan:
                     break
             else:
                 raise StopIteration
@@ -160,14 +160,14 @@ class PdfTokens(object):
         ''' Change the starting location.
         '''
         current = self.current
-        if startloc != current[0]:
-            current[0] = startloc
+        if startloc != current[0][1]:
+            current[0] = startloc, startloc
 
     def floc(self):
         ''' Return the current file position
             (where the next token will be retrieved)
         '''
-        return self.current[0]
+        return self.current[0][1]
     floc = property(floc)
 
     def __iter__(self):
