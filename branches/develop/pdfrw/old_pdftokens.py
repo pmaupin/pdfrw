@@ -252,9 +252,12 @@ class PdfTokens(object):
         PdfObj = PdfObject
         join = ''.join
 
+    def set_floc(self, startloc):
+        self.setstart(startloc)
+
     def floc(self):
         return self.primitive.floc() - sum([len(x) for x in self.tokens])
-    floc = property(floc)
+    floc = property(floc, set_floc)
 
     def __iter__(self):
         return self.iterator

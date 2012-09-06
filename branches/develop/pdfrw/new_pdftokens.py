@@ -168,7 +168,7 @@ class PdfTokens(object):
             (where the next token will be retrieved)
         '''
         return self.current[0][1]
-    floc = property(floc)
+    floc = property(floc, setstart)
 
     def __iter__(self):
         return self.iterator

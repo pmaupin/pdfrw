@@ -7,7 +7,7 @@ import traceback
 import time
 import gc
 
-gc.disable()
+#gc.disable()
 
 args = sys.argv[1:]
 if args:

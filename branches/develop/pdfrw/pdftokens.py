@@ -54,7 +54,6 @@ class PdfTokens(object):
         print 'multiple', (old, new)
         return old
 
-    @property
     def floc(self):
         old = self.old.floc
         new = self.new.floc
@@ -67,6 +66,7 @@ class PdfTokens(object):
         print 'setstart', start
         self.old_setstart(start)
         self.new_setstart(start)
+    floc = property(floc, setstart)
 
     def _set_strip_comments(self, value):
         self.old.strip_comments = value
