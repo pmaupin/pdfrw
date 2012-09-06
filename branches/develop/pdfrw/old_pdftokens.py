@@ -200,7 +200,6 @@ class PdfTokens(object):
             tokens = [substrs.pop()]
             while substrs:
                 s = substrs.pop()
-                tokens.append(chr(int(s[:2], 16)))
                 try:
                     tokens.append(chr(int(s[:2], 16)))
                 except ValueError:

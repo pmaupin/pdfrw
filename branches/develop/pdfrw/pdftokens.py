@@ -36,7 +36,7 @@ class PdfTokens(object):
             new = self.new_next()
         except Done:
             new = Done
-        if old != new:
+        if old != new and (not old.startswith('%%EOF') or not new.startswith('%%EOF')):
             log.warning('Tokens different: old = %s from %d; new = %s from %d' %
                         (repr(old), self.old.floc, repr(new), self.new.floc))
         print 'next', (old, new)

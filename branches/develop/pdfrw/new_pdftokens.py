@@ -1,5 +1,5 @@
 # A part of pdfrw (pdfrw.googlecode.com)
-# Copyright (C) 2006-2009 Patrick Maupin, Austin, Texas
+# Copyright (C) 2006-2012 Patrick Maupin, Austin, Texas
 # MIT license -- See LICENSE.txt for details
 
 '''
@@ -11,15 +11,9 @@ sixth edition, for PDF version 1.7, dated November 2006.
 '''
 
 from __future__ import generators
-import bisect
-import itertools
-
-try:
-    set
-except NameError:
-    from sets import Set as set
 
 import re
+import itertools
 import pdferrors
 from pdfobjects import PdfString, PdfObject
 
@@ -33,19 +27,19 @@ class TokenGroup(object):
     # Escape the ]
     delimiters = r'()<>{}[\]/%'
 
-    # ORDER MATTERS!!!
-    special = (eol, delimiters, whitespace)
+    # "normal" stuff is all but delimiters or whitespace.
 
-    # "normal" stuff is all but delimiters.  Also, we include
-    # escaped delimiters, but we don't include escaped whitespace,
-    # since we will later do a regular string split, and that wouldn't
-    # know about the escape.  Finally, we either do full lines,
-    # or stop at the end of the line, because of the ambiguity
-    # between comments and nested parentheses in literal strings.
-    # If we're not doing a full line, we might do the comment
-    # or string at the start, too.
-    p_normal_single = r'[(%%]?(?:[^\\%s%s]+|\\[^%s])+' % special
-    p_normal_multiple = r'[%s](?:[^\\%s]+|\\[^%s])*' % special
+    p_normal = r'(?:[^\\%s%s]+|\\[^%s])+' % (whitespace, delimiters, whitespace)
+
+    p_comment = r'\%%[^%s]*' % eol
+
+    # This will get the bulk of literal strings.
+    p_literal_string = r'\((?:[^\\()]+|\\.)*[()]?'
+
+    # This will get more pieces of literal strings
+    # (Don't ask me why, but it hangs without the trailing ?.)
+    p_literal_string_extend = r'(?:[^\\()]+|\\.)*[()]?'
+
 
     # A hex string.  This one's easy.
     p_hex_string = r'\<[%s0-9A-Fa-f]*\>' % whitespace
@@ -53,147 +47,97 @@ class TokenGroup(object):
     p_dictdelim = r'\<\<|\>\>'
     p_name = r'/[^%s%s]*' % (delimiters, whitespace)
 
-    pattern = '|'.join([p_name, p_hex_string, p_normal_single, p_normal_multiple, p_dictdelim, '.'])
-    findall = re.compile(pattern).findall
+    p_catchall = '[^%s]' % whitespace
 
-    ending_pattern = r'\>\>[%s]*stream[%s]+' % (whitespace, eol)
-    search = re.compile(ending_pattern).search
-
-    # For splitting out simple tokens from whitespace
-    split = re.compile('([^%s]+)' % whitespace).split
-
-    def getraw(s, start, search=search, findall=findall):
-        end = search(s, start)
-        if end is None:
-            end = ()
-        else:
-            end = end.end(),
-        result = findall(s, start, *end)
-        result.reverse()
-        return result
+    pattern = '|'.join([p_normal, p_name, p_hex_string, p_dictdelim, p_literal_string, p_comment, p_catchall])
+    findtok = re.compile('(%s)[%s]*' % (pattern, whitespace), re.DOTALL).finditer
+    findparen = re.compile('(%s)[%s]*' % (p_literal_string_extend, whitespace), re.DOTALL).finditer
 
     @staticmethod
-    def gettoks(source, start, strip_comments, getraw=getraw,
-                       split=split, delimiters=delimiters, eol = eol,
+    def gettoks(source, loc, strip_comments,
+                       delimiters=delimiters, findtok=findtok, findparen=findparen,
                        PdfString=PdfString, PdfObject=PdfObject, len=len, join=''.join):
-        raw = getraw(source,start)
-        pop = raw.pop
-        loc = start
-        while raw:
-            token = pop()
-            firstch = token[0]
-            if firstch not in delimiters:
-                toklist = split(token)
-                toklist.reverse()
-                lpop = toklist.pop
-                loc += len(lpop())
-                while toklist:
-                    token = lpop()
-                    startloc = loc
-                    loc  += len(token) + len(lpop())
-                    yield startloc, loc, PdfObject(token)
-                continue
-
-            if firstch in '/<(%':
-                if firstch == '/':
-                    if '#' not in token:
-                        token = PdfObject(token)
-                    else:
-                        try:
-                            substrs = token.split('#')
-                            substrs.reverse()
-                            tokens = [substrs.pop()]
-                            while substrs:
-                                s = substrs.pop()
-                                tokens.append(chr(int(s[:2], 16)))
-                                tokens.append(s[2:])
-                            result = PdfObject(join(tokens))
-                            result.encoded = token
-                        except ValueError:
-                            raise pdferrors.PdfInvalidCharacterError(source, loc, token)
-                        startloc = loc
-                        loc  += len(token)
-                        yield startloc, loc, result
-                        continue
-
-                elif firstch == '<':
-                    if token[1:2] != '<':
-                        token = PdfString(token)
-                elif firstch == '(':
-                    toklist = [token]
-                    lappend = toklist.append
-                    nest = 1
-                    while 1:
-                        while nest and raw:
-                            token = pop()
-                            lappend(token)
-                            firstch = token[0]
-                            nest += (firstch == '(') - (firstch == ')')
-                        if not nest:
+        changed_loc = True
+        #print "gettoks start"
+        while changed_loc:
+            #print "gettoks loop", loc
+            changed_loc = False
+            for match in findtok(source, loc):
+                #print "match loop", loc
+                m_start, loc = match.span()
+                token = match.group(1)
+                firstch = token[0]
+                if firstch not in delimiters:
+                    token = PdfObject(token)
+                elif firstch in '/<(%':
+                    if firstch == '/':
+                        if '#' not in token:
+                            token = PdfObject(token)
+                        else:
+                            try:
+                                substrs = token.split('#')
+                                substrs.reverse()
+                                tokens = [substrs.pop()]
+                                while substrs:
+                                    s = substrs.pop()
+                                    tokens.append(chr(int(s[:2], 16)))
+                                    tokens.append(s[2:])
+                                result = PdfObject(join(tokens))
+                                result.encoded = token
+                                token = result
+                            except ValueError:
+                                raise pdferrors.PdfInvalidCharacterError(source, m_start, token)
+                    elif firstch == '<':
+                        if token[1:2] != '<':
+                            token = PdfString(token)
+                    elif firstch == '(':
+                        if source[match.end(1)-1] == ')':
+                            token = PdfString(token)
+                        else:
+                            nest = 2
+                            for match in findparen(source, loc):
+                                loc = match.end(1)
+                                nest += 1 - (source[loc-1] == ')') * 2
+                                if not nest:
+                                    break
+                            if nest:
+                                raise pdferrors.PdfUnexpectedEOFError(source)
+                            token = PdfString(source[m_start:loc])
+                            loc = match.end()
+                            changed_loc = True
+                            yield m_start, loc, token
                             break
-                        if not raw:
-                            raw = getraw(source,start)
-                            pop = raw.pop
-                            if not raw:
-                                # Error here, maybe???
-                                break
-                    token = PdfString(join(toklist))
-                elif firstch == '%':
-                    toklist = [token]
-                    while raw and raw[-1][0] not in eol:
-                        toklist.append(pop())
-                    token = join(toklist)
-                    if strip_comments:
-                        loc += len(token)
-                        continue
+                    elif firstch == '%':
+                        if strip_comments:
+                            continue
 
-            startloc = loc
-            loc  += len(token)
-            yield startloc, loc, token
+                yield m_start, loc, token
 
 class PdfTokens(object):
 
-    def __init__(self, fdata, startloc=0, strip_comments=True,
-                       gettoks=TokenGroup.gettoks, bisect=bisect.bisect_left,
-                       len=len, islice=itertools.islice):
+    def __init__(self, fdata, startloc=0, strip_comments=True):
         self.fdata = fdata
         self.strip_comments = strip_comments
-        self.tokens = tokens = []
-        self.current = current = [(0, 0)]
-        self.restart = restart = [False]
-        self.setstart(startloc)
+        self.current = current = [(startloc, startloc)]
 
-        def iterator():
+        def iterator(gettoks=TokenGroup.gettoks):
             while 1:
-                restart[0] = False
-                startloc = current[0][1]
-                ok = tokens and tokens[0][0] <= startloc <= tokens[-1][0]
-                if ok:
-                    start = bisect(tokens, (startloc, 0, ''))
-                    itokens = islice(tokens, start, None)
-                    #print 'bisect', start, len(tokens), tokens, startloc
-                else:
-                    tokens[:] = gettoks(fdata, startloc, self.strip_comments)
-                    if not tokens:
-                        raise StopIteration
-                    itokens = tokens
-                    #print ('Tokens from %d to %d' % (startloc, tokens[-1][0]))
-                for token in itokens:
+                for token in gettoks(fdata, current[0][1], self.strip_comments):
                     current[0] = token
                     yield token[2]
-                    if restart[0]:
+                    if current[0] is not token:
                         break
+                else:
+                    raise StopIteration
 
         iterator = iterator()
         self.iterator = iterator
         self.next = iterator.next
 
     def setstart(self, startloc):
-        old = self.current[0][1]
-        #print 'setstart', old, startloc
-        if startloc != old:
-            self.current[0] = startloc,startloc
-            self.restart[0] = True
+        current = self.current
+        if startloc != current[0][1]:
+            current[0] = startloc, startloc
 
     def floc(self):
         return self.current[0][1]
