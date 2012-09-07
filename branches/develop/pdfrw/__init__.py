@@ -5,7 +5,7 @@
 from pdfwriter import PdfWriter
 from pdfreader import PdfReader
 from pdfobjects import PdfObject, PdfName, PdfArray, PdfDict, IndirectPdfDict, PdfString
-from new_pdftokens import PdfTokens
+from pdftokens import PdfTokens
 from pdferrors import PdfParseError
 
 # Add a tiny bit of compatibility to pyPdf

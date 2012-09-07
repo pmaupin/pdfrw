@@ -18,7 +18,7 @@ except NameError:
 import gc
 
 from pdferrors import PdfParseError, log
-from new_pdftokens import PdfTokens
+from pdftokens import PdfTokens
 from pdfobjects import PdfDict, PdfArray, PdfName, PdfObject
 from pdfcompress import uncompress
 

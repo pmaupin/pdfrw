@@ -35,14 +35,15 @@ times = []
 
 try:
     for fname in allfiles:
-        print fname
+        #print >> sys.stderr, "File name", fname
+        print "File name", fname
         start = time.time()
         try:
             test_pdf(fname)
         except Exception:
             ok = False
-            #print traceback.format_exc()[:2000]
-            raise
+            print traceback.format_exc()[:2000]
+            #raise
         else:
             ok = True
         elapsed = time.time() - start
