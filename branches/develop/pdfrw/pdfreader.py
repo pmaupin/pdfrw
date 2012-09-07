@@ -122,10 +122,9 @@ class PdfReader(PdfDict):
             source.exception("Expected 'endobj'%s token", isdict and " or 'stream'" or '')
         fdata = source.fdata
         startstream = source.tokstart + len(tok)
-        ch = fdata[startstream]
-        gotcr = ch == '\r'
+        gotcr = fdata[startstream] == '\r'
         startstream += gotcr
-        gotlf = ch == '\n'
+        gotlf = fdata[startstream] == '\n'
         startstream += gotlf
         if not gotlf:
             if not gotcr:
