@@ -25,7 +25,7 @@ from pdfcompress import uncompress
 class PdfReader(PdfDict):
 
     warned_bad_stream_start = False  # Use to keep from spewing warnings
-    warned_bad_stream_length = False  # Use to keep from spewing warnings
+    warned_bad_stream_end = False  # Use to keep from spewing warnings
 
     class DeferredObject(object):
         ''' A placeholder for an object that hasn't been read in yet.
@@ -138,33 +138,44 @@ class PdfReader(PdfDict):
                      streamending = 'endstream endobj'.split(), int=int):
         obj, startstream, maxstream = info
         length =  int(obj.Length)
-        source.floc = endstream = startstream + length
+        source.floc = target_endstream = startstream + length
         endit = source.multiple(2)
+        obj._stream = fdata[startstream:target_endstream]
         if endit == streamending:
-            obj._stream = fdata[startstream:endstream]
             return
 
-        # The length attribute is not right.  Perhaps it's fixable.
+        # The length attribute does not match the distance between the
+        # stream and endstream keywords.
 
+        do_warn, self.warned_bad_stream_end = self.warned_bad_stream_end, False
         endstream = fdata.rfind('endstream', startstream, maxstream)
-        if fdata[endstream-1] == '\n':
-            endstream -= 1
-        if fdata[endstream-1] == '\r':
-            endstream -= 1
-        ok = endstream >= startstream
-        if ok:
-            source.floc = endstream
-            endit = source.multiple(2)
-            ok = endit == streamending
-        source.floc = 0
         source.floc = startstream
-        if not ok:
-            source.exception('Cannot find endstream or endobj')
-        if not self.warned_bad_stream_length:
-            source.error('Stream of apparent length %d has declared length of %d',
-                    endstream - startstream, length)
-            self.private.warned_bad_stream_length = True
-        obj.stream = fdata[startstream:endstream]
+        room = endstream - startstream
+        if endstream < 0:
+            source.error('Could not find endstream')
+            return
+        if length == room + 1 and fdata[startstream-2:startstream] == '\r\n':
+            source.warning(r"stream keyword terminated by \r without \n")
+            obj._stream = fdata[startstream-1:target_endstream-1]
+            return
+        source.floc = endstream
+        if length > room:
+            source.error('stream /Length attribute (%d) appears to be too big (size %d) -- adjusting',
+                             length, room)
+            obj.stream = fdata[startstream:endstream]
+            return
+        if fdata[target_endstream:endstream].rstrip():
+            source.error('stream /Length attribute (%d) might be smaller than data size (%d)',
+                             length, room)
+            return
+        endobj = fdata.find('endobj', endstream, maxstream)
+        if endobj < 0:
+            source.error('Could not find endobj after endstream')
+            return
+        if fdata[endstream:endobj].rstrip() != 'endstream':
+            source.error('Unexpected data between endstream and endobj')
+            return
+        source.error('Illegal endstream/endobj combination')
 
     def ordered_offsets(self):
         obj_offsets = sorted(self.obj_offsets.iteritems(), key=lambda x:x[1])
