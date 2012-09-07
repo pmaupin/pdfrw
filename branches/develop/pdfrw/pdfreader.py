@@ -17,15 +17,15 @@ except NameError:
 
 import gc
 
-from pdferrors import PdfUnexpectedTokenError, PdfStructureError, PdfInputError
-from pdftokens import PdfTokens
+from pdferrors import PdfParseError, log
+from new_pdftokens import PdfTokens
 from pdfobjects import PdfDict, PdfArray, PdfName, PdfObject
 from pdfcompress import uncompress
-from pdflog import log
 
 class PdfReader(PdfDict):
 
-    warned_bad_stream = False  # Use to keep from spewing warnings
+    warned_bad_stream_start = False  # Use to keep from spewing warnings
+    warned_bad_stream_length = False  # Use to keep from spewing warnings
 
     class DeferredObject(object):
         ''' A placeholder for an object that hasn't been read in yet.
@@ -77,7 +77,8 @@ class PdfReader(PdfDict):
 
         tok = next()
         while tok != '>>':
-            assert tok.startswith('/'), (tok, source.multiple(10))
+            if not tok.startswith('/'):
+                source.exception('Expected PDF /name object')
             key = tok
             value = next()
             func = specialget(value)
@@ -87,7 +88,8 @@ class PdfReader(PdfDict):
             else:
                 tok = next()
                 if value.isdigit() and tok.isdigit():
-                    assert next() == 'R'
+                    if next() != 'R':
+                        source.exception('Expected "R" following two integers')
                     value = self.findindirect(value, tok, result, key)
                     tok = next()
             result[key] = value
@@ -97,14 +99,13 @@ class PdfReader(PdfDict):
         ''' Some silly git put an empty object in the
             file.  Back up so the caller sees the endobj.
         '''
-        fdata = source.fdata
-        source.floc = fdata.rindex('endobj', 0, source.floc)
+        source.floc = source.tokstart
         return PdfObject('')
 
     def badtoken(self, source):
         ''' Didn't see that coming.
         '''
-        raise PdfStructureError(source.fdata, source.floc - 2, 'Unexpected delimiter')
+        source.exception('Unexpected delimiter')
 
     def findstream(self, obj, tok, source, PdfDict=PdfDict, isinstance=isinstance, len=len):
         ''' Figure out if there is a content stream
@@ -116,22 +117,61 @@ class PdfReader(PdfDict):
             be an indirect object.)
         '''
 
-        assert isinstance(obj, PdfDict), (type(obj), obj)
-        assert tok == 'stream', tok
+        isdict = isinstance(obj, PdfDict)
+        if not isdict or tok != 'stream':
+            source.exception("Expected 'endobj'%s token", isdict and " or 'stream'" or '')
         fdata = source.fdata
-        floc = fdata.rindex(tok, 0, source.floc) + len(tok)
-        ch = fdata[floc]
-        if ch == '\r':
-            floc += 1
-            ch = '\n'
-            if ch != fdata[floc]:
-                floc -= 1
-                if not self.warned_bad_stream:
-                    log.warning("foo stream terminated by \\r without \\n at file location %s" % floc)
-                    self.private.warned_bad_stream = True
-        assert ch == '\n'
-        startstream = floc + 1
+        startstream = source.tokstart + len(tok)
+        ch = fdata[startstream]
+        gotcr = ch == '\r'
+        startstream += gotcr
+        gotlf = ch == '\n'
+        startstream += gotlf
+        if not gotlf:
+            if not gotcr:
+                source.exception(r'stream keyword not followed by \n')
+            if not self.warned_bad_stream_start:
+                source.warning(r"stream keyword terminated by \r without \n")
+                self.private.warned_bad_stream_start = True
         return startstream
+
+    def readstream(self, info, source, fdata,
+                     streamending = 'endstream endobj'.split(), int=int):
+        obj, startstream, maxstream = info
+        length =  int(obj.Length)
+        source.floc = endstream = startstream + length
+        endit = source.multiple(2)
+        if endit == streamending:
+            obj._stream = fdata[startstream:endstream]
+            return
+
+        # The length attribute is not right.  Perhaps it's fixable.
+
+        endstream = fdata.rfind('endstream', startstream, maxstream)
+        if fdata[endstream-1] == '\n':
+            endstream -= 1
+        if fdata[endstream-1] == '\r':
+            endstream -= 1
+        ok = endstream >= startstream
+        if ok:
+            source.floc = endstream
+            endit = source.multiple(2)
+            ok = endit == streamending
+        source.floc = 0
+        source.floc = startstream
+        if not ok:
+            source.exception('Cannot find endstream or endobj')
+        if not self.warned_bad_stream_length:
+            source.error('Stream of apparent length %d has declared length of %d',
+                    endstream - startstream, length)
+            self.private.warned_bad_stream_length = True
+        obj.stream = fdata[startstream:endstream]
+
+    def ordered_offsets(self):
+        obj_offsets = sorted(self.obj_offsets.iteritems(), key=lambda x:x[1])
+        obj_offsets.append((None, len(self.fdata)))
+        for i in range(len(obj_offsets)-1):
+            yield obj_offsets[i:i+2]
 
     def read_all_indirect(self, source, int=int,
                 isinstance=isinstance, DeferredObject=DeferredObject):
@@ -141,9 +181,6 @@ class PdfReader(PdfDict):
             inside the tokenizer.
         '''
 
-        obj_offsets = self.obj_offsets.iteritems()
-        obj_offsets = [(offset, key) for (key, offset) in obj_offsets]
-        obj_offsets.sort()
         next = source.next
         multiple = source.multiple
         specialget = self.special.get
@@ -152,19 +189,18 @@ class PdfReader(PdfDict):
         findstream = self.findstream
         streams = []
 
-        for offset, key in obj_offsets:
+        for (key, offset), (key2, offset2) in self.ordered_offsets():
             # Read the object header and validate it
             objnum, gennum = key
             source.floc = offset
             objid = multiple(3)
-            try:
-                ok = objid[2] == 'obj'
-                ok = ok and int(objid[0]) == objnum
-                ok = ok and int(objid[1]) == gennum
-                if not ok:
-                    raise PdfStructureError
-            except:
-                log.warning("Did not find PDF object '%d %d obj' at file offset %d" % (objnum, gennum, offset))
+            ok = objid[2] == 'obj'
+            ok = ok and objid[0].isdigit() and int(objid[0]) == objnum
+            ok = ok and objid[1].isdigit() and int(objid[1]) == gennum
+            if not ok:
+                source.floc = offset
+                source.next()
+                source.warning("Expected indirect object '%d %d obj'" % (objnum, gennum))
                 continue
 
             # Read the object, and call special code if it starts
@@ -188,37 +224,14 @@ class PdfReader(PdfDict):
             obj.indirect = True
             tok = source.next()
             if tok != 'endobj':
-                streams.append((obj, findstream(obj, tok, source)))
+                streams.append((obj, findstream(obj, tok, source), offset2))
 
         # Once we've read ALL the indirect objects, including
         # stream lengths, we can update the stream objects with
         # the stream information.
-        streamending = 'endstream endobj'.split()
-        fdata = self.fdata
-        for obj, startstream in streams:
-            endstream = startstream + int(obj.Length)
-            obj._stream = fdata[startstream:endstream]
-            source.floc = endstream
-            try:
-                endit = source.multiple(2)
-                if endit != streamending:
-                    raise PdfUnexpectedTokenError(fdata, endstream, endit[0])
-            except PdfInputError:
-                # perhaps the /Length attribute is broken,
-                # try to read stream anyway disregarding the specified value
-                log.error('incorrect obj stream /Length parameter')
-                endstream = fdata.index('endstream', startstream)
-                if fdata[endstream-2:endstream] == '\r\n':
-                    endstream -= 2
-                elif fdata[endstream-1] in ['\n', '\r']:
-                    endstream -= 1
-                source.floc = endstream
-                endit = source.multiple(2)
-                if endit != streamending:
-                    raise
-                obj.Length = str(endstream-startstream)
-                obj._stream = fdata[startstream:endstream]
-
+        fdata = source.fdata
+        for info in streams:
+            self.readstream(info, source, fdata)
 
         # We created the top dict by merging other dicts,
         # so now we need to fix up the indirect objects there.
@@ -231,14 +244,15 @@ class PdfReader(PdfDict):
         '''
         startloc = fdata.rfind('startxref')
         if startloc < 0:
-            raise PdfStructureError(fdata, 0, 'Trailer not found')
-        xrefinfo = list(PdfTokens(fdata, startloc, False))
-        if (len(xrefinfo) != 3 or
-            xrefinfo[0] != 'startxref' or
-            not xrefinfo[1].isdigit() or
-            xrefinfo[2].rstrip() != '%%EOF'):
-                raise PdfStructureError(fdata, startloc, 'Invalid trailer', xrefinfo)
-        return startloc, PdfTokens(fdata, int(xrefinfo[1]), True)
+            raise PdfParseError('Did not find trailer ("startxref") at end of file')
+        source = PdfTokens(fdata, startloc, False)
+        assert source.next() == 'startxref'  # (We just checked this...)
+        tableloc = source.next_default()
+        if not tableloc.isdigit():
+            source.exception('Expected table location')
+        if source.next_default().rstrip() != '%%EOF':
+            source.exception('Expected %%EOF')
+        return startloc, PdfTokens(fdata, int(tableloc), True)
     findxref = staticmethod(findxref)
 
     def parsexref(self, source, int=int, range=range):
@@ -249,17 +263,22 @@ class PdfReader(PdfDict):
         next = source.next
         tok = next()
         if tok != 'xref':
-            raise PdfStructureError(source.fdata, source.floc, 'Invalid xref', tok)
-        while 1:
-            tok = next()
-            if tok == 'trailer':
-                break
-            startobj = int(tok)
-            for objnum in range(startobj, startobj + int(next())):
-                offset = int(next())
-                generation = int(next())
-                if next() == 'n' and offset != 0:
-                    setdefault((objnum, generation), offset)
+            source.exception('Expected "xref" keyword')
+        start = source.floc
+        try:
+            while 1:
+                tok = next()
+                if tok == 'trailer':
+                    break
+                startobj = int(tok)
+                for objnum in range(startobj, startobj + int(next())):
+                    offset = int(next())
+                    generation = int(next())
+                    if next() == 'n' and offset != 0:
+                        setdefault((objnum, generation), offset)
+        except:
+            source.floc = start
+            source.exception('Invalid table format')
 
     def readpages(self, node, pagename=PdfName.Page, pagesname=PdfName.Pages):
         # PDFs can have arbitrarily nested Pages/Page
@@ -291,11 +310,11 @@ class PdfReader(PdfDict):
 
             assert fdata is not None
             if not fdata.startswith('%PDF-'):
-                raise PdfStructureError(fdata, 0, 'Invalid PDF header', fdata[:20])
+                raise PdfParseError('Invalid PDF header: %s' % repr(fdata[:20].splitlines()[0]))
 
             endloc = fdata.rfind('%%EOF')
             if endloc < 0:
-                raise PdfStructureError(fdata, len(fdata)-20, 'EOF mark not found')
+                raise PdfParseError('EOF mark not found: %s' % repr(fdata[-20:]))
             endloc += 6
             junk = fdata[endloc:]
             fdata = fdata[:endloc]
@@ -320,7 +339,7 @@ class PdfReader(PdfDict):
                 self.parsexref(source)
                 tok = source.next()
                 if tok != '<<':
-                    raise PdfStructureError(source.fdata, source.floc, 'Invalid xref', tok)
+                    source.exception('Expected "<<" starting cross-reference table')
                 # Do not overwrite preexisting entries
                 newdict = self.readdict(source).copy()
                 newdict.update(self)
@@ -329,7 +348,7 @@ class PdfReader(PdfDict):
                 # Loop if any previously-written tables.
                 token = source.next()
                 if token != 'startxref':
-                    raise PdfStructureError(source.fdata, source.floc, 'Invalid xref', token)
+                    source.exception('Expected "startxref" at end of xref table')
                 if self.Prev is None:
                     break
                 source.floc = int(self.Prev)

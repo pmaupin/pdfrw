@@ -15,12 +15,13 @@ from __future__ import generators
 import re
 import itertools
 from pdfobjects import PdfString, PdfObject
-from pdflog import log
+from pdferrors import log, PdfParseError
 
-def countlines(fdata, loc):
+def linepos(fdata, loc):
     line = fdata.count('\n', 0, loc) + 1
     line += fdata.count('\r', 0, loc) - fdata.count('\r\n', 0, loc)
-    return line
+    col = loc - max(fdata.rfind('\n', 0, loc), fdata.rfind('\r', 0, loc))
+    return line, col
 
 class PdfTokens(object):
 
@@ -70,21 +71,21 @@ class PdfTokens(object):
             cache[result] = result
         return result
 
-    def _fixname(cache, token, constructor, splitname=splitname, join=''.join, cacheobj=_cacheobj):
+    def fixname(self, cache, token, constructor, splitname=splitname, join=''.join, cacheobj=_cacheobj):
         ''' Inside name tokens, a '#' character indicates that
             the next two bytes are hex characters to be used
             to form the 'real' character.
         '''
         substrs = splitname(token)
         if '#' in join(substrs[::2]):
-            log.warning('Invalid name token: %s' % repr(token))
+            self.warning('Invalid /Name token')
             return token
-        substrs[1::2] = (int(x, 16) for x in substrs[1::2])
+        substrs[1::2] = (chr(int(x, 16)) for x in substrs[1::2])
         result = cacheobj(cache, join(substrs), constructor)
         result.encoded = token
         return result
 
-    def _gettoks(self, startloc, fixname=_fixname, cacheobj=_cacheobj,
+    def _gettoks(self, startloc, cacheobj=_cacheobj,
                        delimiters=delimiters, findtok=findtok, findparen=findparen,
                        PdfString=PdfString, PdfObject=PdfObject):
         ''' Given a source data string and a location inside it,
@@ -101,6 +102,7 @@ class PdfTokens(object):
         '''
         fdata = self.fdata
         current = self.current = [(startloc, startloc)]
+        namehandler = (cacheobj, self.fixname)
         cache = {}
         while 1:
             for match in findtok(fdata, current[0][1]):
@@ -112,7 +114,7 @@ class PdfTokens(object):
                 elif firstch in '/<(%':
                     if firstch == '/':
                         # PDF Name
-                        token = (cacheobj, fixname)['#' in token](cache, token, PdfObject)
+                        token = namehandler['#' in token](cache, token, PdfObject)
                     elif firstch == '<':
                         # << dict delim, or < hex string >
                         if token[1:2] != '<':
@@ -131,23 +133,26 @@ class PdfTokens(object):
                                 nest += 1 - (fdata[loc-1] == ')') * 2
                                 if not nest:
                                     break
-                            else:
-                                log.error('Unterminated literal string on line %d' %
-                                    countlines(fdata, m_start))
                             token = fdata[m_start:loc]
                             current[0] = m_start, match.end()
+                            if nest:
+                                self.error('Unterminated literal string')
+                                token += ' )'
+                                current[0] = m_start, m_start+1
                         token = cacheobj(cache, token, PdfString)
                     elif firstch == '%':
                         # Comment
                         if self.strip_comments:
                             continue
                     else:
-                        assert 0  # Should never get here
+                        self.exception('Tokenizer logic incorrect -- should never get here')
 
                 yield token
                 if current[0] is not tokspan:
                     break
             else:
+                if self.strip_comments:
+                    raise ValueError
                 raise StopIteration
 
     def __init__(self, fdata, startloc=0, strip_comments=True):
@@ -170,6 +175,13 @@ class PdfTokens(object):
         return self.current[0][1]
     floc = property(floc, setstart)
 
+    def tokstart(self):
+        ''' Return the file position of the most
+            recently retrieved token.
+        '''
+        return self.current[0][0]
+    tokstart = property(tokstart, setstart)
+
     def __iter__(self):
         return self.iterator
 
@@ -177,3 +189,30 @@ class PdfTokens(object):
         ''' Retrieve multiple tokens
         '''
         return list(islice(self, count))
+
+    def next_default(self, default='nope'):
+        for result in self:
+            return result
+        return default
+
+    def msg(self, msg, *arg):
+        if arg:
+            msg %= arg
+        fdata = self.fdata
+        begin, end = self.current[0]
+        line, col = linepos(fdata, begin)
+        if end > begin:
+            tok = fdata[begin:end].rstrip()
+            if len(tok) > 30:
+                tok = tok[:26] + ' ...'
+            return '%s (line=%d, col=%d, token=%s)' % (msg, line, col, repr(tok))
+        return '%s (line=%d, col=%d)' % (msg, line, col)
+
+    def warning(self, *arg):
+        log.warning(self.msg(*arg))
+
+    def error(self, *arg):
+        log.error(self.msg(*arg))
+
+    def exception(self, *arg):
+        raise PdfParseError(self.msg(*arg))
