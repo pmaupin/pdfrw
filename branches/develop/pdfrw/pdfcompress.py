@@ -19,13 +19,14 @@ import zlib
 from pdfobjects import PdfDict, PdfName
 from pdferrors import log
 
-def streamobjects(mylist):
+def streamobjects(mylist, isinstance, PdfDict=PdfDict):
     for obj in mylist:
         if isinstance(obj, PdfDict) and obj.stream is not None:
             yield obj
 
-def uncompress(mylist, warnings=set()):
-    flate = PdfName.FlateDecode
+def uncompress(mylist, warnings=set(), flate = PdfName.FlateDecode,
+                    decompress=zlib.decompressobj, isinstance=isinstance, list=list, len=len):
+    ok = True
     for obj in streamobjects(mylist):
         ftype = obj.Filter
         if ftype is None:
@@ -39,11 +40,13 @@ def uncompress(mylist, warnings=set()):
             if msg not in warnings:
                 warnings.add(msg)
                 log.warning(msg)
+            ok = False
         else:
-            dco = zlib.decompressobj()
+            dco = decompress()
             obj.stream = dco.decompress(obj.stream)
             assert not dco.unused_data and not dco.unconsumed_tail
             obj.Filter = None
+    return ok
 
 def compress(mylist):
     flate = PdfName.FlateDecode
