@@ -17,7 +17,7 @@ except NameError:
 
 import zlib
 from pdfobjects import PdfDict, PdfName
-from pdflog import log
+from pdferrors import log
 
 def streamobjects(mylist):
     for obj in mylist:

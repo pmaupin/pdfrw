@@ -25,8 +25,7 @@ except NameError:
 
 from pdfobjects import PdfName, PdfArray, PdfDict, IndirectPdfDict, PdfObject, PdfString
 from pdfcompress import compress as do_compress
-from pdferrors import PdfOutputError, PdfCircularReferenceError
-from pdflog import log
+from pdferrors import PdfOutputError, PdfCircularReferenceError, log
 
 
 def FormatObjects(f, trailer, version='1.3', compress=True,
