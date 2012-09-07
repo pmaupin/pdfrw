@@ -177,9 +177,9 @@ class PdfReader(PdfDict):
             return
         source.error('Illegal endstream/endobj combination')
 
-    def ordered_offsets(self):
-        obj_offsets = sorted(self.obj_offsets.iteritems(), key=lambda x:x[1])
-        obj_offsets.append((None, len(self.fdata)))
+    def ordered_offsets(self, source):
+        obj_offsets = sorted(source.obj_offsets.iteritems(), key=lambda x:x[1])
+        obj_offsets.append((None, len(source.fdata)))
         for i in range(len(obj_offsets)-1):
             yield obj_offsets[i:i+2]
 
@@ -199,7 +199,7 @@ class PdfReader(PdfDict):
         findstream = self.findstream
         streams = []
 
-        for (key, offset), (key2, offset2) in self.ordered_offsets():
+        for (key, offset), (key2, offset2) in self.ordered_offsets(source):
             # Read the object header and validate it
             objnum, gennum = key
             source.floc = offset
@@ -268,8 +268,8 @@ class PdfReader(PdfDict):
     def parsexref(self, source, int=int, range=range):
         ''' Parse (one of) the cross-reference file section(s)
         '''
-        fdata = self.fdata
-        setdefault = self.obj_offsets.setdefault
+        fdata = source.fdata
+        setdefault = source.obj_offsets.setdefault
         next = source.next
         tok = next()
         if tok != 'xref':
@@ -331,19 +331,18 @@ class PdfReader(PdfDict):
             if junk.rstrip('\00').strip():
                 log.warning('Extra data at end of file')
 
-            self.private.fdata = fdata
-
-            self.private.indirect_objects = {}
-            self.private.special = {'<<': self.readdict,
-                                    '[': self.readarray,
-                                    'endobj': self.empty_obj,
-                                    }
+            private = self.private
+            private.indirect_objects = {}
+            private.special = {'<<': self.readdict,
+                               '[': self.readarray,
+                               'endobj': self.empty_obj,
+                               }
             for tok in r'\ ( ) < > { } ] >> %'.split():
-                self.special[tok] = self.badtoken
+                private.special[tok] = self.badtoken
 
-            self.private.obj_offsets = {}
 
             startloc, source = self.findxref(fdata)
+            source.obj_offsets = {}
             while 1:
                 # Loop through all the cross-reference tables
                 self.parsexref(source)
@@ -365,12 +364,12 @@ class PdfReader(PdfDict):
                 self.Prev = None
 
             self.read_all_indirect(source)
-            self.private.pages = self.readpages(self.Root.Pages)
+            private.pages = self.readpages(self.Root.Pages)
             if decompress:
                 self.uncompress()
 
             # For compatibility with pyPdf
-            self.private.numPages = len(self.pages)
+            private.numPages = len(self.pages)
         finally:
             if disable_gc:
                 gc.enable()
