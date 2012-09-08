@@ -9,18 +9,12 @@ into streams.)  The object subclasses PdfDict, and the
 document pages are stored in a list in the pages attribute
 of the object.
 '''
-
-try:
-    set
-except NameError:
-    from sets import Set as set
-
 import gc
 
-from pdferrors import PdfParseError, log
-from pdftokens import PdfTokens
-from pdfobjects import PdfDict, PdfArray, PdfName, PdfObject
-from pdfcompress import uncompress
+from pdfrw.errors import PdfParseError, log
+from pdfrw.tokens import PdfTokens
+from pdfrw.objects import PdfDict, PdfArray, PdfName, PdfObject
+from pdfrw.uncompress import uncompress
 
 class PdfReader(PdfDict):
 
@@ -254,7 +248,7 @@ class PdfReader(PdfDict):
         '''
         startloc = fdata.rfind('startxref')
         if startloc < 0:
-            raise PdfParseError('Did not find trailer ("startxref") at end of file')
+            raise PdfParseError('Did not find "startxref" at end of file')
         source = PdfTokens(fdata, startloc, False)
         assert source.next() == 'startxref'  # (We just checked this...)
         tableloc = source.next_default()
@@ -338,7 +332,7 @@ class PdfReader(PdfDict):
                                'endobj': self.empty_obj,
                                }
             for tok in r'\ ( ) < > { } ] >> %'.split():
-                private.special[tok] = self.badtoken
+                self.special[tok] = self.badtoken
 
 
             startloc, source = self.findxref(fdata)

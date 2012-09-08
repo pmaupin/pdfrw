@@ -23,9 +23,9 @@ try:
 except NameError:
     from sets import Set as set
 
-from pdfobjects import PdfName, PdfArray, PdfDict, IndirectPdfDict, PdfObject, PdfString
-from pdfcompress import compress as do_compress
-from pdferrors import PdfOutputError, PdfCircularReferenceError, log
+from pdfrw.objects import PdfName, PdfArray, PdfDict, IndirectPdfDict, PdfObject, PdfString
+from pdfrw.compress import compress as do_compress
+from pdfrw.errors import PdfOutputError, PdfCircularReferenceError, log
 
 
 def FormatObjects(f, trailer, version='1.3', compress=True,

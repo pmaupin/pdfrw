@@ -7,17 +7,9 @@ Currently, this sad little file only knows how to decompress
 using the flate (zlib) algorithm.  Maybe more later, but it's
 not a priority for me...
 '''
-
-from __future__ import generators
-
-try:
-    set
-except NameError:
-    from sets import Set as set
-
 import zlib
-from pdfobjects import PdfDict, PdfName
-from pdferrors import log
+from pdfrw.objects import PdfDict, PdfName
+from pdfrw.errors import log
 
 def streamobjects(mylist, isinstance, PdfDict=PdfDict):
     for obj in mylist:
@@ -47,16 +39,3 @@ def uncompress(mylist, warnings=set(), flate = PdfName.FlateDecode,
             assert not dco.unused_data and not dco.unconsumed_tail
             obj.Filter = None
     return ok
-
-def compress(mylist):
-    flate = PdfName.FlateDecode
-    for obj in streamobjects(mylist):
-        ftype = obj.Filter
-        if ftype is not None:
-            continue
-        oldstr = obj.stream
-        newstr = zlib.compress(oldstr)
-        if len(newstr) < len(oldstr) + 30:
-            obj.stream = newstr
-            obj.Filter = flate
-            obj.DecodeParms = None

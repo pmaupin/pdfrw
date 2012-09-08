@@ -14,8 +14,8 @@ from __future__ import generators
 
 import re
 import itertools
-from pdfobjects import PdfString, PdfObject
-from pdferrors import log, PdfParseError
+from pdfrw.objects import PdfString, PdfObject
+from pdfrw.errors import log, PdfParseError
 
 def linepos(fdata, loc):
     line = fdata.count('\n', 0, loc) + 1
