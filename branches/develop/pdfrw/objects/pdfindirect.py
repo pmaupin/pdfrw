@@ -2,15 +2,19 @@
 # Copyright (C) 2006-2012 Patrick Maupin, Austin, Texas
 # MIT license -- See LICENSE.txt for details
 
+class _NotLoaded(object):
+    pass
+
 class PdfIndirect(tuple):
     ''' A placeholder for an object that hasn't been read in yet.
         The object itself is the (object number, generation number) tuple.
         The attributes include information about where the object is
         referenced from and the file object to retrieve the real object from.
     '''
+    value = _NotLoaded
 
-    def __init__(self, reader):
-        self.reader = reader
-
-    def real_value(self):
-        return reader(self)
+    def real_value(self, NotLoaded=_NotLoaded):
+        value = self.value
+        if value is NotLoaded:
+            value = self.value = self._loader(self)
+        return value

@@ -121,6 +121,9 @@ class PdfDict(dict):
             self[key] = value = value.real_value()
         return value
 
+    def __getitem__(self, key):
+        return self.get(key)
+
     def __setattr__(self, name, value, special=_special.get, PdfName=PdfName, vars=vars):
         ''' Set an attribute on the dictionary.  Handle the keywords
             indirect, stream, and _stream specially (for content objects)

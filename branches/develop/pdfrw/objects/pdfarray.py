@@ -3,6 +3,7 @@
 # MIT license -- See LICENSE.txt for details
 
 from pdfrw.objects.pdfindirect import PdfIndirect
+from pdfrw.objects.pdfobject import PdfObject
 
 def _resolved():
     pass
@@ -13,16 +14,21 @@ class PdfArray(list):
     '''
     __slots__ = 'indirect _resolve'.split()
 
-    def __init__(self):
+    def __init__(self, source=[]):
         self.indirect = False
         self._resolve = self._resolver
+        self.extend(source)
 
     def _resolver(self, isinstance=isinstance, enumerate=enumerate,
                         listiter=list.__iter__,
-                        PdfIndirect=PdfIndirect, resolved=_resolved):
+                        PdfIndirect=PdfIndirect, resolved=_resolved,
+                        PdfNull=PdfObject('null')):
         for index, value in enumerate(list.__iter__(self)):
                 if isinstance(value, PdfIndirect):
-                    self[index] = value.real_value()
+                    value = value.real_value()
+                    if value is None:
+                        value = PdfNull
+                    self[index] = value
         self._resolve = resolved
 
     def __getitem__(self, index, listget=list.__getitem__):
