@@ -20,7 +20,7 @@ log = logging.getLogger('pdfrw')
 class PdfError(Exception):
     "Abstract base class of exceptions thrown by this module"
     def __init__(self, msg):
-        self.msg = ''
+        self.msg = msg
     def __str__(self):
         return self.msg
 
