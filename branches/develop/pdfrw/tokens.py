@@ -125,20 +125,30 @@ class PdfTokens(object):
                         # Nested parentheses are a bear, and if
                         # they are present, we exit the for loop
                         # and get back in with a new starting location.
+                        ends = None  # For broken strings
                         if fdata[match.end(1)-1] != ')':
                             nest = 2
                             m_start, loc = tokspan
                             for match in findparen(fdata, loc):
                                 loc = match.end(1)
-                                nest += 1 - (fdata[loc-1] == ')') * 2
+                                ending = fdata[loc-1] == ')'
+                                nest += 1 - ending * 2
                                 if not nest:
                                     break
+                                if ending and ends is None:
+                                    ends = loc, match.end(), nest
                             token = fdata[m_start:loc]
                             current[0] = m_start, match.end()
                             if nest:
-                                self.error('Unterminated literal string')
-                                token += ' )'
-                                current[0] = m_start, m_start+1
+                                # There is one possible recoverable error seen in
+                                # the wild -- some stupid generators don't escape (.
+                                # If this happens, just terminate on first unescaped ).
+                                # The string won't be quite right, but that's a science
+                                # fair project for another time.
+                                (self.error, self.exception)[not ends]('Unterminated literal string')
+                                loc, ends, nest = ends
+                                token = fdata[m_start:loc] + ')' * nest
+                                current[0] = m_start, ends
                         token = cacheobj(cache, token, PdfString)
                     elif firstch == '%':
                         # Comment
