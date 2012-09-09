@@ -200,7 +200,7 @@ class PdfReader(PdfDict):
 
         # Mark the object as indirect, and
         # add it to the list of streams if it starts a stream
-        obj.indirect = True
+        obj.indirect = key
         tok = source.next()
         if tok != 'endobj':
             self.readstream(obj, self.findstream(obj, tok, source), source)
