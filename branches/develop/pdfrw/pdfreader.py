@@ -85,8 +85,6 @@ class PdfReader(PdfDict):
             file.  Back up so the caller sees the endobj.
         '''
         source.floc = source.tokstart
-        # TODO:  Change to None and check
-        return PdfObject('')
 
     def badtoken(self, source):
         ''' Didn't see that coming.
@@ -138,7 +136,7 @@ class PdfReader(PdfDict):
         #TODO:  Extract maxstream from dictionary of object offsets
         # and use rfind instead of find.
         maxstream = len(fdata) - 20
-        endstream = fdata.rfind('endstream', startstream, maxstream)
+        endstream = fdata.find('endstream', startstream, maxstream)
         source.floc = startstream
         room = endstream - startstream
         if endstream < 0:

@@ -28,8 +28,6 @@ class PdfString(str):
 
     hex_funcs = hex_func, hex_func2
 
-    indirect = False
-
     def decode_regular(self, remap=chr):
         assert self[0] == '(' and self[-1] == ')'
         mylist = self.unescape_func(self[1:-1])
