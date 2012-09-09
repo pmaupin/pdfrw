@@ -7,25 +7,18 @@ Currently, this sad little file only knows how to decompress
 using the flate (zlib) algorithm.  Maybe more later, but it's
 not a priority for me...
 '''
-
-from __future__ import generators
-
-try:
-    set
-except NameError:
-    from sets import Set as set
-
 import zlib
-from pdfobjects import PdfDict, PdfName
-from pdflog import log
+from pdfrw.objects import PdfDict, PdfName
+from pdfrw.errors import log
 
-def streamobjects(mylist):
+def streamobjects(mylist, isinstance, PdfDict=PdfDict):
     for obj in mylist:
         if isinstance(obj, PdfDict) and obj.stream is not None:
             yield obj
 
-def uncompress(mylist, warnings=set()):
-    flate = PdfName.FlateDecode
+def uncompress(mylist, warnings=set(), flate = PdfName.FlateDecode,
+                    decompress=zlib.decompressobj, isinstance=isinstance, list=list, len=len):
+    ok = True
     for obj in streamobjects(mylist):
         ftype = obj.Filter
         if ftype is None:
@@ -39,21 +32,10 @@ def uncompress(mylist, warnings=set()):
             if msg not in warnings:
                 warnings.add(msg)
                 log.warning(msg)
+            ok = False
         else:
-            dco = zlib.decompressobj()
+            dco = decompress()
             obj.stream = dco.decompress(obj.stream)
             assert not dco.unused_data and not dco.unconsumed_tail
             obj.Filter = None
-
-def compress(mylist):
-    flate = PdfName.FlateDecode
-    for obj in streamobjects(mylist):
-        ftype = obj.Filter
-        if ftype is not None:
-            continue
-        oldstr = obj.stream
-        newstr = zlib.compress(oldstr)
-        if len(newstr) < len(oldstr) + 30:
-            obj.stream = newstr
-            obj.Filter = flate
-            obj.DecodeParms = None
+    return ok

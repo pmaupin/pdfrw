@@ -1,5 +1,5 @@
 # A part of pdfrw (pdfrw.googlecode.com)
-# Copyright (C) 2006-2009 Patrick Maupin, Austin, Texas
+# Copyright (C) 2006-2012 Patrick Maupin, Austin, Texas
 # MIT license -- See LICENSE.txt for details
 
 '''
@@ -28,9 +28,9 @@ Reference for content:   Adobe PDF reference, sixth edition, version 1.7
         Form xobjects discussed chapter 4.9, page 355
 '''
 
-from pdfobjects import PdfDict, PdfArray, PdfName
-from pdfreader import PdfReader
-from pdflog import log
+from pdfrw.objects import PdfDict, PdfArray, PdfName
+from pdfrw.pdfreader import PdfReader
+from pdfrw.errors import log
 
 class ViewInfo(object):
     ''' Instantiate ViewInfo with a uri, and it will parse out
@@ -83,6 +83,9 @@ def get_rotation(rotate):
     return rotate / 90
 
 def rotate_point(point, rotation):
+    ''' Rotate an (x,y) coordinate clockwise by a 
+        rotation code specifying a multiple of 90 degrees.
+    '''
     if rotation & 1:
         point = point[1], -point[0]
     if rotation & 2:
