@@ -311,9 +311,12 @@ class PdfReader(PdfDict):
                 if hasattr(fname, 'read'):
                     fdata = fname.read()
                 else:
-                    f = open(fname, 'rb')
-                    fdata = f.read()
-                    f.close()
+                    try:
+                        f = open(fname, 'rb')
+                        fdata = f.read()
+                        f.close()
+                    except IOError:
+                        raise PdfParseError('Could not read PDF file %s' % fname)
 
             assert fdata is not None
             if not fdata.startswith('%PDF-'):
