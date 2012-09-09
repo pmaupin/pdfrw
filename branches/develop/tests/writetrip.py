@@ -51,6 +51,7 @@ try:
     for fname in allfiles:
         #print >> sys.stderr, "File name", fname
         print "File name", fname
+        sys.stdout.flush()
         start = time.time()
         try:
             test_pdf(fname)
