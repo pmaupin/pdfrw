@@ -217,7 +217,7 @@ class PdfReader(PdfDict):
         tableloc = source.next_default()
         if not tableloc.isdigit():
             source.exception('Expected table location')
-        if source.next_default().rstrip() != '%%EOF':
+        if source.next_default().rstrip().lstrip('%') != 'EOF':
             source.exception('Expected %%EOF')
         return startloc, PdfTokens(fdata, int(tableloc), True)
     findxref = staticmethod(findxref)
@@ -236,29 +236,67 @@ class PdfReader(PdfDict):
             while 1:
                 tok = next()
                 if tok == 'trailer':
-                    break
+                    return
                 startobj = int(tok)
                 for objnum in range(startobj, startobj + int(next())):
                     offset = int(next())
                     generation = int(next())
-                    if next() == 'n' and offset != 0:
+                    inuse = next()
+                    if inuse == 'n':
+                        if offset != 0:
+                            setdefault((objnum, generation), offset)
+                    elif inuse != 'f':
+                        raise ValueError
+        except:
+            pass
+        try:
+        # Table formatted incorrectly.  See if we can figure it out anyway.
+            end = source.fdata.rindex('trailer', start)
+            table = source.fdata[start:end].splitlines()
+            for line in table:
+                tokens = line.split()
+                if len(tokens) == 2:
+                    objnum = int(tokens[0])
+                elif len(tokens) == 3:
+                    offset, generation, inuse = int(tokens[0]), int(tokens[1]), tokens[2]
+                    if offset != 0 and inuse == 'n':
                         setdefault((objnum, generation), offset)
+                    objnum += 1
+                elif tokens:
+                    log.error('Invalid line in xref table: %s' % repr(line))
+                    raise ValueError
+            log.warning('Badly formatted xref table')
+            source.floc = end
+            source.next()
         except:
             source.floc = start
             source.exception('Invalid table format')
 
-    def readpages(self, node, pagename=PdfName.Page, pagesname=PdfName.Pages):
+    def readpages(self, node):
+        pagename=PdfName.Page
+        pagesname=PdfName.Pages
+        catalogname = PdfName.Catalog
+        typename = PdfName.Type
+        kidname = PdfName.Kids
+
         # PDFs can have arbitrarily nested Pages/Page
         # dictionary structures.
-        if node.Type == pagename:
-            return [node]
-        if node.Type != pagesname:
-            raise PdfParseError('Expected /Page or /Pages dictionary, got %s' % repr(node))
-        result = []
-        subnodes = node.Kids
-        for node in node.Kids:
-            result.extend(self.readpages(node))
-        return result
+        def readnode(node):
+            nodetype = node[typename]
+            if nodetype == pagename:
+                return [node]
+            if nodetype == pagesname:
+                return [readnode(node) for node in node[kidname]]
+            elif nodetype == catalogname:
+                return readnode(node[pagesname])
+            else:
+                log.error('Expected /Page or /Pages dictionary, got %s' % repr(node))
+                return []
+        try:
+            return readnode(node)
+        except (AttributeError, TypeError), s:
+            log.error('Invalid page tree: %s' % s)
+            return []
 
     def __init__(self, fname=None, fdata=None, decompress=False, disable_gc=True):
 
@@ -288,7 +326,7 @@ class PdfReader(PdfDict):
                         raise PdfParseError('Empty PDF file!')
                     raise PdfParseError('Invalid PDF header: %s' % repr(lines[0]))
 
-            endloc = fdata.rfind('%%EOF')
+            endloc = fdata.rfind('%EOF')
             if endloc < 0:
                 raise PdfParseError('EOF mark not found: %s' % repr(fdata[-20:]))
             endloc += 6
@@ -331,7 +369,7 @@ class PdfReader(PdfDict):
                 self.Prev = None
 
             #self.read_all_indirect(source)
-            private.pages = self.readpages(self.Root.Pages)
+            private.pages = self.readpages(self.Root)
             #if decompress:
             #    self.uncompress()
 

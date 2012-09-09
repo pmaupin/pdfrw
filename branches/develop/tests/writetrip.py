@@ -55,6 +55,7 @@ try:
         try:
             test_pdf(fname)
         except Exception, s:
+            sys.stderr.flush()
             ok = False
             if isinstance(s, PdfParseError):
                 print '[ERROR]', s
@@ -62,10 +63,11 @@ try:
                 print traceback.format_exc()[:2000]
             #raise
         else:
+            sys.stderr.flush()
             ok = True
         elapsed = time.time() - start
 
-        print ok and "OK" or "Failed miserably."
+        print ok and "[OK]" or "[FAIL]"
         print
         (badfiles, goodfiles)[ok].append(fname)
         times.append((elapsed, fname))
