@@ -10,18 +10,17 @@ import hashlib
 
 #gc.disable()
 
-args = sys.argv[1:]
-if args:
-    sys.path.insert(0, args[0])
+sys.path.insert(0, '../../PyPDF2/')
 
-try:
-    import pdfrw
-except ImportError:
-    import find_pdfrw
-
+import PyPDF2
+import find_pdfrw
 import pdfrw
 
-from pdfrw import PdfReader, PdfWriter, PdfDict, PdfName, IndirectPdfDict, PdfArray, PdfParseError
+from PyPDF2 import PdfFileReader, PdfFileWriter
+
+import find_pdfrw
+from pdfrw import PdfReader, PdfWriter, PdfParseError
+
 
 allfiles = (x.split('#',1)[0] for x in open('data/allpdfs.txt').read().splitlines())
 allfiles = [x for x in allfiles if x]
@@ -36,16 +35,21 @@ outdir = 'testout'
 if not os.path.exists(outdir):
     os.mkdir(outdir)
 
+if 0:
+    reader, writer = PyPDF2.PdfFileReader, PyPDF2.PdfFileWriter
+else:
+    reader, writer = pdfrw.PdfReader, pdfrw.PdfWriter
+pdferr = pdfrw.PdfParseError
+
 def test_pdf(pdfname):
     outfn = os.path.join(outdir, hashlib.md5(pdfname).hexdigest() + '.pdf')
-    trailer = PdfReader(pdfname, decompress=False)
-    try:
-        trailer.Info.OriginalFileName = pdfname
-    except AttributeError:
-        trailer.OriginalFileName = pdfname
-    writer = PdfWriter()
-    writer.trailer = trailer
-    writer.write(outfn)
+    pdf_in = reader(open(pdfname))
+    pdf_out = writer()
+    for pg_num in range(pdf_in.numPages):
+        pdf_out.addPage(pdf_in.getPage(pg_num))
+    out_stream = open(outfn, "wb")
+    pdf_out.write(out_stream)
+    out_stream.close()
 
 try:
     for fname in allfiles:
@@ -92,5 +96,3 @@ print >> f
 for stuff in times:
     print >> f, '%0.2f %s' % stuff
 f.close()
-
-print pdfrw.__file__

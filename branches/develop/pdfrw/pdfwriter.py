@@ -25,7 +25,7 @@ except NameError:
 
 from pdfrw.objects import PdfName, PdfArray, PdfDict, IndirectPdfDict, PdfObject, PdfString
 from pdfrw.compress import compress as do_compress
-from pdfrw.errors import PdfOutputError, PdfCircularReferenceError, log
+from pdfrw.errors import PdfOutputError, log
 
 def FormatObjects(f, trailer, version='1.3', compress=True,
         id=id, isinstance=isinstance, getattr=getattr,len=len,
@@ -53,7 +53,9 @@ def FormatObjects(f, trailer, version='1.3', compress=True,
 
         if not indirect:
             if objid in visited:
-                raise PdfCircularReferenceError(obj)
+                log.warning('Replicating direct %s object, should be indirect for optimal file size' % type(obj))
+                obj = type(obj)(obj)
+                objid = id(obj)
             visiting(objid)
             result = format_obj(obj)
             leaving(objid)
