@@ -16,7 +16,7 @@ class _DictSearch(object):
         visited = set()
         mydict = self.basedict
         while 1:
-            value = getattr(mydict, name)
+            value = mydict[name]
             if value is not None:
                 return value
             myid = id(mydict)
