@@ -287,16 +287,18 @@ class PdfReader(PdfDict):
         def readnode(node):
             nodetype = node[typename]
             if nodetype == pagename:
-                return [node]
-            if nodetype == pagesname:
-                return [readnode(node) for node in node[kidname]]
+                yield node
+            elif nodetype == pagesname:
+                for node in node[kidname]:
+                    for node in readnode(node):
+                        yield node
             elif nodetype == catalogname:
-                return readnode(node[pagesname])
+                for node in readnode(node[pagesname]):
+                    yield node
             else:
                 log.error('Expected /Page or /Pages dictionary, got %s' % repr(node))
-                return []
         try:
-            return readnode(node)
+            return list(readnode(node))
         except (AttributeError, TypeError), s:
             log.error('Invalid page tree: %s' % s)
             return []

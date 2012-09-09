@@ -12,10 +12,9 @@ class PdfArray(list):
     ''' A PdfArray maps the PDF file array object into a Python list.
         It has an indirect attribute which defaults to False.
     '''
-    __slots__ = 'indirect _resolve'.split()
+    indirect = False
 
     def __init__(self, source=[]):
-        self.indirect = False
         self._resolve = self._resolver
         self.extend(source)
 
