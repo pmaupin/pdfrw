@@ -6,6 +6,7 @@ import os
 import traceback
 import time
 import gc
+import hashlib
 
 #gc.disable()
 
@@ -20,35 +21,54 @@ except ImportError:
 
 import pdfrw
 
-from pdfrw import PdfReader, PdfWriter, PdfDict, PdfName, IndirectPdfDict, PdfArray
+from pdfrw import PdfReader, PdfWriter, PdfDict, PdfName, IndirectPdfDict, PdfArray, PdfParseError
 
 allfiles = (x.split('#',1)[0] for x in open('data/allpdfs.txt').read().splitlines())
 allfiles = [x for x in allfiles if x]
-
-def test_pdf(pdfname):
-    PdfReader(pdfname, decompress=False)
-    return '%0.2f' % (time.time() - start)
 
 badfiles = []
 goodfiles = []
 times = []
 
+sys.setrecursionlimit(20000)
+
+outdir = 'testout'
+if not os.path.exists(outdir):
+    os.mkdir(outdir)
+
+def test_pdf(pdfname):
+    outfn = os.path.join(outdir, hashlib.md5(pdfname).hexdigest() + '.pdf')
+    trailer = PdfReader(pdfname, decompress=False)
+    try:
+        trailer.Info.OriginalFileName = pdfname
+    except AttributeError:
+        trailer.OriginalFileName = pdfname
+    #writer = PdfWriter()
+    #writer.trailer = trailer
+    #writer.write(outfn)
+
 try:
     for fname in allfiles:
         #print >> sys.stderr, "File name", fname
         print "File name", fname
+        sys.stdout.flush()
         start = time.time()
         try:
             test_pdf(fname)
-        except Exception:
+        except Exception, s:
+            sys.stderr.flush()
             ok = False
-            print traceback.format_exc()[:2000]
+            if isinstance(s, PdfParseError):
+                print '[ERROR]', s
+            else:
+                print traceback.format_exc()[:2000]
             #raise
         else:
+            sys.stderr.flush()
             ok = True
         elapsed = time.time() - start
 
-        print ok and "OK" or "Failed miserably."
+        print ok and "[OK]" or "[FAIL]"
         print
         (badfiles, goodfiles)[ok].append(fname)
         times.append((elapsed, fname))

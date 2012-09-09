@@ -227,6 +227,7 @@ class PdfReader(PdfDict):
         '''
         fdata = source.fdata
         setdefault = source.obj_offsets.setdefault
+        add_offset = source.all_offsets.append
         next = source.next
         tok = next()
         if tok != 'xref':
@@ -245,6 +246,7 @@ class PdfReader(PdfDict):
                     if inuse == 'n':
                         if offset != 0:
                             setdefault((objnum, generation), offset)
+                            add_offset(offset)
                     elif inuse != 'f':
                         raise ValueError
         except:
@@ -261,6 +263,7 @@ class PdfReader(PdfDict):
                     offset, generation, inuse = int(tokens[0]), int(tokens[1]), tokens[2]
                     if offset != 0 and inuse == 'n':
                         setdefault((objnum, generation), offset)
+                        add_offset(offset)
                     objnum += 1
                 elif tokens:
                     log.error('Invalid line in xref table: %s' % repr(line))
@@ -350,31 +353,46 @@ class PdfReader(PdfDict):
 
             startloc, source = self.findxref(fdata)
             private.source = source
-            source.obj_offsets = {}
+            xref_table_list = []
+            source.all_offsets = []
             while 1:
+                source.obj_offsets = {}
                 # Loop through all the cross-reference tables
                 self.parsexref(source)
                 tok = source.next()
                 if tok != '<<':
-                    source.exception('Expected "<<" starting cross-reference table')
-                # Do not overwrite preexisting entries
-                newdict = self.readdict(source).copy()
-                newdict.update(self)
-                self.update(newdict)
+                    source.exception('Expected "<<" starting catalog')
+
+                newdict = self.readdict(source)
+
+                token = source.next()
+                if token != 'startxref' and not xref_table_list:
+                    source.warning('Expected "startxref" at end of xref table')
 
                 # Loop if any previously-written tables.
-                token = source.next()
-                if token != 'startxref':
-                    source.exception('Expected "startxref" at end of xref table')
-                if self.Prev is None:
+                prev = newdict.Prev
+                if prev is None:
                     break
-                source.floc = int(self.Prev)
-                self.Prev = None
+                if not xref_table_list:
+                    newdict.Prev = None
+                    original_indirect = self.indirect_objects.copy()
+                    original_newdict = newdict
+                source.floc = int(prev)
+                xref_table_list.append(source.obj_offsets)
+                self.indirect_objects.clear()
+
+            if xref_table_list:
+                for update in reversed(xref_table_list):
+                    source.obj_offsets.update(update)
+                self.indirect_objects.clear()
+                self.indirect_objects.update(original_indirect)
+                newdict = original_newdict
+            self.update(newdict)
 
             #self.read_all_indirect(source)
             private.pages = self.readpages(self.Root)
-            #if decompress:
-            #    self.uncompress()
+            if decompress:
+                log.warn('Global decompress option has been removed because pdfrw now reads lazily.')
 
             # For compatibility with pyPdf
             private.numPages = len(self.pages)
@@ -385,6 +403,3 @@ class PdfReader(PdfDict):
     # For compatibility with pyPdf
     def getPage(self, pagenum):
         return self.pages[pagenum]
-
-    #def uncompress(self):
-    #    uncompress([x[1] for x in self.indirect_objects.itervalues()])
