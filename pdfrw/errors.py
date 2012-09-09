@@ -19,29 +19,13 @@ log = logging.getLogger('pdfrw')
 
 class PdfError(Exception):
     "Abstract base class of exceptions thrown by this module"
-    pass
+    def __init__(self, msg):
+        self.msg = msg
+    def __str__(self):
+        return self.msg
 
 class PdfParseError(PdfError):
     "Error thrown by parser/tokenizer"
 
-###########################################################
-# Deprecating rest of module as being too specific.
-# These errors are most likely not recoverable.  Any
-# recovery would have to be really smart, and could parse
-# the error text quite easily.
-
-PDF_ERROR_CONTEXT = 10
-
 class PdfOutputError(PdfError):
-    "Base class for PDF output errors"
-    def __init__(self, msg):
-        self.msg = ''
-    def __str__(self):
-        return self.msg
-
-class PdfCircularReferenceError(PdfOutputError):
-    def __init__(self, obj):
-        PdfOutputError.__init__(self,
-            'Circular reference encountered in non-indirect object %s' % repr(obj))
-        self.obj = obj
-
+    "Error thrown by PDF writer"
