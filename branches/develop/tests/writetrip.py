@@ -30,6 +30,8 @@ badfiles = []
 goodfiles = []
 times = []
 
+sys.setrecursionlimit(20000)
+
 outdir = 'testout'
 if not os.path.exists(outdir):
     os.mkdir(outdir)
@@ -37,7 +39,10 @@ if not os.path.exists(outdir):
 def test_pdf(pdfname):
     outfn = os.path.join(outdir, hashlib.md5(pdfname).hexdigest() + '.pdf')
     trailer = PdfReader(pdfname, decompress=False)
-    trailer.Info.OriginalFileName = pdfname
+    try:
+        trailer.Info.OriginalFileName = pdfname
+    except AttributeError:
+        trailer.OriginalFileName = pdfname
     writer = PdfWriter()
     writer.trailer = trailer
     writer.write(outfn)

@@ -22,8 +22,8 @@ class PdfReader(PdfDict):
     warned_bad_stream_end = False  # Use to keep from spewing warnings
 
     def findindirect(self, objnum, gennum, PdfIndirect=PdfIndirect, int=int):
-        ''' Read an indirect object.  If it has already
-            been read, return it from the cache.
+        ''' Return a previously loaded indirect object, or create
+            a placeholder for it.
         '''
         key = int(objnum), int(gennum)
         result = self.indirect_objects.get(key)
@@ -168,6 +168,9 @@ class PdfReader(PdfDict):
         source.error('Illegal endstream/endobj combination')
 
     def loadindirect(self, key):
+        result = self.indirect_objects.get(key)
+        if not isinstance(result, PdfIndirect):
+            return result
         source = self.source
         offset = int(self.source.obj_offsets.get(key, '0'))
         if not offset:
@@ -178,9 +181,10 @@ class PdfReader(PdfDict):
         objnum, gennum = key
         source.floc = offset
         objid = source.multiple(3)
-        ok = objid[2] == 'obj'
+        ok = len(objid) == 3
         ok = ok and objid[0].isdigit() and int(objid[0]) == objnum
         ok = ok and objid[1].isdigit() and int(objid[1]) == gennum
+        ok = ok and objid[2] == 'obj'
         if not ok:
             source.floc = offset
             source.next()

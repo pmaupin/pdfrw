@@ -4,6 +4,7 @@
 
 from pdfrw.objects.pdfname import PdfName
 from pdfrw.objects.pdfindirect import PdfIndirect
+from pdfrw.objects.pdfobject import PdfObject
 
 class _DictSearch(object):
     '''  Used to search for inheritable attributes.

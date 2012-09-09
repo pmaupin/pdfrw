@@ -27,7 +27,6 @@ from pdfrw.objects import PdfName, PdfArray, PdfDict, IndirectPdfDict, PdfObject
 from pdfrw.compress import compress as do_compress
 from pdfrw.errors import PdfOutputError, PdfCircularReferenceError, log
 
-
 def FormatObjects(f, trailer, version='1.3', compress=True,
         id=id, isinstance=isinstance, getattr=getattr,len=len,
         sum=sum, set=set, str=str, basestring=basestring,
