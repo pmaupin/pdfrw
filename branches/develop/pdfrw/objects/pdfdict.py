@@ -155,6 +155,13 @@ class PdfDict(dict):
             yield value
     def values(self):
         return list((value for key, value in self.iteritems()))
+    def keys(self):
+        return list((key for key, value in self.iteritems()))
+    def __iter__(self):
+        for key, value in self.iteritems():
+            yield key
+    def iterkeys(self):
+        return iter(self)
 
     def copy(self):
         return type(self)(self)

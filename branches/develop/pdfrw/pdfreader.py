@@ -171,7 +171,7 @@ class PdfReader(PdfDict):
         source = self.source
         offset = int(self.source.obj_offsets.get(key, '0'))
         if not offset:
-            log.warning("Did not find PDF object %s" % key)
+            log.warning("Did not find PDF object %s" % (key,))
             return None
 
         # Read the object header and validate it
