@@ -21,7 +21,7 @@ except ImportError:
 
 import pdfrw
 
-from pdfrw import PdfReader, PdfWriter, PdfDict, PdfName, IndirectPdfDict, PdfArray
+from pdfrw import PdfReader, PdfWriter, PdfDict, PdfName, IndirectPdfDict, PdfArray, PdfParseError
 
 allfiles = (x.split('#',1)[0] for x in open('data/allpdfs.txt').read().splitlines())
 allfiles = [x for x in allfiles if x]
@@ -54,9 +54,12 @@ try:
         start = time.time()
         try:
             test_pdf(fname)
-        except Exception:
+        except Exception, s:
             ok = False
-            print traceback.format_exc()[:2000]
+            if isinstance(s, PdfParseError):
+                print '[ERROR]', s
+            else:
+                print traceback.format_exc()[:2000]
             #raise
         else:
             ok = True

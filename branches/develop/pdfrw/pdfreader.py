@@ -252,7 +252,8 @@ class PdfReader(PdfDict):
         # dictionary structures.
         if node.Type == pagename:
             return [node]
-        assert node.Type == pagesname, node.Type
+        if node.Type != pagesname:
+            raise PdfParseError('Expected /Page or /Pages dictionary, got %s' % repr(node))
         result = []
         subnodes = node.Kids
         for node in node.Kids:
@@ -278,7 +279,14 @@ class PdfReader(PdfDict):
 
             assert fdata is not None
             if not fdata.startswith('%PDF-'):
-                raise PdfParseError('Invalid PDF header: %s' % repr(fdata[:20].splitlines()[0]))
+                startloc = fdata.find('%PDF-')
+                if startloc >= 0:
+                    log.warning('PDF header not at beginning of file')
+                else:
+                    lines = fdata.lstrip().splitlines()
+                    if not lines:
+                        raise PdfParseError('Empty PDF file!')
+                    raise PdfParseError('Invalid PDF header: %s' % repr(lines[0]))
 
             endloc = fdata.rfind('%%EOF')
             if endloc < 0:
