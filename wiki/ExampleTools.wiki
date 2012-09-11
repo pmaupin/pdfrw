@@ -22,6 +22,9 @@ An example which converts a PDF into a 4-up PDF:
 An example which upsizes a letter-sized PDF to a 48 x 36" poster:
   http://code.google.com/p/pdfrw/source/browse/trunk/examples/poster.py
 
+A tiny example which will rotate all or selected pages in a PDF file:
+  http://code.google.com/p/pdfrw/source/browse/trunk/examples/rotate.py
+
 == Slightly more complicated -- booklet ==
 
 A printer with a fancy printer and/or a full-up copy of Acrobat can easily turn your small PDF into a little booklet (for example, print 4 letter-sized pages on a single 11" x 17").
