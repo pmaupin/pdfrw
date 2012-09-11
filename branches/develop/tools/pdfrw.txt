@@ -17,10 +17,6 @@ Model
 The model for both the library and the utility will be that of a
 single document, with operations to be done on the document.
 
-The document can have additional buffers.  The main buffer is
-unnamed, and there is a copy/paste buffer, and optional additional
-named buffers.
-
 The new class will be called Document, and the utility that
 works on documents will simply be named pdfrw.
 
@@ -40,9 +36,8 @@ Any *pages attribute can be satisfied as follows:
     notation is used, but indexing is always 1-based (but ending
     page is -1).  Slice stride is supported (allows for even/odd
     operation, for example).
-  - If parenthesis-delimited string is given, it is a buffer name,
-    and any subsequent pages given imply that buffer until another
-    buffer name is given.
+  - If a string is given, it is a buffer name, and any subsequent
+    pages given imply that buffer until another buffer name is given.
 
 class methods:
 
@@ -75,11 +70,13 @@ class methods:
     document.scale_x(factor, *pages):
     document.scale_y(factor, *pages):
         Scaling is done in-place.
-        factor could be "xxx" where "xxx" is named page size
+        factor could be "xxx" where "xxx" is named page size,
+        in which case the default page margin will be applied.
 
     document.crop(x1, y1, x2, y2, *pages):
     document.move(h_displacement, v_displacement, *pages):
-        Cropping and moving are done in-place.
+        Cropping and moving are done in-place.  Displacement
+        is in points unless suffixed with 'cm' or 'in'.
 
     document.tile(x, y, *pages):
         Create new pages tiled x-wide and y-high, and place
@@ -88,9 +85,17 @@ class methods:
     document.write(fname, *pages):
         Writes document to file.  Default is entire main document.
 
+    document.margin(*margin_info):
+        Margin info is in points (or inches or cm).
+        Sub commands can give 'top', 'bottom', 'left', 'right',
+        or 'row' or 'column' margins.
 
-    --- ADD properties for dealing with metadata
-    --- ADD margin info for printing
+        Used for scaling and tiling.  Defaults to size of margin
+        on page being scaled, or first page of a set of pages
+        being tiled.
+
+    --- ADD properties for dealing with metadata -- setting
+        producer, author name, title, etc.
 
 Utility program
 ===============
@@ -109,19 +114,24 @@ one-based.  For a 6 page document, the following are equivalent: "2-4", "2:5",
 The stride can be used for subsetting, but the colon syntax is required:
 "1::2" or "2::2" will get odd or even numbered pages.
 
+Named buffers are supported by placing the buffer name in parentheses,
+to distinguish it from potential commands, e.g. "(0)" or "(murgatroyd)".
+
 If the output file is not given, it will default to the name of the
 input file, prefixed by 'pdfrw_'.  By default, the program will automatically
-backup the output file with an incrementing extension that starts with '.bak.000'
+backup the output file with an incrementing extension that starts with '.bak.000',
+but this could be disabled with a command line option such as -n.
 
-Additional command options such as -h for help, -c or -f for command file, etc.
-should be supported.
+Additional command options such as -h for help, -c or -f for command file,
+-q for quiet, etc. should be supported.  Could maybe use argparse, but we
+want to support negative numbers for ranges, so that should be done with care.
 
 The actual commands follow directly from the document class methods.  Shortened
 unambiguous command names should be supported (this is easy to automate).
 
 Examples:
 
-  Two-up letter:
+  Two-up portrait letter letter:
 
     pdfrw input.pdf tile 2 1 replace rotate 90 scale letter rotate -90 -o output.pdf
 
