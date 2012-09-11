@@ -14,7 +14,7 @@ It does not currently support:
   * PDF v. 1.5 compressed object streams
   * encryption
 
-[http://www.accesspdf.com/pdftk/ pdftk] is a wonderful command-line tool that can convert your PDFs to remove encryption and compression.
+[http://www.accesspdf.com/pdftk/ pdftk] is a wonderful command-line tool that can convert your PDFs to remove encryption and compression.  However, in most cases, you can do a lot of useful work with PDFs without actually removing compression, because only certain elements inside PDFs are actually compressed.  (This changes somewhat with PDFs designed for version 1.15 and above of the specification.)
 
 == Higher-level capabilities ==
 
