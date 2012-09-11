@@ -1,0 +1,127 @@
+
+===========================================
+Definition for new pdfrw command line tool
+===========================================
+
+Goal
+======
+
+Develop:
+  - A module that handles common PDF operations; and
+  - A useful command line utility that uses the new module
+
+
+Model
+======
+
+The model for both the library and the utility will be that of a
+single document, with operations to be done on the document.
+
+The document can have additional buffers.  The main buffer is
+unnamed, and there is a copy/paste buffer, and optional additional
+named buffers.
+
+The new class will be called Document, and the utility that
+works on documents will simply be named pdfrw.
+
+Document class
+===============
+
+An instantiation of the document class can optionally be passed
+a PDF file to populate into the document.  A document is one or
+more linear collections of pages.  The collections can be named;
+the default collection is unnamed.
+
+Any *pages attribute can be satisfied as follows:
+
+  - If no pages given, implies the entire main (unnamed doc)
+  - if integers given, implies page numbers
+  - If slice given, implies a subset of pages.  Regular slice
+    notation is used, but indexing is always 1-based (but ending
+    page is -1).  Slice stride is supported (allows for even/odd
+    operation, for example).
+  - If parenthesis-delimited string is given, it is a buffer name,
+    and any subsequent pages given imply that buffer until another
+    buffer name is given.
+
+class methods:
+
+    document.add(fname, *pages) :
+      If pages is given, those pages from the new file are inserted into the doc.
+
+    document.cut(*pages):
+    document.copy(*pages):
+    document.delete(*pages):
+       cut, copy, or delete pages
+
+    document.paste(*pages):
+       Pastes into the doc.
+       Default is to paste entire copy buffer at end of main doc.
+
+    document.replace(*pages):
+        Replaces given pages (default entire main buffer)
+        with contents of copy buffer.
+
+    document.rotate(clockwise_degrees, *pages):
+    document.mirror(h_or_v, *pages)
+       Rotates or mirrors set of pages in place.
+
+    document.over(pagenum, *pages):
+    document.under(pagenum, *pages):
+        over/underlay is done in place.
+        overlay or underlay given pages with page
+
+    document.scale(factor, *pages):
+    document.scale_x(factor, *pages):
+    document.scale_y(factor, *pages):
+        Scaling is done in-place.
+        factor could be "xxx" where "xxx" is named page size
+
+    document.crop(x1, y1, x2, y2, *pages):
+    document.move(h_displacement, v_displacement, *pages):
+        Cropping and moving are done in-place.
+
+    document.tile(x, y, *pages):
+        Create new pages tiled x-wide and y-high, and place
+        them in copy buffer.
+
+    document.write(fname, *pages):
+        Writes document to file.  Default is entire main document.
+
+
+    --- ADD properties for dealing with metadata
+    --- ADD margin info for printing
+
+Utility program
+===============
+
+The utility program will be named, aptly enough, 'pdfrw.'
+
+pdfrw <inpfile> [command] [command ...] [-o <outfile>]
+
+The command options will follow directly from the document object methods.
+
+Page ranges can be given multiple ways.  The idea is to give an optional,
+gentle introduction to python range concepts, but keep the page numbering
+one-based.  For a 6 page document, the following are equivalent: "2-4", "2:5",
+ "-5:-2", and even "2:5:" or "2:5:1".
+
+The stride can be used for subsetting, but the colon syntax is required:
+"1::2" or "2::2" will get odd or even numbered pages.
+
+If the output file is not given, it will default to the name of the
+input file, prefixed by 'pdfrw_'.  By default, the program will automatically
+backup the output file with an incrementing extension that starts with '.bak.000'
+
+Additional command options such as -h for help, -c or -f for command file, etc.
+should be supported.
+
+The actual commands follow directly from the document class methods.  Shortened
+unambiguous command names should be supported (this is easy to automate).
+
+Examples:
+
+  Two-up letter:
+
+    pdfrw input.pdf tile 2 1 replace rotate 90 scale letter rotate -90 -o output.pdf
+
