@@ -6,8 +6,7 @@ usage:   print_two.py my.pdf
 Creates print_two.my.pdf
 
 This is only useful when you can cut down sheets of paper to make two
-small documents.  Works for double-sided only right now.  Needs
-uncompressed PDF.
+small documents.  Works for double-sided only right now.
 
 '''
 
@@ -15,7 +14,7 @@ import sys
 import os
 
 import find_pdfrw
-from pdfrw import PdfReader, PdfWriter, PdfArray
+from pdfrw import PdfReader, PdfWriter, PdfArray, IndirectPdfDict
 
 def fixpage(page, count=[0]):
     count[0] += 1
@@ -35,16 +34,20 @@ def fixpage(page, count=[0]):
     page.Rotate = (int(page.Rotate or 0) + 90) % 360
 
     contents = page.Contents
-    assert contents.Filter is None, "Must decompress page first"
+    if contents is None:
+        return page
+    contents = isinstance(contents, dict) and [contents] or contents
 
-    stream = contents.stream
-    stream = '0 1 -1 0 %s %s cm\n%s' % (finalsize[0], 0, stream)
-
+    prefix = '0 1 -1 0 %s %s cm\n' % (finalsize[0], 0)
     if evenpage:
-        stream = '1 0 0 1 %s %s cm\n%s' % (0, finalsize[1]/2, stream)
-
-    stream = 'q\n-1 0 0 -1 %s %s cm\n%s\nQ\n%s' % (finalsize + (stream,stream))
-    contents.stream = stream
+        prefix = '1 0 0 1 %s %s cm\n' % (0, finalsize[1]/2) +  prefix
+    first_prefix = 'q\n-1 0 0 -1 %s %s cm\n' % finalsize + prefix
+    second_prefix = '\nQ\n' + prefix
+    first_prefix = IndirectPdfDict(stream=first_prefix)
+    second_prefix = IndirectPdfDict(stream=second_prefix)
+    contents = PdfArray(([second_prefix] + contents) * 2)
+    contents[0] = first_prefix
+    page.Contents = contents
     return page
 
 

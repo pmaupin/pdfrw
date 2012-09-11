@@ -51,8 +51,8 @@ def fixpage(page, watermark):
 
 def watermark(input_fname, watermark_fname, output_fname=None):
     outfn = output_fname or ('watermark.' + os.path.basename(input_fname))
-    w = pagexobj(PdfReader(watermark_fname, decompress=False).pages[0])
-    pages = PdfReader(input_fname, decompress=False).pages
+    w = pagexobj(PdfReader(watermark_fname).pages[0])
+    pages = PdfReader(input_fname).pages
     PdfWriter().addpages([fixpage(x, w) for x in pages]).write(outfn)
     return outfn
 
@@ -60,8 +60,8 @@ def fix_pdf(fname, watermark_fname, indir, outdir):
     from os import mkdir, path
     if not path.exists(outdir):
         mkdir(outdir)
-    watermark = pagexobj(PdfReader(watermark_fname, decompress=False).pages[0])
-    trailer = PdfReader(path.join(indir, fname), decompress=False)
+    watermark = pagexobj(PdfReader(watermark_fname).pages[0])
+    trailer = PdfReader(path.join(indir, fname))
     for page in trailer.pages:
         fixpage(page, watermark)
     PdfWriter().write(path.join(outdir, fname), trailer)
@@ -99,9 +99,9 @@ if __name__ == "__main__":
     options, args = parser.parse_args()
     
     if options.input_fname and options.watermark_fname:
-        watermark = pagexobj(PdfReader(options.watermark_fname, decompress=False).pages[0])
+        watermark = pagexobj(PdfReader(options.watermark_fname).pages[0])
         outfn = 'watermark.' + os.path.basename(options.input_fname)
-        pages = PdfReader(options.input_fname, decompress=False).pages
+        pages = PdfReader(options.input_fname).pages
         
         PdfWriter().addpages([fixpage(x, watermark) for x in pages]).write(outfn)
     

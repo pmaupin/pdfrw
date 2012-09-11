@@ -45,7 +45,7 @@ def go(argv):
     inpfn, = argv
     outfn = '4up.' + os.path.basename(inpfn)
 
-    pages = PdfReader(inpfn, decompress=False).pages
+    pages = PdfReader(inpfn).pages
     pages = [pagexobj(x) for x in pages]
     canvas = Canvas(outfn)
 

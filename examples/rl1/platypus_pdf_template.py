@@ -43,7 +43,7 @@ class MyTemplate(PageTemplate):
             )]
         PageTemplate.__init__(self, name, frames)
         # use first page as template
-        page = PdfReader(pdf_template_filename, decompress=False).pages[0]
+        page = PdfReader(pdf_template_filename).pages[0]
         self.page_template = pagexobj(page)
         # Scale it to fill the complete page
         self.page_xscale = PAGE_WIDTH/self.page_template.BBox[2]

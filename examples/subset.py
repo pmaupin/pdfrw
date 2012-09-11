@@ -17,6 +17,6 @@ inpfn, firstpage, lastpage = sys.argv[1:]
 firstpage, lastpage = int(firstpage), int(lastpage)
 
 outfn = 'subset_%s_to_%s.%s' % (firstpage, lastpage, os.path.basename(inpfn))
-pages = PdfReader(inpfn, decompress=False).pages
+pages = PdfReader(inpfn).pages
 pages = pages[firstpage-1:lastpage]
 PdfWriter().addpages(pages).write(outfn)

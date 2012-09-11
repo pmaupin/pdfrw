@@ -49,7 +49,7 @@ def fixpage(*pages):
 
 inpfn, = sys.argv[1:]
 outfn = 'booklet.' + os.path.basename(inpfn)
-pages = PdfReader(inpfn, decompress=False).pages
+pages = PdfReader(inpfn).pages
 
 # Use page1 as a marker to print a blank at the end
 if len(pages) & 1:

@@ -25,7 +25,9 @@ def trypath(newpath):
 root = trypath(__file__) or trypath(os.path.realpath(__file__))
 
 if root is None:
-    raise SystemExit('%s: Could not find path to package %s' % (__file__, myname))
-
-if root not in sys.path:
+    print
+    print 'Warning: %s: Could not find path to development package %s' % (__file__, myname)
+    print '             The import will either fail or will use system-installed libraries'
+    print
+elif root not in sys.path:
     sys.path.append(root)
