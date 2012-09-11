@@ -1,6 +1,10 @@
 #summary pdfrw source files
 #labels Featured
 
+== Needs work! ==
+
+pdfrw has been reorganized recently, and does not map to the file layout below.
+
 == Introduction ==
 
 The pdfrw library is currently a single Python package with 7 sub-modules.
