@@ -12,6 +12,8 @@ poster.py -- Changes the size of a PDF to create a poster
 
 print_two.py  -- this is used when printing two cut-down copies on a single sheet of paper (double-sided)  Requires uncompressed PDF.
 
+rotate.py -- This will rotate selected ranges of pages within a document.
+
 subset.py -- This will retrieve a subset of pages from a document.
 
 watermark.py  -- Adds a watermark to a PDF
