@@ -44,7 +44,7 @@ def adjust(page):
     )
 
 def go(inpfn, outfn):
-    reader = PdfReader(inpfn, decompress=False)
+    reader = PdfReader(inpfn)
     page, = reader.pages
     writer = PdfWriter()
     writer.addpage(adjust(page))

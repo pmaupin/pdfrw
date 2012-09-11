@@ -39,7 +39,7 @@ def get4(allpages):
     )
 
 def go(inpfn, outfn):
-    pages = PdfReader(inpfn, decompress=False).pages
+    pages = PdfReader(inpfn).pages
     writer = PdfWriter()
     while pages:
         writer.addpage(get4(pages))

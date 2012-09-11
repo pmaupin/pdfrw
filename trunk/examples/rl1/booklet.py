@@ -22,7 +22,7 @@ from pdfrw.toreportlab import makerl
 
 
 def read_and_double(inpfn):
-    pages = PdfReader(inpfn, decompress=False).pages
+    pages = PdfReader(inpfn).pages
     pages = [pagexobj(x) for x in pages]
     if len(pages) & 1:
         pages.append(pages[0])  # Sentinel -- get same size for back as front
