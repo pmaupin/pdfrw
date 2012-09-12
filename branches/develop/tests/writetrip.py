@@ -48,6 +48,7 @@ def test_pdf(pdfname):
     writer.write(outfn)
 
 try:
+    first_start_time = time.time()
     for fname in allfiles:
         #print >> sys.stderr, "File name", fname
         print "File name", fname
@@ -73,10 +74,10 @@ try:
         (badfiles, goodfiles)[ok].append(fname)
         times.append((elapsed, fname))
 except KeyboardInterrupt:
-    raise
     pass
 
 print "Total = %s, good = %s, bad = %s" % (len(times), len(goodfiles), len(badfiles))
+print "Execution time = %0.2f" % (time.time() - first_start_time)
 
 times.sort()
 times.reverse()
