@@ -83,7 +83,7 @@ def FormatObjects(f, trailer, version='1.3', compress=True, killobj=(),
             objnum = len(objlist) + 1
             objlist_append(None)
             indirect_dict[objid] = objnum
-            objlist[objnum-1] = format_obj(obj)
+            deferred.append((objnum-1, obj))
         return '%s 0 R' % objnum
 
     def format_array(myarray, formatter):
@@ -137,6 +137,11 @@ def FormatObjects(f, trailer, version='1.3', compress=True, killobj=(),
                 return encode(obj)
             return str(getattr(obj, 'encoded', obj))
 
+    def format_deferred():
+        while deferred:
+            index, obj = deferred.pop()
+            objlist[index] = format_obj(obj)
+
 
     indirect_dict = {}
     indirect_dict_get = indirect_dict.get
@@ -149,6 +154,8 @@ def FormatObjects(f, trailer, version='1.3', compress=True, killobj=(),
     lf_join = '\n  '.join
     f_write = f.write
 
+    deferred = []
+
     # Don't reference old catalog or pages objects -- swap references to new ones.
     swapobj = {PdfName.Catalog:trailer.Root, PdfName.Pages:trailer.Root.Pages, None:trailer}.get
     swapobj = [(objid, swapobj(obj.Type)) for objid, obj in killobj.iteritems()]
@@ -160,6 +167,10 @@ def FormatObjects(f, trailer, version='1.3', compress=True, killobj=(),
     # The first format of trailer gets all the information,
     # but we throw away the actual trailer formatting.
     format_obj(trailer)
+    # Keep formatting until we're done.
+    # (Used to recurse inside format_obj for this, but
+    #  hit system limit.)
+    format_deferred()
     # Now we know the size, so we update the trailer dict
     # and get the formatted data.
     trailer.Size = PdfObject(len(objlist) + 1)

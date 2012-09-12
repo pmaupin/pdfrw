@@ -30,8 +30,6 @@ badfiles = []
 goodfiles = []
 times = []
 
-sys.setrecursionlimit(20000)
-
 outdir = 'testout'
 if not os.path.exists(outdir):
     os.mkdir(outdir)
