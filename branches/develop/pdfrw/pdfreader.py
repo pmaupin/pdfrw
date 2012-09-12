@@ -413,7 +413,7 @@ class PdfReader(PdfDict):
         deferred = self.deferred_objects
         prev = set()
         while 1:
-            new = list(deferred - prev)
+            new = deferred - prev
             if not new:
                 break
             prev |= deferred
