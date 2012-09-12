@@ -35,6 +35,7 @@ def FormatObjects(f, trailer, version='1.3', compress=True, killobj=(),
         id=id, isinstance=isinstance, getattr=getattr,len=len,
         sum=sum, set=set, str=str, basestring=basestring,
         hasattr=hasattr, repr=repr, enumerate=enumerate,
+        list=list, dict=dict, tuple=tuple,
         do_compress=do_compress, PdfArray=PdfArray,
         PdfDict=PdfDict, PdfObject=PdfObject, encode=PdfString.encode):
     ''' FormatObjects performs the actual formatting and disk write.
@@ -110,27 +111,32 @@ def FormatObjects(f, trailer, version='1.3', compress=True, killobj=(),
             return references for indirect objects, and add
             the indirect object to the list.
         '''
-        if isinstance(obj, PdfArray):
-            myarray = [add(x) for x in obj]
-            return format_array(myarray, '[%s]')
-        elif isinstance(obj, PdfDict):
-            if compress and obj.stream:
-                do_compress([obj])
-            myarray = []
-            dictkeys = [str(x) for x in obj.keys()]
-            dictkeys.sort()
-            for key in dictkeys:
-                myarray.append(key)
-                myarray.append(add(obj[key]))
-            result = format_array(myarray, '<<%s>>')
-            stream = obj.stream
-            if stream is not None:
-                result = '%s\nstream\n%s\nendstream' % (result, stream)
-            return result
-        elif isinstance(obj, basestring) and not hasattr(obj, 'indirect'):
-            return encode(obj)
-        else:
+        while 1:
+            if isinstance(obj, (list, dict, tuple)):
+                if isinstance(obj, PdfArray):
+                    myarray = [add(x) for x in obj]
+                    return format_array(myarray, '[%s]')
+                elif isinstance(obj, PdfDict):
+                    if compress and obj.stream:
+                        do_compress([obj])
+                    myarray = []
+                    dictkeys = [str(x) for x in obj.keys()]
+                    dictkeys.sort()
+                    for key in dictkeys:
+                        myarray.append(key)
+                        myarray.append(add(obj[key]))
+                    result = format_array(myarray, '<<%s>>')
+                    stream = obj.stream
+                    if stream is not None:
+                        result = '%s\nstream\n%s\nendstream' % (result, stream)
+                    return result
+                obj = (PdfArray, PdfDict)[isinstance(obj, dict)](obj)
+                continue
+
+            if not hasattr(obj, 'indirect') and isinstance(obj, basestring):
+                return encode(obj)
             return str(getattr(obj, 'encoded', obj))
+
 
     indirect_dict = {}
     indirect_dict_get = indirect_dict.get
