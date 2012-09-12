@@ -55,7 +55,7 @@ The !PdfReader object is a subclass of !PdfDict, which allows easy access to an 
 indirect_objects and pages are internally generated, while Info, Size, and Root are retrieved from the trailer of the PDF file.  The only real use for indirect_objects
 is to do debugging.
 
-pages, however, is possibly the most useful attribute of the PdfReader object.  It is a list of all the pages in the document.  It is created because the PDF format allows arbitrarily complicated nested dictionaries to describe the page order.  Each entry in the pages list is the !PdfDict object for one of the pages in the file, in order.
+pages, however, is possibly the most useful attribute of the !PdfReader object.  It is a list of all the pages in the document.  It is created because the PDF format allows arbitrarily complicated nested dictionaries to describe the page order.  Each entry in the pages list is the !PdfDict object for one of the pages in the file, in order.
 
 {{{
 >>> len(x.pages)
