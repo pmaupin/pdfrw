@@ -7,7 +7,7 @@ The [http://code.google.com/p/pdfrw/source/browse/trunk/pdfrw/ pdfrw library] cu
 
 The [http://code.google.com/p/pdfrw/source/browse/trunk/pdfrw/__init__.py __init__.py] module does the usual thing of importing a few major attributes from some of the submodules, and the [http://code.google.com/p/pdfrw/source/browse/trunk/pdfrw/errors.py errors.py] module supports logging and exception generation.
 
-== PDF object representations ==
+== PDF ObjectModel support ==
 
 The [http://code.google.com/p/pdfrw/source/browse/trunk/pdfrw/objects/ objects sub-package] contains files (and corresponding modules) for each of the internal representations of the kinds of basic objects that exist in a PDF file, with the [http://code.google.com/p/pdfrw/source/browse/trunk/pdfrw/objects/__init__.py objects/__init__.py] in that module simply gathering them up and making them available to the main pdfrw package.
 
