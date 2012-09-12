@@ -29,6 +29,7 @@ class PdfReader(PdfDict):
         result = self.indirect_objects.get(key)
         if result is None:
             self.indirect_objects[key] = result = PdfIndirect(key)
+            self.deferred_objects.add(key)
             result._loader = self.loadindirect
         return result
 
@@ -197,6 +198,7 @@ class PdfReader(PdfDict):
             obj = func(source)
 
         self.indirect_objects[key] = obj
+        self.deferred_objects.remove(key)
 
         # Mark the object as indirect, and
         # add it to the list of streams if it starts a stream
@@ -345,6 +347,7 @@ class PdfReader(PdfDict):
 
             private = self.private
             private.indirect_objects = {}
+            private.deferred_objects = set()
             private.special = {'<<': self.readdict,
                                '[': self.readarray,
                                'endobj': self.empty_obj,
@@ -394,7 +397,7 @@ class PdfReader(PdfDict):
             #self.read_all_indirect(source)
             private.pages = self.readpages(self.Root)
             if decompress:
-                log.warn('Global decompress option has been removed because pdfrw now reads lazily.')
+                self.uncompress()
 
             # For compatibility with pyPdf
             private.numPages = len(self.pages)
@@ -405,3 +408,18 @@ class PdfReader(PdfDict):
     # For compatibility with pyPdf
     def getPage(self, pagenum):
         return self.pages[pagenum]
+
+    def read_all(self):
+        deferred = self.deferred_objects
+        prev = set()
+        while 1:
+            new = list(deferred - prev)
+            if not new:
+                break
+            prev |= deferred
+            for key in new:
+                self.loadindirect(key)
+
+    def uncompress(self):
+        self.read_all()
+        uncompress(self.indirect_objects.itervalues())

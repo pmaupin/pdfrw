@@ -11,7 +11,7 @@ import zlib
 from pdfrw.objects import PdfDict, PdfName
 from pdfrw.errors import log
 
-def streamobjects(mylist, isinstance, PdfDict=PdfDict):
+def streamobjects(mylist, isinstance=isinstance, PdfDict=PdfDict):
     for obj in mylist:
         if isinstance(obj, PdfDict) and obj.stream is not None:
             yield obj

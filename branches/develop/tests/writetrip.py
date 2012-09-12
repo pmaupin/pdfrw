@@ -8,6 +8,8 @@ import time
 import gc
 import hashlib
 
+from sys import stderr
+
 #gc.disable()
 
 args = sys.argv[1:]
@@ -36,6 +38,7 @@ if not os.path.exists(outdir):
 
 def test_pdf(pdfname):
     outfn = os.path.join(outdir, hashlib.md5(pdfname).hexdigest() + '.pdf')
+    print >> stderr, '             ->', outfn
     trailer = PdfReader(pdfname, decompress=False)
     try:
         trailer.Info.OriginalFileName = pdfname
@@ -49,25 +52,25 @@ try:
     first_start_time = time.time()
     for fname in allfiles:
         #print >> sys.stderr, "File name", fname
-        print "File name", fname
+        print >> stderr, "File name", fname
         sys.stdout.flush()
         start = time.time()
         try:
             test_pdf(fname)
         except Exception, s:
-            sys.stderr.flush()
+            stderr.flush()
             ok = False
             if isinstance(s, PdfParseError):
-                print '[ERROR]', s
+                print >> stderr, '[ERROR]', s
             else:
-                print traceback.format_exc()[-2000:]
+                print >> stderr, traceback.format_exc()[-2000:]
             #raise
         else:
-            sys.stderr.flush()
+            stderr.flush()
             ok = True
         elapsed = time.time() - start
 
-        print ok and "[OK]" or "[FAIL]"
+        print >> stderr,  ok and "[OK]" or "[FAIL]"
         print
         (badfiles, goodfiles)[ok].append(fname)
         times.append((elapsed, fname))
