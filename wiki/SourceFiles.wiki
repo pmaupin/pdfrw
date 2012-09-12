@@ -5,11 +5,11 @@
 
 The [http://code.google.com/p/pdfrw/source/browse/trunk/pdfrw/ pdfrw library] currently consists of 16 modules organized into a main package and one sub-package.
 
-The [http://code.google.com/p/pdfrw/source/browse/trunk/pdfrw/__init__.py __init__.py] module does the usual thing of importing a few major attributes from some of the submodules, and the [http://code.google.com/p/pdfrw/source/browse/trunk/pdfrw/errors.py errors.py] supports logging and exception generation.
+The [http://code.google.com/p/pdfrw/source/browse/trunk/pdfrw/__init__.py __init__.py] module does the usual thing of importing a few major attributes from some of the submodules, and the [http://code.google.com/p/pdfrw/source/browse/trunk/pdfrw/errors.py errors.py] module supports logging and exception generation.
 
 == PDF object representations ==
 
-The [http://code.google.com/p/pdfrw/source/browse/trunk/pdfrw/objects/ objects sub-package] contains one file (and a corresponding module) for internal representations of the kinds of basic objects that exist in a PDF file, with the [http://code.google.com/p/pdfrw/source/browse/trunk/pdfrw/objects/__init__.py objects/__init__.py] in that module simply gathering them up and making them available to the main pdfrw package.
+The [http://code.google.com/p/pdfrw/source/browse/trunk/pdfrw/objects/ objects sub-package] contains files (and corresponding modules) for each of the internal representations of the kinds of basic objects that exist in a PDF file, with the [http://code.google.com/p/pdfrw/source/browse/trunk/pdfrw/objects/__init__.py objects/__init__.py] in that module simply gathering them up and making them available to the main pdfrw package.
 
 One feature that all the PDF object classes have in common is the inclusion of an 'indirect' attribute.  If 'indirect' exists and evaluates to True, then when the object is written out, it is written out as an indirect object.  That is to say, it is addressable in the PDF file, and could be referenced by any number (including zero) of container objects.  This indirect object capability allows PDF files to contain internal circular references.
 
