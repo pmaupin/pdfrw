@@ -187,8 +187,15 @@ class PdfReader(PdfDict):
         if not ok:
             source.floc = offset
             source.next()
-            source.warning("Expected indirect object '%d %d obj'" % (objnum, gennum))
-            return None
+            objheader = '%d %d obj' % (objnum, gennum)
+            fdata = source.fdata
+            offset2 = fdata.find('\n' + objheader) + 1 or fdata.find('\r' + objheader) + 1
+            if not offset2 or fdata.find(fdata[offset2-1] + objheader, offset2) > 0:
+                source.warning("Expected indirect object '%s'" % objheader)
+                return None
+            source.warning("Indirect object %s found at incorrect offset %d (expected offset %d)" %
+                                     (objheader, offset2, offset))
+            source.floc = offset2 + len(objheader)
 
         # Read the object, and call special code if it starts
         # an array or dictionary
