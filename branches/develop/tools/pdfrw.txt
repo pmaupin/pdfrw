@@ -41,8 +41,12 @@ Any *pages attribute can be satisfied as follows:
 
 class methods:
 
-    document.add(fname, *pages) :
-      If pages is given, those pages from the new file are inserted into the doc.
+    document.read(fname, *pages) :
+      By default, will concatenate all pages from fname to end of main buffer.
+      If pages is given, will read all pages from fname to given pages.
+      To take partial pages, read into a buffer, then copy/paste
+      from buffer.  It is not an error for *pages to take fewer
+      pages than are in file.
 
     document.cut(*pages):
     document.copy(*pages):
@@ -50,16 +54,17 @@ class methods:
        cut, copy, or delete pages
 
     document.paste(*pages):
-       Pastes into the doc.
+       Pastes copy buffer (most recent cut or copy) into the doc.
        Default is to paste entire copy buffer at end of main doc.
 
     document.replace(*pages):
         Replaces given pages (default entire main buffer)
-        with contents of copy buffer.
+        with contents of copy buffer.  It is not an error
+        for *pages to be smaller than copy buffer.
 
     document.rotate(clockwise_degrees, *pages):
     document.mirror(h_or_v, *pages)
-       Rotates or mirrors set of pages in place.
+       Rotates or mirrors a set of pages in place.
 
     document.over(pagenum, *pages):
     document.under(pagenum, *pages):
