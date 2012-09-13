@@ -35,7 +35,18 @@ def uncompress(mylist, warnings=set(), flate = PdfName.FlateDecode,
             ok = False
         else:
             dco = decompress()
-            obj.stream = dco.decompress(obj.stream)
-            assert not dco.unused_data and not dco.unconsumed_tail
-            obj.Filter = None
+            error = None
+            try:
+                data = dco.decompress(obj.stream)
+            except Exception, s:
+                error = str(s)
+            if error is None:
+                assert not dco.unconsumed_tail
+                if dco.unused_data.strip():
+                    error = 'Unconsumed compression data: %s' % repr(dco.unused_data[:20])
+            if error is None:
+                obj.Filter = None
+                obj.stream = data
+            else:
+                log.error('%s %s' % (error, repr(obj.indirect)))
     return ok
