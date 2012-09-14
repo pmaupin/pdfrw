@@ -14,11 +14,17 @@ Develop:
 Model
 ======
 
-The model for both the library and the utility will be that of a
-single document, with operations to be done on the document.
+The model for both the library and the utility will be an object
+that contains multiple PDF pages in (potentially) multiple
+buffers:
+  - There is a main buffer.  By default, most operations
+    will operate on the entire main buffer.
+  - There is a copy (cut and paste) buffer.  Its operation
+    should be intuitive to any recent computer user.
+  - There are client (user) definable named buffers.
 
 The new class will be called Document, and the utility that
-works on documents will simply be named pdfrw.
+works on these documents will simply be named pdfrw.
 
 Document class
 ===============
@@ -31,64 +37,119 @@ the default collection is unnamed.
 Any *pages attribute can be satisfied as follows:
 
   - If no pages given, implies the entire main (unnamed doc)
-  - if integers given, implies page numbers
+  - if integers given, implies page numbers.  1 is the first
+    page, -1 is the last page.
   - If slice given, implies a subset of pages.  Regular slice
     notation is used, but indexing is always 1-based (but ending
     page is -1).  Slice stride is supported (allows for even/odd
-    operation, for example).
+    operation, for example).  This should be intuitive for normal
+    users, but will be a bit weird for Python programmers, because:
+      - Indexing starts at 1, not zero
+      - The interval will be fully closed, instead of half-open
+        (the last page is specified, not the page after the last page)
+
   - If a string is given, it is a buffer name, and any subsequent
     pages given imply that buffer until another buffer name is given.
+    (If no subsequent numbers are given, then the entire buffer
+    is specified.)
 
 class methods:
 
+    # These two methods may be used by programs, but will not
+    # be directly exposed by the utility program.
+
+    document.add(pagelist, *pages):
+      By default, will add all pages from the list to the end of the main buffer.
+      If pages is given, will add pages from pagelist to given page locations.
+      To take only some pages from list, add into a buffer, then copy/paste
+      from buffer.  It is not an error for *pages to specify fewer
+      pages than are in pagelist -- pages will be taken starting at the
+      beginning of the list.
+
+    document.retrieve(*pages):
+      Creates and returns a list of pages.  By default, will return
+      the entire main buffer.
+
+    # Following methods will all be exposed in utility program.
+
     document.read(fname, *pages) :
-      By default, will concatenate all pages from fname to end of main buffer.
-      If pages is given, will read all pages from fname to given pages.
-      To take partial pages, read into a buffer, then copy/paste
-      from buffer.  It is not an error for *pages to take fewer
-      pages than are in file.
+        Opens a file, reads the pages, and calls self.add() to stuff
+        them into the document.
+
+    document.write(fname, *pages, overwrite=True, backup='.bak_%03d'):
+        Passes the pages to self.retrieve(), and writes the
+        resulting pagelist to the named file.  By default, a file
+        backup will be created if the output file already exists.
+        The backup will be named, e.g. foo.bak_001.pdf
+
 
     document.cut(*pages):
     document.copy(*pages):
     document.delete(*pages):
-       cut, copy, or delete pages
+       cut, copy, or delete pages.  The default is to process the
+       entire main buffer.  If multiple slices are given, extents are
+       calculated before the operation is done, to simplify user
+       calculation of page numbers for delete and cut.
+
+       cut is identical to a copy followed by a delete.
 
     document.paste(*pages):
-       Pastes copy buffer (most recent cut or copy) into the doc.
-       Default is to paste entire copy buffer at end of main doc.
-
-    document.replace(*pages):
-        Replaces given pages (default entire main buffer)
-        with contents of copy buffer.  It is not an error
-        for *pages to be smaller than copy buffer.
+       Pastes copy buffer (from most recent cut, copy, or tile) into
+       the doc.  Paste operates in one of 3 modes:
+         - If no pages, or only a buffer name is given, appends
+           entire copy buffer to the main or the named buffer.
+         - If page ranges are given, will insert pages in the
+           named pages.  To insert a range of pages, you can
+           use, e.g 2:2 to exhaust the copy buffer into a single
+           insertion, or 2:3 to add exactly 2 pages at the location
+           of the current page 2.  Unlike copy and delete, paste does
+           not calculate the extents before doing any operations, so
+           after you insert pages 2 and 3, the prior page 2 will be
+           page 4 before it does the next operation.
+         - The keywords "replace" and "insert" may be used to toggle
+           the operation mode.  In replacement mode, old pages are
+           replaced on a one-for-one basis.  Insert mode never deletes
+           old pages; replacement mode always deletes an existing page
+           for every page it adds.  "replace" and "insert" can be toggled
+           repeatedly until copy buffer is exhausted.  A warning will be
+           issued if copy buffer is exhausted before page selection is
+           fulfilled.
 
     document.rotate(clockwise_degrees, *pages):
-    document.mirror(h_or_v, *pages)
-       Rotates or mirrors a set of pages in place.
+    document.mirror(*pages):
+       Rotates or mirrors a set of pages in place.  Default is entire
+       main buffer.  If 'h' or 'v' is passed to mirror, it defines the
+       axis for mirroring of subsequent pages.  Default is 'h'.
 
-    document.over(pagenum, *pages):
-    document.under(pagenum, *pages):
-        over/underlay is done in place.
-        overlay or underlay given pages with page
+    document.front(*pages):
+    document.back(*pages):
+        Composites page(s) from the copy buffer with
+       *pages.  front places the copy in front of existing
+        pages, and back places the copy behind.
+        The merge is done in place.  For example, to watermark,
+        place a single watermark page in the copy buffer,
+        or two pages to alternate left/right watermarks,
+        and then place the watermark behind or in front
+        of the pages in the main buffer.
 
     document.scale(factor, *pages):
-    document.scale_x(factor, *pages):
-    document.scale_y(factor, *pages):
+    document.scalex(factor, *pages):
+    document.scaley(factor, *pages):
         Scaling is done in-place.
         factor could be "xxx" where "xxx" is named page size,
         in which case the default page margin will be applied.
 
+        .. Note::  Needs some serious thought about margin/scaling semantics.
+
     document.crop(x1, y1, x2, y2, *pages):
     document.move(h_displacement, v_displacement, *pages):
-        Cropping and moving are done in-place.  Displacement
+        Cropping and moving are done in-place on page, e.g. in
+        preparation for compositing with another page.  Displacement
         is in points unless suffixed with 'cm' or 'in'.
 
     document.tile(x, y, *pages):
         Create new pages tiled x-wide and y-high, and place
         them in copy buffer.
-
-    document.write(fname, *pages):
-        Writes document to file.  Default is entire main document.
 
     document.margin(*margin_info):
         Margin info is in points (or inches or cm).
@@ -107,17 +168,18 @@ Utility program
 
 The utility program will be named, aptly enough, 'pdfrw.'
 
-pdfrw <inpfile> [command] [command ...] [-o <outfile>]
+pdfrw [command or <inpfile>] ... [-o <outfile>]
 
 The command options will follow directly from the document object methods.
 
-Page ranges can be given multiple ways.  The idea is to give an optional,
-gentle introduction to python range concepts, but keep the page numbering
-one-based.  For a 6 page document, the following are equivalent: "2-4", "2:5",
- "-5:-2", and even "2:5:" or "2:5:1".
+Page ranges can be given multiple ways.  For a 6 page document, the
+following are equivalent, and will specify the second through fourth (not fifth)
+pages of a document: "2-4", "2:4" "-5:-3", "2:4:", "2:4:1".
 
-The stride can be used for subsetting, but the colon syntax is required:
-"1::2" or "2::2" will get odd or even numbered pages.
+'-' can be used in place of ':' except when a negative page number
+needs to be specified, or when a stride needs to be specified.  For example,
+"1-4" is the same as "1:4", but "1-4-2" is not valid.  Likewise,
+"-1-4" is not valid, but "-1:4" is.
 
 Named buffers are supported by placing the buffer name in parentheses,
 to distinguish it from potential commands, e.g. "(0)" or "(murgatroyd)".
@@ -136,7 +198,7 @@ unambiguous command names should be supported (this is easy to automate).
 
 Examples:
 
-  Two-up portrait letter letter:
+  Two-up portrait letter:
 
-    pdfrw input.pdf tile 2 1 replace rotate 90 scale letter rotate -90 -o output.pdf
+    pdfrw input.pdf tile 2 1 delete paste scale letter -o output.pdf
 
