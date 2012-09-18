@@ -222,7 +222,8 @@ class PdfReader(PdfDict):
         if startloc < 0:
             raise PdfParseError('Did not find "startxref" at end of file')
         source = PdfTokens(fdata, startloc, False)
-        assert source.next() == 'startxref'  # (We just checked this...)
+        tok = source.next()
+        assert tok == 'startxref'  # (We just checked this...)
         tableloc = source.next_default()
         if not tableloc.isdigit():
             source.exception('Expected table location')
