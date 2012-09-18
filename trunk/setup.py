@@ -31,7 +31,7 @@ March 2010.  Several small examples are provided.
         'Operating System :: OS Independent',
         'Programming Language :: Python',
         'Topic :: Multimedia :: Graphics :: Graphics Conversion',
-        'Topic :: Software Development :: Libraries'
+        'Topic :: Software Development :: Libraries',
         'Topic :: Utilities'
     ],
     keywords='pdf vector graphics',
