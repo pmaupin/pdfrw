@@ -29,6 +29,7 @@ class PdfReader(PdfDict):
         result = self.indirect_objects.get(key)
         if result is None:
             self.indirect_objects[key] = result = PdfIndirect(key)
+            self.deferred_objects.add(key)
             result._loader = self.loadindirect
         return result
 
@@ -186,8 +187,15 @@ class PdfReader(PdfDict):
         if not ok:
             source.floc = offset
             source.next()
-            source.warning("Expected indirect object '%d %d obj'" % (objnum, gennum))
-            return None
+            objheader = '%d %d obj' % (objnum, gennum)
+            fdata = source.fdata
+            offset2 = fdata.find('\n' + objheader) + 1 or fdata.find('\r' + objheader) + 1
+            if not offset2 or fdata.find(fdata[offset2-1] + objheader, offset2) > 0:
+                source.warning("Expected indirect object '%s'" % objheader)
+                return None
+            source.warning("Indirect object %s found at incorrect offset %d (expected offset %d)" %
+                                     (objheader, offset2, offset))
+            source.floc = offset2 + len(objheader)
 
         # Read the object, and call special code if it starts
         # an array or dictionary
@@ -197,6 +205,7 @@ class PdfReader(PdfDict):
             obj = func(source)
 
         self.indirect_objects[key] = obj
+        self.deferred_objects.remove(key)
 
         # Mark the object as indirect, and
         # add it to the list of streams if it starts a stream
@@ -213,7 +222,8 @@ class PdfReader(PdfDict):
         if startloc < 0:
             raise PdfParseError('Did not find "startxref" at end of file')
         source = PdfTokens(fdata, startloc, False)
-        assert source.next() == 'startxref'  # (We just checked this...)
+        tok = source.next()
+        assert tok == 'startxref'  # (We just checked this...)
         tableloc = source.next_default()
         if not tableloc.isdigit():
             source.exception('Expected table location')
@@ -345,6 +355,7 @@ class PdfReader(PdfDict):
 
             private = self.private
             private.indirect_objects = {}
+            private.deferred_objects = set()
             private.special = {'<<': self.readdict,
                                '[': self.readarray,
                                'endobj': self.empty_obj,
@@ -394,7 +405,7 @@ class PdfReader(PdfDict):
             #self.read_all_indirect(source)
             private.pages = self.readpages(self.Root)
             if decompress:
-                log.warn('Global decompress option has been removed because pdfrw now reads lazily.')
+                self.uncompress()
 
             # For compatibility with pyPdf
             private.numPages = len(self.pages)
@@ -405,3 +416,18 @@ class PdfReader(PdfDict):
     # For compatibility with pyPdf
     def getPage(self, pagenum):
         return self.pages[pagenum]
+
+    def read_all(self):
+        deferred = self.deferred_objects
+        prev = set()
+        while 1:
+            new = deferred - prev
+            if not new:
+                break
+            prev |= deferred
+            for key in new:
+                self.loadindirect(key)
+
+    def uncompress(self):
+        self.read_all()
+        uncompress(self.indirect_objects.itervalues())

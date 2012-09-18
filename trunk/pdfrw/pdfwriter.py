@@ -35,6 +35,7 @@ def FormatObjects(f, trailer, version='1.3', compress=True, killobj=(),
         id=id, isinstance=isinstance, getattr=getattr,len=len,
         sum=sum, set=set, str=str, basestring=basestring,
         hasattr=hasattr, repr=repr, enumerate=enumerate,
+        list=list, dict=dict, tuple=tuple,
         do_compress=do_compress, PdfArray=PdfArray,
         PdfDict=PdfDict, PdfObject=PdfObject, encode=PdfString.encode):
     ''' FormatObjects performs the actual formatting and disk write.
@@ -82,7 +83,7 @@ def FormatObjects(f, trailer, version='1.3', compress=True, killobj=(),
             objnum = len(objlist) + 1
             objlist_append(None)
             indirect_dict[objid] = objnum
-            objlist[objnum-1] = format_obj(obj)
+            deferred.append((objnum-1, obj))
         return '%s 0 R' % objnum
 
     def format_array(myarray, formatter):
@@ -110,27 +111,37 @@ def FormatObjects(f, trailer, version='1.3', compress=True, killobj=(),
             return references for indirect objects, and add
             the indirect object to the list.
         '''
-        if isinstance(obj, PdfArray):
-            myarray = [add(x) for x in obj]
-            return format_array(myarray, '[%s]')
-        elif isinstance(obj, PdfDict):
-            if compress and obj.stream:
-                do_compress([obj])
-            myarray = []
-            dictkeys = [str(x) for x in obj.keys()]
-            dictkeys.sort()
-            for key in dictkeys:
-                myarray.append(key)
-                myarray.append(add(obj[key]))
-            result = format_array(myarray, '<<%s>>')
-            stream = obj.stream
-            if stream is not None:
-                result = '%s\nstream\n%s\nendstream' % (result, stream)
-            return result
-        elif isinstance(obj, basestring) and not hasattr(obj, 'indirect'):
-            return encode(obj)
-        else:
+        while 1:
+            if isinstance(obj, (list, dict, tuple)):
+                if isinstance(obj, PdfArray):
+                    myarray = [add(x) for x in obj]
+                    return format_array(myarray, '[%s]')
+                elif isinstance(obj, PdfDict):
+                    if compress and obj.stream:
+                        do_compress([obj])
+                    myarray = []
+                    dictkeys = [str(x) for x in obj.keys()]
+                    dictkeys.sort()
+                    for key in dictkeys:
+                        myarray.append(key)
+                        myarray.append(add(obj[key]))
+                    result = format_array(myarray, '<<%s>>')
+                    stream = obj.stream
+                    if stream is not None:
+                        result = '%s\nstream\n%s\nendstream' % (result, stream)
+                    return result
+                obj = (PdfArray, PdfDict)[isinstance(obj, dict)](obj)
+                continue
+
+            if not hasattr(obj, 'indirect') and isinstance(obj, basestring):
+                return encode(obj)
             return str(getattr(obj, 'encoded', obj))
+
+    def format_deferred():
+        while deferred:
+            index, obj = deferred.pop()
+            objlist[index] = format_obj(obj)
+
 
     indirect_dict = {}
     indirect_dict_get = indirect_dict.get
@@ -143,6 +154,8 @@ def FormatObjects(f, trailer, version='1.3', compress=True, killobj=(),
     lf_join = '\n  '.join
     f_write = f.write
 
+    deferred = []
+
     # Don't reference old catalog or pages objects -- swap references to new ones.
     swapobj = {PdfName.Catalog:trailer.Root, PdfName.Pages:trailer.Root.Pages, None:trailer}.get
     swapobj = [(objid, swapobj(obj.Type)) for objid, obj in killobj.iteritems()]
@@ -154,6 +167,10 @@ def FormatObjects(f, trailer, version='1.3', compress=True, killobj=(),
     # The first format of trailer gets all the information,
     # but we throw away the actual trailer formatting.
     format_obj(trailer)
+    # Keep formatting until we're done.
+    # (Used to recurse inside format_obj for this, but
+    #  hit system limit.)
+    format_deferred()
     # Now we know the size, so we update the trailer dict
     # and get the formatted data.
     trailer.Size = PdfObject(len(objlist) + 1)
