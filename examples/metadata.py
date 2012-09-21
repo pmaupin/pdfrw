@@ -28,7 +28,7 @@ outfn = 'output.pdf'
 
 writer = PdfWriter()
 for inpfn in inputs:
-    writer.addpages(PdfReader(inpfn.pages)
+    writer.addpages(PdfReader(inpfn).pages)
 
 writer.trailer.Info = IndirectPdfDict(
     Title = 'your title goes here',
