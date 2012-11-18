@@ -12,7 +12,7 @@ from exceptions import Exception
 
 logging.basicConfig(
     format='[%(levelname)s] %(filename)s:%(lineno)d %(message)s',
-    level=logging.WARNING)
+        level=logging.WARNING)
 
 log = logging.getLogger('pdfrw')
 
@@ -21,11 +21,14 @@ class PdfError(Exception):
     "Abstract base class of exceptions thrown by this module"
     def __init__(self, msg):
         self.msg = msg
+
     def __str__(self):
         return self.msg
 
+
 class PdfParseError(PdfError):
     "Error thrown by parser/tokenizer"
+
 
 class PdfOutputError(PdfError):
     "Error thrown by PDF writer"

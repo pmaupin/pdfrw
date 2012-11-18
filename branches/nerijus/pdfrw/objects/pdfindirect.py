@@ -2,8 +2,10 @@
 # Copyright (C) 2006-2012 Patrick Maupin, Austin, Texas
 # MIT license -- See LICENSE.txt for details
 
+
 class _NotLoaded(object):
     pass
+
 
 class PdfIndirect(tuple):
     ''' A placeholder for an object that hasn't been read in yet.
