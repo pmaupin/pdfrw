@@ -71,12 +71,13 @@ def _makedict(rldoc, pdfobj):
 
     return rlobj
 
+
 def _makestream(rldoc, pdfobj, xobjtype=PdfName.XObject):
     rldict = RLDict()
     rlobj = RLStream(rldict, pdfobj.stream)
 
     if pdfobj.Type == xobjtype:
-        shortname = 'pdfrw_%s' % (rldoc.objectcounter+1)
+        shortname = 'pdfrw_%s' % (rldoc.objectcounter + 1)
         fullname = rldoc.getXObjectName(shortname)
     else:
         shortname = fullname = None
@@ -87,6 +88,7 @@ def _makestream(rldoc, pdfobj, xobjtype=PdfName.XObject):
         rldict[key[1:]] = makerl_recurse(rldoc, value)
 
     return result
+
 
 def _makearray(rldoc, pdfobj):
     rlobj = rlarray = RLArray([])
@@ -101,9 +103,11 @@ def _makearray(rldoc, pdfobj):
 
     return rlobj
 
+
 def _makestr(rldoc, pdfobj):
     assert isinstance(pdfobj, (float, int, str)), repr(pdfobj)
     return pdfobj
+
 
 def makerl_recurse(rldoc, pdfobj):
     docdict = getattr(pdfobj, 'derived_rl_obj', None)
@@ -125,6 +129,7 @@ def makerl_recurse(rldoc, pdfobj):
     else:
         func = _makestr
     return func(rldoc, pdfobj)
+
 
 def makerl(canv, pdfobj):
     try:
