@@ -322,10 +322,9 @@ class PdfReader(PdfDict):
 
                 source.floc = end
                 endit = source.multiple(2)
-                if endit != 'endstream endobj'.split():
+                if endit != ['endstream', 'endobj']:
                     source.exception('Expected endstream endobj')
-                else:
-                    return obj
+                return obj
             else:
                 source.exception('Expected xref stream')
 
