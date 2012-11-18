@@ -253,7 +253,7 @@ class PdfReader(PdfDict):
 
         def convert_to_int(d, size):
             if size > 8:
-                raise Exception('Invalid size in convert_to_int')
+                source.exception('Invalid size in convert_to_int')
             d = '\x00\x00\x00\x00\x00\x00\x00\x00' + d
             d = d[-8:]
             return struct.unpack('>q', d)[0]
@@ -443,6 +443,8 @@ class PdfReader(PdfDict):
                     raise PdfParseError('Invalid PDF header: %s' %
                         repr(lines[0]))
 
+            self.version = fdata[5:8]
+
             endloc = fdata.rfind('%EOF')
             if endloc < 0:
                 raise PdfParseError('EOF mark not found: %s' %
@@ -490,6 +492,10 @@ class PdfReader(PdfDict):
                 for update in reversed(xref_list):
                     source.obj_offsets.update(update)
                 trailer.update(original_trailer)
+
+            if trailer.Version and \
+                    float(trailer.Version) > float(self.version):
+                self.version = trailer.Version
 
             trailer = PdfDict(
                 Root=trailer.Root,
