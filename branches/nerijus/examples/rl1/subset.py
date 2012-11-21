@@ -25,14 +25,15 @@ from pdfrw.toreportlab import makerl
 
 def go(inpfn, firstpage, lastpage):
     firstpage, lastpage = int(firstpage), int(lastpage)
-    outfn = 'subset_%s_to_%s.%s' % (firstpage, lastpage, os.path.basename(inpfn))
+    outfn = 'subset_%s_to_%s.%s' % (firstpage, lastpage,
+        os.path.basename(inpfn))
 
     pages = PdfReader(inpfn).pages
-    pages = [pagexobj(x) for x in pages[firstpage-1:lastpage]]
+    pages = [pagexobj(x) for x in pages[firstpage - 1:lastpage]]
     canvas = Canvas(outfn)
 
     for page in pages:
-        canvas.setPageSize(tuple(page.BBox[2:]))
+        canvas.setPageSize((page.BBox[2], page.BBox[3]))
         canvas.doForm(makerl(canvas, page))
         canvas.showPage()
 
