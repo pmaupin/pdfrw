@@ -11,7 +11,7 @@ Even as a pure PDF container library, pdfrw comes up a bit short.
 It does not currently support:
 
   * Most compression/decompression filters
-  * PDF v. 1.5 compressed object streams
+  * PDF v. 1.5 compressed object streams (now supported in branch [http://code.google.com/p/pdfrw/source/browse/#svn%2Fbranches%2Fnerijus nerijus])
   * encryption
 
 [http://www.accesspdf.com/pdftk/ pdftk] is a wonderful command-line tool that can convert your PDFs to remove encryption and compression.  However, in most cases, you can do a lot of useful work with PDFs without actually removing compression, because only certain elements inside PDFs are actually compressed.  (This changes somewhat with PDFs designed for version 1.15 and above of the specification.)
