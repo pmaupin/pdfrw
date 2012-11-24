@@ -206,10 +206,7 @@ def pagexobj(page, viewinfo=ViewInfo(), allow_compressed=True):
             contlist = [c for c in page.Contents]
             uncompress(contlist)
             stream = '\n'.join([c.stream for c in contlist])
-            contents = PdfDict(
-                Length=len(stream),
-                stream=stream
-                )
+            contents = PdfDict(stream=stream)
     else:
         contents = page.Contents
     # Make sure the only attribute is length
