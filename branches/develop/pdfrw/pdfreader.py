@@ -196,7 +196,7 @@ class PdfReader(PdfDict):
             fdata = source.fdata
             offset2 = (fdata.find('\n' + objheader) + 1 or
                        fdata.find('\r' + objheader) + 1)
-            if (not offset2 or 
+            if (not offset2 or
                     fdata.find(fdata[offset2 - 1] + objheader, offset2) > 0):
                 source.warning("Expected indirect object '%s'" % objheader)
                 return None

@@ -6,11 +6,7 @@ __version__ = '0.1'
 
 from pdfrw.pdfwriter import PdfWriter
 from pdfrw.pdfreader import PdfReader
-from pdfrw.objects import PdfObject, PdfName, PdfArray, PdfDict, IndirectPdfDict, PdfString
+from pdfrw.objects import PdfObject, PdfName, PdfArray, PdfDict
+from pdfrw.objects import IndirectPdfDict, PdfString
 from pdfrw.tokens import PdfTokens
 from pdfrw.errors import PdfParseError
-
-# Add a tiny bit of compatibility to pyPdf
-
-PdfFileReader = PdfReader
-PdfFileWriter = PdfWriter

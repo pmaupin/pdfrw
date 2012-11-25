@@ -15,4 +15,5 @@ class PdfName(object):
 
     def __call__(self, name, PdfObject=PdfObject):
         return PdfObject('/' + name)
+
 PdfName = PdfName()

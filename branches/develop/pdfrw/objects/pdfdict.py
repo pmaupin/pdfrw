@@ -120,8 +120,10 @@ class PdfDict(dict):
         '''
         return self.get(PdfName(name))
 
-    def get(self, key, dictget=dict.get, isinstance=isinstance, PdfIndirect=PdfIndirect):
-        ''' Get a value out of the dictionary, after resolving any indirect objects.
+    def get(self, key, dictget=dict.get, isinstance=isinstance,
+            PdfIndirect=PdfIndirect):
+        ''' Get a value out of the dictionary, after resolving any indirect
+            objects.
         '''
         value = dictget(self, key)
         if isinstance(value, PdfIndirect):
@@ -131,7 +133,8 @@ class PdfDict(dict):
     def __getitem__(self, key):
         return self.get(key)
 
-    def __setattr__(self, name, value, special=_special.get, PdfName=PdfName, vars=vars):
+    def __setattr__(self, name, value, special=_special.get, PdfName=PdfName,
+                    vars=vars):
         ''' Set an attribute on the dictionary.  Handle the keywords
             indirect, stream, and _stream specially (for content objects)
         '''
@@ -145,7 +148,8 @@ class PdfDict(dict):
                 notnone = value is not None
                 self.Length = notnone and PdfObject(len(value)) or None
 
-    def iteritems(self, dictiter=dict.iteritems, isinstance=isinstance, PdfIndirect=PdfIndirect):
+    def iteritems(self, dictiter=dict.iteritems, isinstance=isinstance,
+                  PdfIndirect=PdfIndirect):
         ''' Iterate over the dictionary, resolving any unresolved objects
         '''
         for key, value in list(dictiter(self)):

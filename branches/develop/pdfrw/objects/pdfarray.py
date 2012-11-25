@@ -21,9 +21,8 @@ class PdfArray(list):
         self.extend(source)
 
     def _resolver(self, isinstance=isinstance, enumerate=enumerate,
-                  listiter=list.__iter__,
-                  PdfIndirect=PdfIndirect, resolved=_resolved,
-                  PdfNull=PdfObject('null')):
+                  listiter=list.__iter__, PdfIndirect=PdfIndirect,
+                  resolved=_resolved, PdfNull=PdfObject('null')):
         for index, value in enumerate(list.__iter__(self)):
                 if isinstance(value, PdfIndirect):
                     value = value.real_value()
