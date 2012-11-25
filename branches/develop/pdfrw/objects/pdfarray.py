@@ -5,8 +5,10 @@
 from pdfrw.objects.pdfindirect import PdfIndirect
 from pdfrw.objects.pdfobject import PdfObject
 
+
 def _resolved():
     pass
+
 
 class PdfArray(list):
     ''' A PdfArray maps the PDF file array object into a Python list.
@@ -19,9 +21,9 @@ class PdfArray(list):
         self.extend(source)
 
     def _resolver(self, isinstance=isinstance, enumerate=enumerate,
-                        listiter=list.__iter__,
-                        PdfIndirect=PdfIndirect, resolved=_resolved,
-                        PdfNull=PdfObject('null')):
+                  listiter=list.__iter__,
+                  PdfIndirect=PdfIndirect, resolved=_resolved,
+                  PdfNull=PdfObject('null')):
         for index, value in enumerate(list.__iter__(self)):
                 if isinstance(value, PdfIndirect):
                     value = value.real_value()
@@ -45,15 +47,19 @@ class PdfArray(list):
     def count(self, item):
         self._resolve()
         return list.count(self, item)
+
     def index(self, item):
         self._resolve()
         return list.index(self, item)
+
     def remove(self, item):
         self._resolve()
         return list.remove(self, item)
+
     def sort(self, *args, **kw):
         self._resolve()
         return list.sort(self, *args, **kw)
+
     def pop(self, *args):
         self._resolve()
         return list.pop(self, *args)

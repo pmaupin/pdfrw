@@ -17,11 +17,13 @@ import itertools
 from pdfrw.objects import PdfString, PdfObject
 from pdfrw.errors import log, PdfParseError
 
+
 def linepos(fdata, loc):
     line = fdata.count('\n', 0, loc) + 1
     line += fdata.count('\r', 0, loc) - fdata.count('\r\n', 0, loc)
     col = loc - max(fdata.rfind('\n', 0, loc), fdata.rfind('\r', 0, loc))
     return line, col
+
 
 class PdfTokens(object):
 
@@ -35,7 +37,8 @@ class PdfTokens(object):
 
     # "normal" stuff is all but delimiters or whitespace.
 
-    p_normal = r'(?:[^\\%s%s]+|\\[^%s])+' % (whitespace, delimiters, whitespace)
+    p_normal = r'(?:[^\\%s%s]+|\\[^%s])+' % (
+        whitespace, delimiters, whitespace)
 
     p_comment = r'\%%[^%s]*' % eol
 
@@ -54,9 +57,12 @@ class PdfTokens(object):
 
     p_catchall = '[^%s]' % whitespace
 
-    pattern = '|'.join([p_normal, p_name, p_hex_string, p_dictdelim, p_literal_string, p_comment, p_catchall])
-    findtok = re.compile('(%s)[%s]*' % (pattern, whitespace), re.DOTALL).finditer
-    findparen = re.compile('(%s)[%s]*' % (p_literal_string_extend, whitespace), re.DOTALL).finditer
+    pattern = '|'.join([p_normal, p_name, p_hex_string, p_dictdelim,
+                        p_literal_string, p_comment, p_catchall])
+    findtok = re.compile(
+        '(%s)[%s]*' % (pattern, whitespace), re.DOTALL).finditer
+    findparen = re.compile('(%s)[%s]*' % (
+        p_literal_string_extend, whitespace), re.DOTALL).finditer
     splitname = re.compile(r'\#([0-9A-Fa-f]{2})').split
 
     def _cacheobj(cache, obj, constructor):
@@ -86,8 +92,8 @@ class PdfTokens(object):
         return result
 
     def _gettoks(self, startloc, cacheobj=_cacheobj,
-                       delimiters=delimiters, findtok=findtok, findparen=findparen,
-                       PdfString=PdfString, PdfObject=PdfObject):
+                 delimiters=delimiters, findtok=findtok, findparen=findparen,
+                 PdfString=PdfString, PdfObject=PdfObject):
         ''' Given a source data string and a location inside it,
             gettoks generates tokens.  Each token is a tuple of the form:
              <starting file loc>, <ending file loc>, <token string>
@@ -114,7 +120,8 @@ class PdfTokens(object):
                 elif firstch in '/<(%':
                     if firstch == '/':
                         # PDF Name
-                        token = namehandler['#' in token](cache, token, PdfObject)
+                        token = namehandler['#' in token](
+                            cache, token, PdfObject)
                     elif firstch == '<':
                         # << dict delim, or < hex string >
                         if token[1:2] != '<':
@@ -126,12 +133,12 @@ class PdfTokens(object):
                         # they are present, we exit the for loop
                         # and get back in with a new starting location.
                         ends = None  # For broken strings
-                        if fdata[match.end(1)-1] != ')':
+                        if fdata[match.end(1) - 1] != ')':
                             nest = 2
                             m_start, loc = tokspan
                             for match in findparen(fdata, loc):
                                 loc = match.end(1)
-                                ending = fdata[loc-1] == ')'
+                                ending = fdata[loc - 1] == ')'
                                 nest += 1 - ending * 2
                                 if not nest:
                                     break
@@ -145,7 +152,8 @@ class PdfTokens(object):
                                 # If this happens, just terminate on first unescaped ).
                                 # The string won't be quite right, but that's a science
                                 # fair project for another time.
-                                (self.error, self.exception)[not ends]('Unterminated literal string')
+                                (self.error, self.exception)[not ends](
+                                    'Unterminated literal string')
                                 loc, ends, nest = ends
                                 token = fdata[m_start:loc] + ')' * nest
                                 current[0] = m_start, ends

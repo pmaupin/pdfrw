@@ -11,13 +11,15 @@ import zlib
 from pdfrw.objects import PdfDict, PdfName
 from pdfrw.errors import log
 
+
 def streamobjects(mylist, isinstance=isinstance, PdfDict=PdfDict):
     for obj in mylist:
         if isinstance(obj, PdfDict) and obj.stream is not None:
             yield obj
 
-def uncompress(mylist, warnings=set(), flate = PdfName.FlateDecode,
-                    decompress=zlib.decompressobj, isinstance=isinstance, list=list, len=len):
+
+def uncompress(mylist, warnings=set(), flate=PdfName.FlateDecode,
+               decompress=zlib.decompressobj, isinstance=isinstance, list=list, len=len):
     ok = True
     for obj in streamobjects(mylist):
         ftype = obj.Filter
@@ -43,7 +45,8 @@ def uncompress(mylist, warnings=set(), flate = PdfName.FlateDecode,
             if error is None:
                 assert not dco.unconsumed_tail
                 if dco.unused_data.strip():
-                    error = 'Unconsumed compression data: %s' % repr(dco.unused_data[:20])
+                    error = 'Unconsumed compression data: %s' % repr(
+                        dco.unused_data[:20])
             if error is None:
                 obj.Filter = None
                 obj.stream = data

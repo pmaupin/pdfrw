@@ -12,6 +12,7 @@ from pdfrw.objects import PdfDict, PdfName
 from pdfrw.errors import log
 from pdfrw.uncompress import streamobjects
 
+
 def compress(mylist):
     flate = PdfName.FlateDecode
     for obj in streamobjects(mylist):

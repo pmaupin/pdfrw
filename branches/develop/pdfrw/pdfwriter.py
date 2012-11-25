@@ -31,13 +31,14 @@ NullObject = PdfObject('null')
 NullObject.indirect = True
 NullObject.Type = 'Null object'
 
+
 def FormatObjects(f, trailer, version='1.3', compress=True, killobj=(),
-        id=id, isinstance=isinstance, getattr=getattr,len=len,
-        sum=sum, set=set, str=str, basestring=basestring,
-        hasattr=hasattr, repr=repr, enumerate=enumerate,
-        list=list, dict=dict, tuple=tuple,
-        do_compress=do_compress, PdfArray=PdfArray,
-        PdfDict=PdfDict, PdfObject=PdfObject, encode=PdfString.encode):
+                  id=id, isinstance=isinstance, getattr=getattr, len=len,
+                  sum=sum, set=set, str=str, basestring=basestring,
+                  hasattr=hasattr, repr=repr, enumerate=enumerate,
+                  list=list, dict=dict, tuple=tuple,
+                  do_compress=do_compress, PdfArray=PdfArray,
+                  PdfDict=PdfDict, PdfObject=PdfObject, encode=PdfString.encode):
     ''' FormatObjects performs the actual formatting and disk write.
         Should be a class, was a class, turned into nested functions
         for performace (to reduce attribute lookups).
@@ -83,7 +84,7 @@ def FormatObjects(f, trailer, version='1.3', compress=True, killobj=(),
             objnum = len(objlist) + 1
             objlist_append(None)
             indirect_dict[objid] = objnum
-            deferred.append((objnum-1, obj))
+            deferred.append((objnum - 1, obj))
         return '%s 0 R' % objnum
 
     def format_array(myarray, formatter):
@@ -142,7 +143,6 @@ def FormatObjects(f, trailer, version='1.3', compress=True, killobj=(),
             index, obj = deferred.pop()
             objlist[index] = format_obj(obj)
 
-
     indirect_dict = {}
     indirect_dict_get = indirect_dict.get
     objlist = []
@@ -156,10 +156,15 @@ def FormatObjects(f, trailer, version='1.3', compress=True, killobj=(),
 
     deferred = []
 
-    # Don't reference old catalog or pages objects -- swap references to new ones.
-    swapobj = {PdfName.Catalog:trailer.Root, PdfName.Pages:trailer.Root.Pages, None:trailer}.get
-    swapobj = [(objid, swapobj(obj.Type)) for objid, obj in killobj.iteritems()]
-    swapobj = dict((objid, obj is None and NullObject or obj) for objid, obj in swapobj).get
+    # Don't reference old catalog or pages objects.
+    # Instead, swap the references over to new ones.
+    swapobj = {PdfName.Catalog: trailer.Root,
+               PdfName.Pages: trailer.Root.Pages,
+               None: trailer}.get
+    swapobj = [(objid, swapobj(obj.Type))
+               for objid, obj in killobj.iteritems()]
+    swapobj = dict((objid, obj is None and NullObject or obj)
+                   for objid, obj in swapobj).get
 
     for objid in killobj:
         assert swapobj(objid) is not None
@@ -197,6 +202,7 @@ def FormatObjects(f, trailer, version='1.3', compress=True, killobj=(),
         f_write('%010d %05d %s\r\n' % x)
     f_write('trailer\n\n%s\nstartxref\n%s\n%%%%EOF\n' % (trailer, offset))
 
+
 class PdfWriter(object):
 
     _trailer = None
@@ -211,15 +217,15 @@ class PdfWriter(object):
         self._trailer = None
         if page.Type != PdfName.Page:
             raise PdfOutputError('Bad /Type:  Expected %s, found %s'
-                                  % (PdfName.Page, page.Type))
-        inheritable = page.inheritable # searches for resources
+                                 % (PdfName.Page, page.Type))
+        inheritable = page.inheritable  # searches for resources
         self.pagearray.append(
             IndirectPdfDict(
                 page,
-                Resources = inheritable.Resources,
-                MediaBox = inheritable.MediaBox,
-                CropBox = inheritable.CropBox,
-                Rotate = inheritable.Rotate,
+                Resources=inheritable.Resources,
+                MediaBox=inheritable.MediaBox,
+                CropBox=inheritable.CropBox,
+                Rotate=inheritable.Rotate,
             )
         )
 
@@ -249,12 +255,12 @@ class PdfWriter(object):
 
         # Create the basic object structure of the PDF file
         trailer = PdfDict(
-            Root = IndirectPdfDict(
-                Type = PdfName.Catalog,
-                Pages = IndirectPdfDict(
-                    Type = PdfName.Pages,
-                    Count = PdfObject(len(self.pagearray)),
-                    Kids = self.pagearray
+            Root=IndirectPdfDict(
+                Type=PdfName.Catalog,
+                Pages=IndirectPdfDict(
+                    Type=PdfName.Pages,
+                    Count=PdfObject(len(self.pagearray)),
+                    Kids=self.pagearray
                 )
             )
         )
@@ -288,7 +294,7 @@ if __name__ == '__main__':
     x = pdfreader.PdfReader('source.pdf')
     y = PdfWriter()
     for i, page in enumerate(x.pages):
-        print '  Adding page', i+1, '\r',
+        print '  Adding page', i + 1, '\r',
         y.addpage(page)
     print
     y.write('result.pdf')

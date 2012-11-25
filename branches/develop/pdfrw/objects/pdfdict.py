@@ -6,13 +6,16 @@ from pdfrw.objects.pdfname import PdfName
 from pdfrw.objects.pdfindirect import PdfIndirect
 from pdfrw.objects.pdfobject import PdfObject
 
+
 class _DictSearch(object):
     '''  Used to search for inheritable attributes.
     '''
     def __init__(self, basedict):
         self.basedict = basedict
+
     def __getattr__(self, name, PdfName=PdfName):
         return self[PdfName(name)]
+
     def __getitem__(self, name, set=set, getattr=getattr, id=id):
         visited = set()
         mydict = self.basedict
@@ -27,14 +30,17 @@ class _DictSearch(object):
             if mydict is None:
                 return
 
+
 class _Private(object):
     ''' Used to store private attributes (not output to PDF files)
         on PdfDict classes
     '''
     def __init__(self, pdfdict):
         vars(self)['pdfdict'] = pdfdict
+
     def __setattr__(self, name, value):
         vars(self.pdfdict)[name] = value
+
 
 class PdfDict(dict):
     ''' PdfDict objects are subclassed dictionaries with the following features:
@@ -84,10 +90,10 @@ class PdfDict(dict):
     indirect = False
     stream = None
 
-    _special = dict(indirect = ('indirect', False),
-                    stream = ('stream', True),
-                    _stream = ('stream', False),
-                   )
+    _special = dict(indirect=('indirect', False),
+                    stream=('stream', True),
+                    _stream=('stream', False),
+                    )
 
     def __setitem__(self, name, value, setter=dict.__setitem__):
         assert name.startswith('/'), name
@@ -151,16 +157,21 @@ class PdfDict(dict):
 
     def items(self):
         return list(self.iteritems())
+
     def itervalues(self):
         for key, value in self.iteritems():
             yield value
+
     def values(self):
         return list((value for key, value in self.iteritems()))
+
     def keys(self):
         return list((key for key, value in self.iteritems()))
+
     def __iter__(self):
         for key, value in self.iteritems():
             yield key
+
     def iterkeys(self):
         return iter(self)
 
@@ -196,6 +207,7 @@ class PdfDict(dict):
         '''
         return _Private(self)
     private = property(private)
+
 
 class IndirectPdfDict(PdfDict):
     ''' IndirectPdfDict is a convenience class.  You could
