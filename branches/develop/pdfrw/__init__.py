@@ -1,6 +1,8 @@
 # A part of pdfrw (pdfrw.googlecode.com)
-# Copyright (C) 2006-2009 Patrick Maupin, Austin, Texas
+# Copyright (C) 2006-2012 Patrick Maupin, Austin, Texas
 # MIT license -- See LICENSE.txt for details
+
+__version__ = '0.1'
 
 from pdfrw.pdfwriter import PdfWriter
 from pdfrw.pdfreader import PdfReader
