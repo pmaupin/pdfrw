@@ -27,7 +27,7 @@ def go(inpfn, firstpage, lastpage):
     firstpage, lastpage = int(firstpage), int(lastpage)
     outfn = 'subset_%s_to_%s.%s' % (firstpage, lastpage, os.path.basename(inpfn))
 
-    pages = PdfReader(inpfn, decompress=False).pages
+    pages = PdfReader(inpfn).pages
     pages = [pagexobj(x) for x in pages[firstpage-1:lastpage]]
     canvas = Canvas(outfn)
 
