@@ -95,8 +95,13 @@ class PdfDict(dict):
                     _stream=('stream', False),
                    )
 
+    whitespace = '\x00 \t\f'
+    delimiters = r'()<>{}[\]/%'
+    forbidden = whitespace + delimiters
+
     def __setitem__(self, name, value, setter=dict.__setitem__):
         assert name.startswith('/'), name
+        assert not any((c in self.forbidden) for c in name[1:]), name
         if value is not None:
             setter(self, name, value)
         elif name in self:
