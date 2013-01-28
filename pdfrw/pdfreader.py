@@ -474,13 +474,13 @@ class PdfReader(PdfDict):
 
                 # Loop through all the cross-reference tables/streams
                 trailer = self.parsexref(source)
-                token = source.next()
-                if token != 'startxref' and not xref_list:
-                    source.warning('Expected "startxref" at end of xref table')
 
                 # Loop if any previously-written xrefs.
                 prev = trailer.Prev
                 if prev is None:
+                    token = source.next()
+                    if token != 'startxref':
+                        source.warning('Expected "startxref" at end of xref table')
                     break
                 if not xref_list:
                     trailer.Prev = None
