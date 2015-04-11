@@ -83,7 +83,7 @@ def get_rotation(rotate):
     return rotate / 90
 
 def rotate_point(point, rotation):
-    ''' Rotate an (x,y) coordinate clockwise by a 
+    ''' Rotate an (x,y) coordinate clockwise by a
         rotation code specifying a multiple of 90 degrees.
     '''
     if rotation & 1:
@@ -123,14 +123,55 @@ def getrects(inheritable, pageinfo, rotation):
         cbox = rotate_rect(cbox, -rotation)
     return mbox, cbox
 
+def _build_cache(contents, allow_compressed):
+    ''' Build a new dictionary holding the stream,
+        and save it along with private cache info.
+        Assumes validity has been pre-checked if
+        we have a non-None xobj_copy.
+    '''
+    try:
+        xobj_copy = contents.xobj_copy
+    except AttributeError:
+        # Should have a PdfArray here...
+        array = contents
+        private = contents
+    else:
+        # Should have a PdfDict here -- might or might not have cache copy
+        if xobj_copy is not None:
+            return xobj_copy
+        array = [contents]
+        private = contents.private
+
+    # The spec says nothing about nested arrays.  Will
+    # assume that's not a problem until we encounter them...
+
+    xobj_copy = PdfDict(array[0])
+    xobj_copy.private.xobj_cachedict = {}
+    private.xobj_copy = xobj_copy
+
+    if len(array) > 1:
+        newstream = '\n'.join(x.stream for x in array)
+        newlength = sum(int(x.Length) for x in array)
+        assert newlength == len(newstream)
+        xobj_copy.stream = newstream
+
+        # Cannot currently cope with different kinds of
+        # compression in the array, so just disallow it.
+        allow_compressed = False
+
+    if not allow_compressed:
+        # Make sure there are no compression parameters
+        for cdict in array:
+            assert len([x for x in cdict.iteritems()]) == 1
+
+            cachedict = contents.cachedict = {}
+    return xobj_copy
 
 def _cache_xobj(contents, resources, mbox, bbox, rotation):
     ''' Return a cached Form XObject, or create a new one and cache it.
         Adds private members x, y, w, h
     '''
     cachedict = contents.xobj_cachedict
-    if cachedict is None:
-        cachedict = contents.private.xobj_cachedict = {}
     cachekey = mbox, bbox, rotation
     result = cachedict.get(cachekey)
     if result is None:
@@ -187,12 +228,7 @@ def pagexobj(page, viewinfo=ViewInfo(), allow_compressed=True):
     rotation = get_rotation(inheritable.Rotate)
     mbox, bbox = getrects(inheritable, viewinfo, rotation)
     rotation += get_rotation(viewinfo.rotate)
-    contents = page.Contents
-    # Make sure the only attribute is length
-    # All the filters must have been executed
-    assert int(contents.Length) == len(contents.stream)
-    if not allow_compressed:
-        assert len([x for x in contents.iteritems()]) == 1
+    contents = _build_cache(page.Contents, allow_compressed)
     return _cache_xobj(contents, resources, mbox, bbox, rotation)
 
 
