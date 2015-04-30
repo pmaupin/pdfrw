@@ -151,7 +151,7 @@ def _build_cache(contents, allow_compressed):
 
     if len(array) > 1:
         newstream = '\n'.join(x.stream for x in array)
-        newlength = sum(int(x.Length) for x in array)
+        newlength = sum(int(x.Length) for x in array) + len(array) - 1
         assert newlength == len(newstream)
         xobj_copy.stream = newstream
 
