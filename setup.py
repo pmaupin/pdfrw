@@ -19,10 +19,10 @@ March 2010.  Several small examples are provided.
 ''',
     author='Patrick Maupin',
     author_email='pmaupin@gmail.com',
-    platforms="Independent",
+    platforms='Independent',
     url='http://code.google.com/p/pdfrw/',
     packages=['pdfrw', 'pdfrw.objects'],
-    license="MIT",
+    license='MIT',
     classifiers=[
         'Development Status :: 4 - Beta',
         'Environment :: Console',

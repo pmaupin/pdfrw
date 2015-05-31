@@ -19,6 +19,7 @@ from pdfrw import PdfReader, PdfDict, PdfArray, PdfName
 XObject = PdfName.XObject
 Image = PdfName.Image
 
+
 def find_images(obj, visited=set()):
     if not isinstance(obj, (PdfDict, PdfArray)):
         return
@@ -37,6 +38,7 @@ def find_images(obj, visited=set()):
     for item in obj:
         for result in find_images(item, visited):
             yield result
+
 
 def show_image(image):
     print '******************'

@@ -16,6 +16,7 @@ import os
 import find_pdfrw
 from pdfrw import PdfReader, PdfWriter, PdfArray, IndirectPdfDict
 
+
 def fixpage(page, count=[0]):
     count[0] += 1
     evenpage = not (count[0] & 1)
@@ -40,7 +41,7 @@ def fixpage(page, count=[0]):
 
     prefix = '0 1 -1 0 %s %s cm\n' % (finalsize[0], 0)
     if evenpage:
-        prefix = '1 0 0 1 %s %s cm\n' % (0, finalsize[1]/2) +  prefix
+        prefix = '1 0 0 1 %s %s cm\n' % (0, finalsize[1] / 2) + prefix
     first_prefix = 'q\n-1 0 0 -1 %s %s cm\n' % finalsize + prefix
     second_prefix = '\nQ\n' + prefix
     first_prefix = IndirectPdfDict(stream=first_prefix)

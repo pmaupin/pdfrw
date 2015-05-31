@@ -13,8 +13,10 @@ import sys
 import os
 
 import find_pdfrw
-from pdfrw import PdfReader, PdfWriter, PdfDict, PdfArray, PdfName, IndirectPdfDict
+from pdfrw import (PdfReader, PdfWriter, PdfDict,
+                   PdfArray, PdfName, IndirectPdfDict)
 from pdfrw.buildxobj import pagexobj
+
 
 def fixpage(*pages):
     pages = [pagexobj(x) for x in pages]
@@ -39,11 +41,11 @@ def fixpage(*pages):
             pages.remove(p1)
 
     return IndirectPdfDict(
-        Type = PdfName.Page,
-        Contents = PdfDict(stream=''.join(page.stream for page in pages)),
-        MediaBox = PdfArray([0, 0, x, y]),
-        Resources = PdfDict(
-            XObject = PdfDict(pages),
+        Type=PdfName.Page,
+        Contents=PdfDict(stream=''.join(page.stream for page in pages)),
+        MediaBox=PdfArray([0, 0, x, y]),
+        Resources=PdfDict(
+            XObject=PdfDict(pages),
         ),
     )
 

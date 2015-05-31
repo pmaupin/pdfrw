@@ -14,6 +14,7 @@ import find_pdfrw
 from pdfrw import PdfReader, PdfWriter, PdfDict, PdfName, PdfArray
 from pdfrw.buildxobj import pagexobj
 
+
 def get4(allpages):
     # Pull a maximum of 4 pages off the list
     pages = [pagexobj(x) for x in allpages[:4]]
@@ -32,11 +33,12 @@ def get4(allpages):
         xobjdict[index] = page
 
     return PdfDict(
-        Type = PdfName.Page,
-        Contents = PdfDict(stream=''.join(stream)),
-        MediaBox = PdfArray([0, 0, x_max, y_max]),
-        Resources = PdfDict(XObject = xobjdict),
+        Type=PdfName.Page,
+        Contents=PdfDict(stream=''.join(stream)),
+        MediaBox=PdfArray([0, 0, x_max, y_max]),
+        Resources=PdfDict(XObject=xobjdict),
     )
+
 
 def go(inpfn, outfn):
     pages = PdfReader(inpfn).pages

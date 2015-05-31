@@ -6,13 +6,17 @@ from pdfrw.objects.pdfname import PdfName
 from pdfrw.objects.pdfindirect import PdfIndirect
 from pdfrw.objects.pdfobject import PdfObject
 
+
 class _DictSearch(object):
     '''  Used to search for inheritable attributes.
     '''
+
     def __init__(self, basedict):
         self.basedict = basedict
+
     def __getattr__(self, name, PdfName=PdfName):
         return self[PdfName(name)]
+
     def __getitem__(self, name, set=set, getattr=getattr, id=id):
         visited = set()
         mydict = self.basedict
@@ -27,28 +31,35 @@ class _DictSearch(object):
             if mydict is None:
                 return
 
+
 class _Private(object):
     ''' Used to store private attributes (not output to PDF files)
         on PdfDict classes
     '''
+
     def __init__(self, pdfdict):
         vars(self)['pdfdict'] = pdfdict
+
     def __setattr__(self, name, value):
         vars(self.pdfdict)[name] = value
 
+
 class PdfDict(dict):
-    ''' PdfDict objects are subclassed dictionaries with the following features:
+    ''' PdfDict objects are subclassed dictionaries
+        with the following features:
 
         - Every key in the dictionary starts with "/"
 
         - A dictionary item can be deleted by assigning it to None
 
-        - Keys that (after the initial "/") conform to Python naming conventions
-          can also be accessed (set and retrieved) as attributes of the dictionary.
-          E.g.  mydict.Page is the same thing as mydict['/Page']
+        - Keys that (after the initial "/") conform to Python
+          naming conventions can also be accessed (set and retrieved)
+          as attributes of the dictionary.  E.g.  mydict.Page is the
+          same thing as mydict['/Page']
 
-        - Private attributes (not in the PDF space) can be set on the dictionary
-          object attribute dictionary by using the private attribute:
+        - Private attributes (not in the PDF space) can be set
+          on the dictionary object attribute dictionary by using
+          the private attribute:
 
                 mydict.private.foo = 3
                 mydict.foo = 5
@@ -61,11 +72,11 @@ class PdfDict(dict):
 
         - PdfDicts have the following read-only properties:
 
-            - private -- as discussed above, provides write access to dictionary's
-                         attributes
-            - inheritable -- this creates and returns a "view" attribute that
-                         will search through the object hierarchy for any desired
-                         attribute, such as /Rotate or /MediaBox
+            - private -- as discussed above, provides write access to
+                         dictionary's attributes
+            - inheritable -- this creates and returns a "view" attribute
+                         that will search through the object hierarchy for
+                         any desired attribute, such as /Rotate or /MediaBox
 
         - PdfDicts also have the following special attributes:
             - indirect is not stored in the PDF dictionary, but in the object's
@@ -84,10 +95,10 @@ class PdfDict(dict):
     indirect = False
     stream = None
 
-    _special = dict(indirect = ('indirect', False),
-                    stream = ('stream', True),
-                    _stream = ('stream', False),
-                   )
+    _special = dict(indirect=('indirect', False),
+                    stream=('stream', True),
+                    _stream=('stream', False),
+                    )
 
     def __setitem__(self, name, value, setter=dict.__setitem__):
         assert name.startswith('/'), name
@@ -114,8 +125,10 @@ class PdfDict(dict):
         '''
         return self.get(PdfName(name))
 
-    def get(self, key, dictget=dict.get, isinstance=isinstance, PdfIndirect=PdfIndirect):
-        ''' Get a value out of the dictionary, after resolving any indirect objects.
+    def get(self, key, dictget=dict.get, isinstance=isinstance,
+            PdfIndirect=PdfIndirect):
+        ''' Get a value out of the dictionary,
+            after resolving any indirect objects.
         '''
         value = dictget(self, key)
         if isinstance(value, PdfIndirect):
@@ -125,7 +138,8 @@ class PdfDict(dict):
     def __getitem__(self, key):
         return self.get(key)
 
-    def __setattr__(self, name, value, special=_special.get, PdfName=PdfName, vars=vars):
+    def __setattr__(self, name, value, special=_special.get,
+                    PdfName=PdfName, vars=vars):
         ''' Set an attribute on the dictionary.  Handle the keywords
             indirect, stream, and _stream specially (for content objects)
         '''
@@ -139,7 +153,8 @@ class PdfDict(dict):
                 notnone = value is not None
                 self.Length = notnone and PdfObject(len(value)) or None
 
-    def iteritems(self, dictiter=dict.iteritems, isinstance=isinstance, PdfIndirect=PdfIndirect):
+    def iteritems(self, dictiter=dict.iteritems,
+                  isinstance=isinstance, PdfIndirect=PdfIndirect):
         ''' Iterate over the dictionary, resolving any unresolved objects
         '''
         for key, value in list(dictiter(self)):
@@ -151,16 +166,21 @@ class PdfDict(dict):
 
     def items(self):
         return list(self.iteritems())
+
     def itervalues(self):
         for key, value in self.iteritems():
             yield value
+
     def values(self):
         return list((value for key, value in self.iteritems()))
+
     def keys(self):
         return list((key for key, value in self.iteritems()))
+
     def __iter__(self):
         for key, value in self.iteritems():
             yield key
+
     def iterkeys(self):
         return iter(self)
 
@@ -196,6 +216,7 @@ class PdfDict(dict):
         '''
         return _Private(self)
     private = property(private)
+
 
 class IndirectPdfDict(PdfDict):
     ''' IndirectPdfDict is a convenience class.  You could

@@ -29,6 +29,7 @@ from pdfrw.toreportlab import makerl
 PAGE_WIDTH = defaultPageSize[0]
 PAGE_HEIGHT = defaultPageSize[1]
 
+
 class MyTemplate(PageTemplate):
     """The kernel of this example, where we use pdfrw to fill in the
     background of a page before writing to it.  This could be used to fill
@@ -57,6 +58,7 @@ class MyTemplate(PageTemplate):
         canvas.doForm(rl_obj)
         canvas.restoreState()
 
+
 class MyDocTemplate(BaseDocTemplate):
     """Used to apply heading to table of contents."""
 
@@ -70,20 +72,22 @@ class MyDocTemplate(BaseDocTemplate):
                 self.canv.bookmarkPage(key)
                 self.notify('TOCEntry', [1, text, self.page, key])
 
+
 def create_toc():
     """Creates the table of contents"""
     table_of_contents = TableOfContents()
     table_of_contents.dotsMinLevel = 0
-    header1 = ParagraphStyle(name = 'Heading1', fontSize = 16, leading = 16)
-    header2 = ParagraphStyle(name = 'Heading2', fontSize = 14, leading = 14)
+    header1 = ParagraphStyle(name='Heading1', fontSize=16, leading=16)
+    header2 = ParagraphStyle(name='Heading2', fontSize=14, leading=14)
     table_of_contents.levelStyles = [header1, header2]
     return [table_of_contents, PageBreak()]
+
 
 def create_pdf(filename, pdf_template_filename):
     """Create the pdf, with all the contents"""
     pdf_report = open(filename, "w")
     document = MyDocTemplate(pdf_report)
-    templates = [ MyTemplate(pdf_template_filename, name='background') ]
+    templates = [MyTemplate(pdf_template_filename, name='background')]
     document.addPageTemplates(templates)
 
     styles = getSampleStyleSheet()

@@ -4,6 +4,7 @@
 
 import re
 
+
 class PdfString(str):
     ''' A PdfString is an encoded string.  It has a decode
         method to get the actual string data out, and there
@@ -12,18 +13,20 @@ class PdfString(str):
         defaults to being a direct object.
     '''
     indirect = False
-    unescape_dict = {'\\b':'\b', '\\f':'\f', '\\n':'\n',
-                     '\\r':'\r', '\\t':'\t',
-                     '\\\r\n': '', '\\\r':'', '\\\n':'',
-                     '\\\\':'\\', '\\':'',
-                    }
-    unescape_pattern = r'(\\\\|\\b|\\f|\\n|\\r|\\t|\\\r\n|\\\r|\\\n|\\[0-9]+|\\)'
+    unescape_dict = {'\\b': '\b', '\\f': '\f', '\\n': '\n',
+                     '\\r': '\r', '\\t': '\t',
+                     '\\\r\n': '', '\\\r': '', '\\\n': '',
+                     '\\\\': '\\', '\\': '',
+                     }
+    unescape_pattern = (r'(\\\\|\\b|\\f|\\n|\\r|\\t'
+                        r'|\\\r\n|\\\r|\\\n|\\[0-9]+|\\)')
     unescape_func = re.compile(unescape_pattern).split
 
     hex_pattern = '([a-fA-F0-9][a-fA-F0-9]|[a-fA-F0-9])'
     hex_func = re.compile(hex_pattern).split
 
-    hex_pattern2 = '([a-fA-F0-9][a-fA-F0-9][a-fA-F0-9][a-fA-F0-9]|[a-fA-F0-9][a-fA-F0-9]|[a-fA-F0-9])'
+    hex_pattern2 = ('([a-fA-F0-9][a-fA-F0-9][a-fA-F0-9][a-fA-F0-9]|'
+                    '[a-fA-F0-9][a-fA-F0-9]|[a-fA-F0-9])')
     hex_func2 = re.compile(hex_pattern2).split
 
     hex_funcs = hex_func, hex_func2
@@ -50,7 +53,9 @@ class PdfString(str):
         data = self.hex_funcs[twobytes](data)
         chars = data[1::2]
         other = data[0::2]
-        assert other[0] == '<' and other[-1] == '>' and ''.join(other) == '<>', self
+        assert (other[0] == '<' and
+                other[-1] == '>' and
+                ''.join(other) == '<>'), self
         return ''.join([remap(int(x, 16)) for x in chars])
 
     def decode(self, remap=chr, twobytes=False):
@@ -69,5 +74,5 @@ class PdfString(str):
         source = source.replace('\\', '\\\\')
         source = source.replace('(', '\\(')
         source = source.replace(')', '\\)')
-        return cls('(' +source + ')')
+        return cls('(' + source + ')')
     encode = classmethod(encode)
