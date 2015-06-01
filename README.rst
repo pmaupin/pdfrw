@@ -2,7 +2,6 @@ pdfrw reads and writes PDF files.
 
 It is available at PyPI -- the current released revision is 0.1.
 
-Code is now developed at github, but the documentation
-is still at `google code`__
+Please see the wiki__ for usage information
 
-__ http://code.google.com/p/pdfrw
+__ https://github.com/pmaupin/pdfrw/wiki
