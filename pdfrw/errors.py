@@ -33,3 +33,6 @@ class PdfParseError(PdfError):
 
 class PdfOutputError(PdfError):
     "Error thrown by PDF writer"
+
+class PdfNotImplementedError(PdfError):
+    "Error thrown on missing features"

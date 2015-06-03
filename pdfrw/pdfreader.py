@@ -150,7 +150,9 @@ class PdfReader(PdfDict):
             return
         if (length == room + 1 and
                 fdata[startstream - 2:startstream] == '\r\n'):
-            source.warning(r"stream keyword terminated by \r without \n")
+            if not self.warned_bad_stream_start:
+                source.warning(r"stream keyword terminated by \r without \n")
+                self.private.warned_bad_stream_start = True
             obj._stream = fdata[startstream - 1:target_endstream - 1]
             return
         source.floc = endstream

@@ -52,16 +52,9 @@ def fixpage(page, watermark):
     return page
 
 
-def watermark(input_fname, watermark_fname, output_fname=None):
-    outfn = output_fname or ('watermark.' + os.path.basename(input_fname))
-    w = pagexobj(PdfReader(watermark_fname).pages[0])
-    pages = PdfReader(input_fname).pages
-    PdfWriter().addpages([fixpage(x, w) for x in pages]).write(outfn)
-    return outfn
-
-
 def fix_pdf(fname, watermark_fname, indir, outdir):
     from os import mkdir, path
+    fname = os.path.basename(fname)
     if not path.exists(outdir):
         mkdir(outdir)
     watermark = pagexobj(PdfReader(watermark_fname).pages[0])
@@ -81,7 +74,6 @@ def batch_watermark(pdfdir, watermark_fname, outputdir='tmp'):
     good_files = 0
 
     for fname in fnames:
-        fname = fname.replace(pdfdir + '/', '')
         try:
             total_pages += fix_pdf(fname, watermark_fname, pdfdir, outputdir)
             good_files += 1

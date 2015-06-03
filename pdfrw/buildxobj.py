@@ -30,7 +30,7 @@ Reference for content:   Adobe PDF reference, sixth edition, version 1.7
 
 from pdfrw.objects import PdfDict, PdfArray, PdfName
 from pdfrw.pdfreader import PdfReader
-from pdfrw.errors import log
+from pdfrw.errors import log, PdfNotImplementedError
 
 
 class ViewInfo(object):
@@ -169,7 +169,11 @@ def _build_cache(contents, allow_compressed):
     if not allow_compressed:
         # Make sure there are no compression parameters
         for cdict in array:
-            assert len([x for x in cdict.iteritems()]) == 1
+            keys = [x[0] for x in cdict.iteritems()]
+            if len(keys) != 1:
+                raise PdfNotImplementedError(
+                    'Xobjects with compression parameters not supported: %s' %
+                    keys)
 
             cachedict = contents.cachedict = {}
     return xobj_copy

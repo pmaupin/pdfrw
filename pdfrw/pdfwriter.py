@@ -33,14 +33,30 @@ NullObject.indirect = True
 NullObject.Type = 'Null object'
 
 
+def user_fmt(obj, isinstance=isinstance, float=float, str=str,
+             basestring=basestring, encode=PdfString.encode):
+    ''' This function may be replaced by the user for
+        specialized formatting requirements.
+    '''
+
+    if isinstance(obj, basestring):
+        return encode(obj)
+
+    # PDFs don't handle exponent notation
+    if isinstance(obj, float):
+            return ('%.9f' % obj).rstrip('0').rstrip('.')
+
+    return str(obj)
+
+
 def FormatObjects(f, trailer, version='1.3', compress=True, killobj=(),
+                  user_fmt=user_fmt,
                   id=id, isinstance=isinstance, getattr=getattr, len=len,
                   sum=sum, set=set, str=str, basestring=basestring,
                   hasattr=hasattr, repr=repr, enumerate=enumerate,
                   list=list, dict=dict, tuple=tuple,
                   do_compress=do_compress, PdfArray=PdfArray,
-                  PdfDict=PdfDict, PdfObject=PdfObject,
-                  encode=PdfString.encode):
+                  PdfDict=PdfDict, PdfObject=PdfObject):
     ''' FormatObjects performs the actual formatting and disk write.
         Should be a class, was a class, turned into nested functions
         for performace (to reduce attribute lookups).
@@ -139,9 +155,11 @@ def FormatObjects(f, trailer, version='1.3', compress=True, killobj=(),
                 obj = (PdfArray, PdfDict)[isinstance(obj, dict)](obj)
                 continue
 
-            if not hasattr(obj, 'indirect') and isinstance(obj, basestring):
-                return encode(obj)
-            return str(getattr(obj, 'encoded', obj))
+            # We assume that an object with an indirect
+            # attribute knows how to represent itself to us.
+            if hasattr(obj, 'indirect'):
+                return str(getattr(obj, 'encoded', obj))
+            return user_fmt(obj)
 
     def format_deferred():
         while deferred:
@@ -210,6 +228,7 @@ def FormatObjects(f, trailer, version='1.3', compress=True, killobj=(),
 class PdfWriter(object):
 
     _trailer = None
+    canonicalize = False
 
     def __init__(self, version='1.3', compress=False):
         self.pagearray = PdfArray()
@@ -257,6 +276,9 @@ class PdfWriter(object):
         if trailer is not None:
             return trailer
 
+        if self.canonicalize:
+            self.make_canonical()
+
         # Create the basic object structure of the PDF file
         trailer = PdfDict(
             Root=IndirectPdfDict(
@@ -273,6 +295,7 @@ class PdfWriter(object):
         pagedict = trailer.Root.Pages
         for page in pagedict.Kids:
             page.Parent = pagedict
+            page.indirect = True
         self._trailer = trailer
         return trailer
 
@@ -281,16 +304,37 @@ class PdfWriter(object):
 
     trailer = property(_get_trailer, _set_trailer)
 
-    def write(self, fname, trailer=None):
+    def write(self, fname, trailer=None, user_fmt=user_fmt):
         trailer = trailer or self.trailer
 
         # Dump the data.  We either have a filename or a preexisting
         # file object.
         preexisting = hasattr(fname, 'write')
         f = preexisting and fname or open(fname, 'wb')
-        FormatObjects(f, trailer, self.version, self.compress, self.killobj)
+        FormatObjects(f, trailer, self.version, self.compress,
+                      self.killobj, user_fmt=user_fmt)
         if not preexisting:
             f.close()
+
+    def make_canonical(self):
+        ''' Canonicalizes a PDF.  Assumes everything
+            is a Pdf object already.
+        '''
+        visited = set()
+        workitems = list(self.pagearray)
+        while workitems:
+            obj = workitems.pop()
+            objid = id(obj)
+            if objid in visited:
+                continue
+            visited.add(objid)
+            obj.indirect = False
+            if isinstance(obj, (PdfArray, PdfDict)):
+                obj.indirect = True
+                if isinstance(obj, PdfArray):
+                    workitems += obj
+                else:
+                    workitems += obj.values()
 
 if __name__ == '__main__':
     import logging
