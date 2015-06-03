@@ -1,10 +1,11 @@
 # A part of pdfrw (pdfrw.googlecode.com)
-# Copyright (C) 2006-2012 Patrick Maupin, Austin, Texas
+# Copyright (C) 2006-2015 Patrick Maupin, Austin, Texas
 # MIT license -- See LICENSE.txt for details
 
-from pdfrw.objects.pdfname import PdfName
-from pdfrw.objects.pdfindirect import PdfIndirect
-from pdfrw.objects.pdfobject import PdfObject
+from .pdfname import PdfName
+from .pdfindirect import PdfIndirect
+from .pdfobject import PdfObject
+from ..py23_diffs import iteritems
 
 
 class _DictSearch(object):
@@ -115,7 +116,7 @@ class PdfDict(dict):
             if isinstance(args, PdfDict):
                 self.indirect = args.indirect
                 self._stream = args.stream
-        for key, value in kw.iteritems():
+        for key, value in iteritems(kw):
             setattr(self, key, value)
 
     def __getattr__(self, name, PdfName=PdfName):
@@ -153,7 +154,7 @@ class PdfDict(dict):
                 notnone = value is not None
                 self.Length = notnone and PdfObject(len(value)) or None
 
-    def iteritems(self, dictiter=dict.iteritems,
+    def iteritems(self, dictiter=iteritems,
                   isinstance=isinstance, PdfIndirect=PdfIndirect):
         ''' Iterate over the dictionary, resolving any unresolved objects
         '''

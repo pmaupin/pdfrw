@@ -1,5 +1,5 @@
 # A part of pdfrw (pdfrw.googlecode.com)
-# Copyright (C) 2006-2009 Patrick Maupin, Austin, Texas
+# Copyright (C) 2006-2015 Patrick Maupin, Austin, Texas
 # MIT license -- See LICENSE.txt for details
 
 '''
@@ -7,9 +7,9 @@ Currently, this sad little file only knows how to decompress
 using the flate (zlib) algorithm.  Maybe more later, but it's
 not a priority for me...
 '''
-import zlib
-from pdfrw.objects import PdfDict, PdfName
-from pdfrw.errors import log
+from .objects import PdfDict, PdfName
+from .errors import log
+from .py23_diffs import zlib
 
 
 def streamobjects(mylist, isinstance=isinstance, PdfDict=PdfDict):
@@ -17,9 +17,12 @@ def streamobjects(mylist, isinstance=isinstance, PdfDict=PdfDict):
         if isinstance(obj, PdfDict) and obj.stream is not None:
             yield obj
 
+# Hack so we can import if zlib not available
+decompressobj = zlib if zlib is None else zlib.decompressobj
+
 
 def uncompress(mylist, warnings=set(), flate=PdfName.FlateDecode,
-               decompress=zlib.decompressobj, isinstance=isinstance,
+               decompress=decompressobj, isinstance=isinstance,
                list=list, len=len):
     ok = True
     for obj in streamobjects(mylist):
@@ -42,7 +45,7 @@ def uncompress(mylist, warnings=set(), flate=PdfName.FlateDecode,
             error = None
             try:
                 data = dco.decompress(obj.stream)
-            except Exception, s:
+            except Exception as s:
                 error = str(s)
             if error is None:
                 assert not dco.unconsumed_tail

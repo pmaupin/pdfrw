@@ -1,5 +1,5 @@
 # A part of pdfrw (pdfrw.googlecode.com)
-# Copyright (C) 2006-2012 Patrick Maupin, Austin, Texas
+# Copyright (C) 2006-2015 Patrick Maupin, Austin, Texas
 # MIT license -- See LICENSE.txt for details
 
 '''
@@ -28,9 +28,9 @@ Reference for content:   Adobe PDF reference, sixth edition, version 1.7
         Form xobjects discussed chapter 4.9, page 355
 '''
 
-from pdfrw.objects import PdfDict, PdfArray, PdfName
-from pdfrw.pdfreader import PdfReader
-from pdfrw.errors import log, PdfNotImplementedError
+from .objects import PdfDict, PdfArray, PdfName
+from .pdfreader import PdfReader
+from .errors import log, PdfNotImplementedError
 
 
 class ViewInfo(object):
@@ -174,8 +174,6 @@ def _build_cache(contents, allow_compressed):
                 raise PdfNotImplementedError(
                     'Xobjects with compression parameters not supported: %s' %
                     keys)
-
-            cachedict = contents.cachedict = {}
     return xobj_copy
 
 

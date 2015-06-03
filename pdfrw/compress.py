@@ -1,5 +1,5 @@
 # A part of pdfrw (pdfrw.googlecode.com)
-# Copyright (C) 2006-2009 Patrick Maupin, Austin, Texas
+# Copyright (C) 2006-2015 Patrick Maupin, Austin, Texas
 # MIT license -- See LICENSE.txt for details
 
 '''
@@ -7,9 +7,10 @@ Currently, this sad little file only knows how to decompress
 using the flate (zlib) algorithm.  Maybe more later, but it's
 not a priority for me...
 '''
-import zlib
-from pdfrw.objects import PdfName
-from pdfrw.uncompress import streamobjects
+
+from .objects import PdfName
+from .uncompress import streamobjects
+from .py23_diffs import zlib
 
 
 def compress(mylist):

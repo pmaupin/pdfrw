@@ -1,7 +1,5 @@
-#!/usr/bin/env python
-
 # A part of pdfrw (pdfrw.googlecode.com)
-# Copyright (C) 2006-2009 Patrick Maupin, Austin, Texas
+# Copyright (C) 2006-2015 Patrick Maupin, Austin, Texas
 # MIT license -- See LICENSE.txt for details
 
 '''
@@ -18,15 +16,11 @@ addpage() assumes that the pages are part of a valid
 tree/forest of PDF objects.
 '''
 
-try:
-    set
-except NameError:
-    from sets import Set as set
-
-from pdfrw.objects import (PdfName, PdfArray, PdfDict, IndirectPdfDict,
-                           PdfObject, PdfString)
-from pdfrw.compress import compress as do_compress
-from pdfrw.errors import PdfOutputError, log
+from .objects import (PdfName, PdfArray, PdfDict, IndirectPdfDict,
+                      PdfObject, PdfString)
+from .compress import compress as do_compress
+from .errors import PdfOutputError, log
+from .py23_diffs import iteritems, convert_store
 
 NullObject = PdfObject('null')
 NullObject.indirect = True
@@ -34,7 +28,7 @@ NullObject.Type = 'Null object'
 
 
 def user_fmt(obj, isinstance=isinstance, float=float, str=str,
-             basestring=basestring, encode=PdfString.encode):
+             basestring=str, encode=PdfString.encode):
     ''' This function may be replaced by the user for
         specialized formatting requirements.
     '''
@@ -50,17 +44,19 @@ def user_fmt(obj, isinstance=isinstance, float=float, str=str,
 
 
 def FormatObjects(f, trailer, version='1.3', compress=True, killobj=(),
-                  user_fmt=user_fmt,
+                  user_fmt=user_fmt, do_compress=do_compress,
+                  convert_store=convert_store, iteritems=iteritems,
                   id=id, isinstance=isinstance, getattr=getattr, len=len,
-                  sum=sum, set=set, str=str, basestring=basestring,
-                  hasattr=hasattr, repr=repr, enumerate=enumerate,
-                  list=list, dict=dict, tuple=tuple,
-                  do_compress=do_compress, PdfArray=PdfArray,
-                  PdfDict=PdfDict, PdfObject=PdfObject):
+                  sum=sum, set=set, str=str, hasattr=hasattr, repr=repr,
+                  enumerate=enumerate, list=list, dict=dict, tuple=tuple,
+                  PdfArray=PdfArray, PdfDict=PdfDict, PdfObject=PdfObject):
     ''' FormatObjects performs the actual formatting and disk write.
         Should be a class, was a class, turned into nested functions
         for performace (to reduce attribute lookups).
     '''
+
+    def f_write(s):
+        f.write(convert_store(s))
 
     def add(obj):
         ''' Add an object to our list, if it's an indirect
@@ -175,7 +171,6 @@ def FormatObjects(f, trailer, version='1.3', compress=True, killobj=(),
     leaving = visited.remove
     space_join = ' '.join
     lf_join = '\n  '.join
-    f_write = f.write
 
     deferred = []
 
@@ -184,7 +179,7 @@ def FormatObjects(f, trailer, version='1.3', compress=True, killobj=(),
     swapobj = {PdfName.Catalog: trailer.Root,
                PdfName.Pages: trailer.Root.Pages, None: trailer}.get
     swapobj = [(objid, swapobj(obj.Type))
-               for objid, obj in killobj.iteritems()]
+               for objid, obj in iteritems(killobj)]
     swapobj = dict((objid, obj is None and NullObject or obj)
                    for objid, obj in swapobj).get
 
@@ -311,10 +306,12 @@ class PdfWriter(object):
         # file object.
         preexisting = hasattr(fname, 'write')
         f = preexisting and fname or open(fname, 'wb')
-        FormatObjects(f, trailer, self.version, self.compress,
-                      self.killobj, user_fmt=user_fmt)
-        if not preexisting:
-            f.close()
+        try:
+            FormatObjects(f, trailer, self.version, self.compress,
+                          self.killobj, user_fmt=user_fmt)
+        finally:
+            if not preexisting:
+                f.close()
 
     def make_canonical(self):
         ''' Canonicalizes a PDF.  Assumes everything
@@ -335,16 +332,3 @@ class PdfWriter(object):
                     workitems += obj
                 else:
                     workitems += obj.values()
-
-if __name__ == '__main__':
-    import logging
-    log.setLevel(logging.DEBUG)
-    import pdfreader
-    x = pdfreader.PdfReader('source.pdf')
-    y = PdfWriter()
-    for i, page in enumerate(x.pages):
-        print '  Adding page', i + 1, '\r',
-        y.addpage(page)
-    print
-    y.write('result.pdf')
-    print

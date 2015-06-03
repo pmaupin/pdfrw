@@ -1,5 +1,5 @@
 # A part of pdfrw (pdfrw.googlecode.com)
-# Copyright (C) 2006-2009 Patrick Maupin, Austin, Texas
+# Copyright (C) 2006-2015 Patrick Maupin, Austin, Texas
 # MIT license -- See LICENSE.txt for details
 
 '''
@@ -11,10 +11,11 @@ of the object.
 '''
 import gc
 
-from pdfrw.errors import PdfParseError, log
-from pdfrw.tokens import PdfTokens
-from pdfrw.objects import PdfDict, PdfArray, PdfName, PdfObject, PdfIndirect
-from pdfrw.uncompress import uncompress
+from .errors import PdfParseError, log
+from .tokens import PdfTokens
+from .objects import PdfDict, PdfArray, PdfName, PdfObject, PdfIndirect
+from .uncompress import uncompress
+from .py23_diffs import convert_load
 
 
 class PdfReader(PdfDict):
@@ -136,8 +137,7 @@ class PdfReader(PdfDict):
         # The length attribute does not match the distance between the
         # stream and endstream keywords.
 
-        do_warn, self.warned_bad_stream_end = (self.warned_bad_stream_end,
-                                               False)
+        self.warned_bad_stream_end = False
 
         # TODO:  Extract maxstream from dictionary of object offsets
         # and use rfind instead of find.
@@ -248,7 +248,6 @@ class PdfReader(PdfDict):
     def parsexref(self, source, int=int, range=range):
         ''' Parse (one of) the cross-reference file section(s)
         '''
-        fdata = source.fdata
         setdefault = source.obj_offsets.setdefault
         add_offset = source.all_offsets.append
         next = source.next
@@ -325,7 +324,7 @@ class PdfReader(PdfDict):
                           repr(node))
         try:
             return list(readnode(node))
-        except (AttributeError, TypeError), s:
+        except (AttributeError, TypeError) as s:
             log.error('Invalid page tree: %s' % s)
             return []
 
@@ -350,7 +349,7 @@ class PdfReader(PdfDict):
                     except IOError:
                         raise PdfParseError('Could not read PDF file %s' %
                                             fname)
-
+                    fdata = convert_load(fdata)
             assert fdata is not None
             if not fdata.startswith('%PDF-'):
                 startloc = fdata.find('%PDF-')

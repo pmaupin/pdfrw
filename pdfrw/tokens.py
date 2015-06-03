@@ -1,5 +1,5 @@
 # A part of pdfrw (pdfrw.googlecode.com)
-# Copyright (C) 2006-2012 Patrick Maupin, Austin, Texas
+# Copyright (C) 2006-2015 Patrick Maupin, Austin, Texas
 # MIT license -- See LICENSE.txt for details
 
 '''
@@ -10,12 +10,11 @@ sixth edition, for PDF version 1.7, dated November 2006.
 
 '''
 
-from __future__ import generators
-
 import re
 import itertools
-from pdfrw.objects import PdfString, PdfObject
-from pdfrw.errors import log, PdfParseError
+from .objects import PdfString, PdfObject
+from .errors import log, PdfParseError
+from .py23_diffs import nextattr
 
 
 def linepos(fdata, loc):
@@ -181,7 +180,7 @@ class PdfTokens(object):
         self.fdata = fdata
         self.strip_comments = strip_comments
         self.iterator = iterator = self._gettoks(startloc)
-        self.next = iterator.next
+        self.next = getattr(iterator, nextattr)
 
     def setstart(self, startloc):
         ''' Change the starting location.
