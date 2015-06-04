@@ -1,9 +1,10 @@
 # A part of pdfrw (pdfrw.googlecode.com)
-# Copyright (C) 2006-2012 Patrick Maupin, Austin, Texas
+# Copyright (C) 2006-2015 Patrick Maupin, Austin, Texas
 # MIT license -- See LICENSE.txt for details
 
-from pdfrw.objects.pdfindirect import PdfIndirect
-from pdfrw.objects.pdfobject import PdfObject
+from .pdfindirect import PdfIndirect
+from .pdfobject import PdfObject
+
 
 
 def _resolved():
@@ -35,9 +36,12 @@ class PdfArray(list):
         self._resolve()
         return listget(self, index)
 
-    def __getslice__(self, index, listget=list.__getslice__):
-        self._resolve()
-        return listget(self, index)
+    try:
+        def __getslice__(self, i, j, listget=list.__getslice__):
+            self._resolve()
+            return listget(self, i, j)
+    except AttributeError:
+        pass
 
     def __iter__(self, listiter=list.__iter__):
         self._resolve()

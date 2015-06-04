@@ -1,5 +1,5 @@
 # A part of pdfrw (pdfrw.googlecode.com)
-# Copyright (C) 2006-2012 Patrick Maupin, Austin, Texas
+# Copyright (C) 2006-2015 Patrick Maupin, Austin, Texas
 # MIT license -- See LICENSE.txt for details
 
 import re
@@ -17,16 +17,16 @@ class PdfString(str):
                      '\\r': '\r', '\\t': '\t',
                      '\\\r\n': '', '\\\r': '', '\\\n': '',
                      '\\\\': '\\', '\\': '',
-                    }
-    unescape_pattern = \
-        r'(\\\\|\\b|\\f|\\n|\\r|\\t|\\\r\n|\\\r|\\\n|\\[0-9]+|\\)'
+                     }
+    unescape_pattern = (r'(\\\\|\\b|\\f|\\n|\\r|\\t'
+                        r'|\\\r\n|\\\r|\\\n|\\[0-9]+|\\)')
     unescape_func = re.compile(unescape_pattern).split
 
     hex_pattern = '([a-fA-F0-9][a-fA-F0-9]|[a-fA-F0-9])'
     hex_func = re.compile(hex_pattern).split
 
     hex_pattern2 = ('([a-fA-F0-9][a-fA-F0-9][a-fA-F0-9][a-fA-F0-9]|'
-                   '[a-fA-F0-9][a-fA-F0-9]|[a-fA-F0-9])')
+                    '[a-fA-F0-9][a-fA-F0-9]|[a-fA-F0-9])')
     hex_func2 = re.compile(hex_pattern2).split
 
     hex_funcs = hex_func, hex_func2
@@ -53,8 +53,9 @@ class PdfString(str):
         data = self.hex_funcs[twobytes](data)
         chars = data[1::2]
         other = data[0::2]
-        assert other[0] == '<' and other[-1] == '>' and \
-            ''.join(other) == '<>', self
+        assert (other[0] == '<' and
+                other[-1] == '>' and
+                ''.join(other) == '<>'), self
         return ''.join([remap(int(x, 16)) for x in chars])
 
     def decode(self, remap=chr, twobytes=False):

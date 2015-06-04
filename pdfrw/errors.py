@@ -1,5 +1,5 @@
 # A part of pdfrw (pdfrw.googlecode.com)
-# Copyright (C) 2006-2009 Patrick Maupin, Austin, Texas
+# Copyright (C) 2006-2015 Patrick Maupin, Austin, Texas
 # MIT license -- See LICENSE.txt for details
 
 '''
@@ -7,18 +7,18 @@ PDF Exceptions and error handling
 '''
 
 import logging
-from exceptions import Exception
 
 
 logging.basicConfig(
     format='[%(levelname)s] %(filename)s:%(lineno)d %(message)s',
-        level=logging.WARNING)
+           level=logging.WARNING)
 
 log = logging.getLogger('pdfrw')
 
 
 class PdfError(Exception):
     "Abstract base class of exceptions thrown by this module"
+
     def __init__(self, msg):
         self.msg = msg
 
@@ -32,3 +32,7 @@ class PdfParseError(PdfError):
 
 class PdfOutputError(PdfError):
     "Error thrown by PDF writer"
+
+
+class PdfNotImplementedError(PdfError):
+    "Error thrown on missing features"

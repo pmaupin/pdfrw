@@ -13,8 +13,10 @@ import sys
 import os
 
 import find_pdfrw
-from pdfrw import PdfReader, PdfWriter, PdfDict, PdfArray, PdfName, IndirectPdfDict
+from pdfrw import (PdfReader, PdfWriter, PdfDict,
+                   PdfArray, PdfName, IndirectPdfDict)
 from pdfrw.buildxobj import pagexobj
+
 
 def fixpage(*pages):
     pages = [pagexobj(x) for x in pages]

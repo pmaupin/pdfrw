@@ -1,5 +1,5 @@
 # A part of pdfrw (pdfrw.googlecode.com)
-# Copyright (C) 2006-2012 Patrick Maupin, Austin, Texas
+# Copyright (C) 2006-2015 Patrick Maupin, Austin, Texas
 # MIT license -- See LICENSE.txt for details
 
 '''
@@ -28,10 +28,10 @@ Reference for content:   Adobe PDF reference, sixth edition, version 1.7
         Form xobjects discussed chapter 4.9, page 355
 '''
 
-from pdfrw.objects import PdfDict, PdfArray, PdfName
-from pdfrw.pdfreader import PdfReader
-from pdfrw.errors import log
-from pdfrw.uncompress import uncompress
+from .objects import PdfDict, PdfArray, PdfName
+from .pdfreader import PdfReader
+from .errors import log, PdfNotImplementedError
+from .py23_diffs import iteritems
 
 
 class ViewInfo(object):
@@ -65,7 +65,7 @@ class ViewInfo(object):
                 setattr(self, key, [float(x) for x in value])
             else:
                 log.error('Unknown option: %s', key)
-        for key, value in kw.iteritems():
+        for key, value in iteritems(kw):
             assert hasattr(self, key), key
             setattr(self, key, value)
 
@@ -125,10 +125,57 @@ def getrects(inheritable, pageinfo, rotation):
         ctop = mtop - y
         cright = cleft + w
         cbot = ctop - h
-        cbox = max(mleft, cleft), max(mbot, cbot), \
-               min(mright, cright), min(mtop, ctop)
+        cbox = (max(mleft, cleft), max(mbot, cbot),
+                min(mright, cright), min(mtop, ctop))
         cbox = rotate_rect(cbox, -rotation)
     return mbox, cbox
+
+
+def _build_cache(contents, allow_compressed):
+    ''' Build a new dictionary holding the stream,
+        and save it along with private cache info.
+        Assumes validity has been pre-checked if
+        we have a non-None xobj_copy.
+    '''
+    try:
+        xobj_copy = contents.xobj_copy
+    except AttributeError:
+        # Should have a PdfArray here...
+        array = contents
+        private = contents
+    else:
+        # Should have a PdfDict here -- might or might not have cache copy
+        if xobj_copy is not None:
+            return xobj_copy
+        array = [contents]
+        private = contents.private
+
+    # The spec says nothing about nested arrays.  Will
+    # assume that's not a problem until we encounter them...
+
+    xobj_copy = PdfDict(array[0])
+    xobj_copy.private.xobj_cachedict = {}
+    private.xobj_copy = xobj_copy
+
+    if len(array) > 1:
+        newstream = '\n'.join(x.stream for x in array)
+        newlength = sum(int(x.Length) for x in array) + len(array) - 1
+        assert newlength == len(newstream)
+        xobj_copy.stream = newstream
+
+        # Cannot currently cope with different kinds of
+        # compression in the array, so just disallow it.
+        allow_compressed = False
+
+    if not allow_compressed:
+        # Make sure there are no compression parameters
+        for cdict in array:
+            keys = [x[0] for x in iteritems(cdict)]
+            if len(keys) != 1:
+                raise PdfNotImplementedError(
+                    'Xobjects with compression parameters not supported: %s' %
+                    keys)
+    return xobj_copy
 
 
 def _cache_xobj(contents, resources, mbox, bbox, rotation):
@@ -136,8 +183,6 @@ def _cache_xobj(contents, resources, mbox, bbox, rotation):
         Adds private members x, y, w, h
     '''
     cachedict = contents.xobj_cachedict
-    if cachedict is None:
-        cachedict = contents.private.xobj_cachedict = {}
     cachekey = mbox, bbox, rotation
     result = cachedict.get(cachekey)
     if result is None:
@@ -151,8 +196,8 @@ def _cache_xobj(contents, resources, mbox, bbox, rotation):
         )
         rect = bbox
         if rotation:
-            matrix = rotate_point((1, 0), rotation) + \
-                     rotate_point((0, 1), rotation)
+            matrix = (rotate_point((1, 0), rotation) +
+                      rotate_point((0, 1), rotation))
             result.Matrix = PdfArray(matrix + (0, 0))
             rect = rotate_rect(rect, rotation)
 
@@ -198,22 +243,7 @@ def pagexobj(page, viewinfo=ViewInfo(), allow_compressed=True):
     rotation = get_rotation(inheritable.Rotate)
     mbox, bbox = getrects(inheritable, viewinfo, rotation)
     rotation += get_rotation(viewinfo.rotate)
-    if isinstance(page.Contents, PdfArray):
-        if len(page.Contents) == 1:
-            contents = page.Contents[0]
-        else:
-            # decompress and join multiple streams
-            contlist = [c for c in page.Contents]
-            uncompress(contlist)
-            stream = '\n'.join([c.stream for c in contlist])
-            contents = PdfDict(stream=stream)
-    else:
-        contents = page.Contents
-    # Make sure the only attribute is length
-    # All the filters must have been executed
-    assert int(contents.Length) == len(contents.stream)
-    if not allow_compressed:
-        assert len([x for x in contents.iteritems()]) == 1
+    contents = _build_cache(page.Contents, allow_compressed)
     return _cache_xobj(contents, resources, mbox, bbox, rotation)
 
 

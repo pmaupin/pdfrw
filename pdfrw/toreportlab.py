@@ -1,5 +1,5 @@
 # A part of pdfrw (pdfrw.googlecode.com)
-# Copyright (C) 2006-2009 Patrick Maupin, Austin, Texas
+# Copyright (C) 2006-2015 Patrick Maupin, Austin, Texas
 # MIT license -- See LICENSE.txt for details
 
 '''
@@ -52,7 +52,7 @@ Notes:
 '''
 
 from reportlab.pdfbase import pdfdoc as rldocmodule
-from pdfrw.objects import PdfDict, PdfArray, PdfName
+from .objects import PdfDict, PdfArray, PdfName
 
 RLStream = rldocmodule.PDFStream
 RLDict = rldocmodule.PDFDictionary
@@ -107,6 +107,7 @@ def _makearray(rldoc, pdfobj):
 def _makestr(rldoc, pdfobj):
     assert isinstance(pdfobj, (float, int, str)), repr(pdfobj)
     return str(getattr(pdfobj, 'encoded', pdfobj))
+
 
 
 def makerl_recurse(rldoc, pdfobj):

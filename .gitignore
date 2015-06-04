@@ -1,0 +1,42 @@
+bad.txt
+test_codegen_dump_1.txt
+test_codegen_dump_2.txt
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+
+# Distribution / packaging
+.Python
+env/
+bin/
+build/
+develop-eggs/
+dist/
+eggs/
+lib/
+lib64/
+lib64
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+pyvenv.cfg
+pip-selfcheck.json
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.coverage
+.cache
+nosetests.xml
+coverage.xml
+
+# Sphinx documentation
+docs/_build/

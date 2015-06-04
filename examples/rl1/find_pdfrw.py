@@ -5,7 +5,8 @@
                 1) Make a copy, change 'xxx' in package to be your name; or
                 2) Under Linux, just ln -s to where this is in the right tree
 
-    Created by Pat Maupin, who doesn't consider it big enough to be worth copyrighting
+    Created by Pat Maupin, who doesn't consider it big enough to
+    be worth copyrighting
 '''
 
 import sys
@@ -13,6 +14,7 @@ import os
 
 myname = __name__[5:]   # remove 'find_'
 myname = os.path.join(myname, '__init__.py')
+
 
 def trypath(newpath):
     path = None
@@ -26,8 +28,10 @@ root = trypath(__file__) or trypath(os.path.realpath(__file__))
 
 if root is None:
     print
-    print 'Warning: %s: Could not find path to development package %s' % (__file__, myname)
-    print '             The import will either fail or will use system-installed libraries'
+    print ('Warning: %s: Could not find path to development package %s' %
+           (__file__, myname))
+    print ('             The import will either fail or will '
+           'use system-installed libraries')
     print
 elif root not in sys.path:
     sys.path.append(root)

@@ -1,7 +1,5 @@
-#!/usr/bin/env python
-
 # A part of pdfrw (pdfrw.googlecode.com)
-# Copyright (C) 2006-2009 Patrick Maupin, Austin, Texas
+# Copyright (C) 2006-2015 Patrick Maupin, Austin, Texas
 # MIT license -- See LICENSE.txt for details
 
 '''
@@ -18,32 +16,47 @@ addpage() assumes that the pages are part of a valid
 tree/forest of PDF objects.
 '''
 
-try:
-    set
-except NameError:
-    from sets import Set as set
-
-from pdfrw.objects import PdfName, PdfArray, PdfDict, IndirectPdfDict
-from pdfrw.objects import PdfObject, PdfString
-from pdfrw.compress import compress as do_compress
-from pdfrw.errors import PdfOutputError, log
+from .objects import (PdfName, PdfArray, PdfDict, IndirectPdfDict,
+                      PdfObject, PdfString)
+from .compress import compress as do_compress
+from .errors import PdfOutputError, log
+from .py23_diffs import iteritems, convert_store
 
 NullObject = PdfObject('null')
 NullObject.indirect = True
 NullObject.Type = 'Null object'
 
 
+def user_fmt(obj, isinstance=isinstance, float=float, str=str,
+             basestring=str, encode=PdfString.encode):
+    ''' This function may be replaced by the user for
+        specialized formatting requirements.
+    '''
+
+    if isinstance(obj, basestring):
+        return encode(obj)
+
+    # PDFs don't handle exponent notation
+    if isinstance(obj, float):
+            return ('%.9f' % obj).rstrip('0').rstrip('.')
+
+    return str(obj)
+
+
 def FormatObjects(f, trailer, version='1.3', compress=True, killobj=(),
-        id=id, isinstance=isinstance, getattr=getattr, len=len,
-        sum=sum, set=set, str=str, basestring=basestring,
-        hasattr=hasattr, repr=repr, enumerate=enumerate,
-        list=list, dict=dict, tuple=tuple,
-        do_compress=do_compress, PdfArray=PdfArray,
-        PdfDict=PdfDict, PdfObject=PdfObject, encode=PdfString.encode):
+                  user_fmt=user_fmt, do_compress=do_compress,
+                  convert_store=convert_store, iteritems=iteritems,
+                  id=id, isinstance=isinstance, getattr=getattr, len=len,
+                  sum=sum, set=set, str=str, hasattr=hasattr, repr=repr,
+                  enumerate=enumerate, list=list, dict=dict, tuple=tuple,
+                  PdfArray=PdfArray, PdfDict=PdfDict, PdfObject=PdfObject):
     ''' FormatObjects performs the actual formatting and disk write.
         Should be a class, was a class, turned into nested functions
         for performace (to reduce attribute lookups).
     '''
+
+    def f_write(s):
+        f.write(convert_store(s))
 
     def add(obj):
         ''' Add an object to our list, if it's an indirect
@@ -60,9 +73,9 @@ def FormatObjects(f, trailer, version='1.3', compress=True, killobj=(),
 
         if not indirect:
             if objid in visited:
-                log.warning(('Replicating direct %s object,'
-                            ' should be indirect for optimal file size')
-                            % type(obj))
+                log.warning('Replicating direct %s object, '
+                            'should be indirect for optimal file size' %
+                            type(obj))
                 obj = type(obj)(obj)
                 objid = id(obj)
             visiting(objid)
@@ -132,14 +145,17 @@ def FormatObjects(f, trailer, version='1.3', compress=True, killobj=(),
                     result = format_array(myarray, '<<%s>>')
                     stream = obj.stream
                     if stream is not None:
-                        result = '%s\nstream\n%s\nendstream' % (result, stream)
+                        result = ('%s\nstream\n%s\nendstream' %
+                                  (result, stream))
                     return result
                 obj = (PdfArray, PdfDict)[isinstance(obj, dict)](obj)
                 continue
 
-            if not hasattr(obj, 'indirect') and isinstance(obj, basestring):
-                return encode(obj)
-            return str(getattr(obj, 'encoded', obj))
+            # We assume that an object with an indirect
+            # attribute knows how to represent itself to us.
+            if hasattr(obj, 'indirect'):
+                return str(getattr(obj, 'encoded', obj))
+            return user_fmt(obj)
 
     def format_deferred():
         while deferred:
@@ -155,19 +171,17 @@ def FormatObjects(f, trailer, version='1.3', compress=True, killobj=(),
     leaving = visited.remove
     space_join = ' '.join
     lf_join = '\n  '.join
-    f_write = f.write
 
     deferred = []
 
     # Don't reference old catalog or pages objects --
     # swap references to new ones.
     swapobj = {PdfName.Catalog: trailer.Root,
-               PdfName.Pages: trailer.Root.Pages,
-               None: trailer}.get
-    swapobj = [(objid, swapobj(obj.Type)) for objid, obj in
-        killobj.iteritems()]
-    swapobj = dict((objid, obj is None and NullObject or obj) for objid, obj in
-        swapobj).get
+               PdfName.Pages: trailer.Root.Pages, None: trailer}.get
+    swapobj = [(objid, swapobj(obj.Type))
+               for objid, obj in iteritems(killobj)]
+    swapobj = dict((objid, obj is None and NullObject or obj)
+                   for objid, obj in swapobj).get
 
     for objid in killobj:
         assert swapobj(objid) is not None
@@ -209,6 +223,7 @@ def FormatObjects(f, trailer, version='1.3', compress=True, killobj=(),
 class PdfWriter(object):
 
     _trailer = None
+    canonicalize = False
 
     def __init__(self, version='1.3', compress=False):
         self.pagearray = PdfArray()
@@ -220,7 +235,7 @@ class PdfWriter(object):
         self._trailer = None
         if page.Type != PdfName.Page:
             raise PdfOutputError('Bad /Type:  Expected %s, found %s'
-                                  % (PdfName.Page, page.Type))
+                                 % (PdfName.Page, page.Type))
         inheritable = page.inheritable  # searches for resources
         self.pagearray.append(
             IndirectPdfDict(
@@ -254,6 +269,9 @@ class PdfWriter(object):
         if trailer is not None:
             return trailer
 
+        if self.canonicalize:
+            self.make_canonical()
+
         # Create the basic object structure of the PDF file
         trailer = PdfDict(
             Root=IndirectPdfDict(
@@ -279,26 +297,36 @@ class PdfWriter(object):
 
     trailer = property(_get_trailer, _set_trailer)
 
-    def write(self, fname, trailer=None):
+    def write(self, fname, trailer=None, user_fmt=user_fmt):
         trailer = trailer or self.trailer
 
         # Dump the data.  We either have a filename or a preexisting
         # file object.
         preexisting = hasattr(fname, 'write')
         f = preexisting and fname or open(fname, 'wb')
-        FormatObjects(f, trailer, self.version, self.compress, self.killobj)
-        if not preexisting:
-            f.close()
+        try:
+            FormatObjects(f, trailer, self.version, self.compress,
+                          self.killobj, user_fmt=user_fmt)
+        finally:
+            if not preexisting:
+                f.close()
 
-if __name__ == '__main__':
-    import logging
-    log.setLevel(logging.DEBUG)
-    import pdfreader
-    x = pdfreader.PdfReader('source.pdf')
-    y = PdfWriter()
-    for i, page in enumerate(x.pages):
-        print '  Adding page', i + 1, '\r',
-        y.addpage(page)
-    print
-    y.write('result.pdf')
-    print
+    def make_canonical(self):
+        ''' Canonicalizes a PDF.  Assumes everything
+            is a Pdf object already.
+        '''
+        visited = set()
+        workitems = list(self.pagearray)
+        while workitems:
+            obj = workitems.pop()
+            objid = id(obj)
+            if objid in visited:
+                continue
+            visited.add(objid)
+            obj.indirect = False
+            if isinstance(obj, (PdfArray, PdfDict)):
+                obj.indirect = True
+                if isinstance(obj, PdfArray):
+                    workitems += obj
+                else:
+                    workitems += obj.values()

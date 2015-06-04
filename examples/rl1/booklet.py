@@ -43,7 +43,7 @@ def make_pdf(outfn, xobjpairs):
             x += xobj.BBox[2]
             y = max(y, xobj.BBox[3])
 
-        canvas.setPageSize((x,y))
+        canvas.setPageSize((x, y))
 
         # Handle blank back page
         if len(xobjlist) > 1 and xobjlist[0] == xobjlist[-1]:

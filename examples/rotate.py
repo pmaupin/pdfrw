@@ -34,7 +34,8 @@ if not ranges:
 for onerange in ranges:
     onerange = (onerange + onerange[-1:])[:2]
     for pagenum in range(onerange[0]-1, onerange[1]):
-        pages[pagenum].Rotate = (int(pages[pagenum].inheritable.Rotate or 0) + rotate) % 360
+        pages[pagenum].Rotate = (int(pages[pagenum].inheritable.Rotate or
+                                     0) + rotate) % 360
 
 outdata = PdfWriter()
 outdata.trailer = trailer

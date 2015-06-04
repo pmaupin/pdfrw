@@ -1,5 +1,5 @@
 # A part of pdfrw (pdfrw.googlecode.com)
-# Copyright (C) 2006-2009 Patrick Maupin, Austin, Texas
+# Copyright (C) 2006-2015 Patrick Maupin, Austin, Texas
 # MIT license -- See LICENSE.txt for details
 
 '''
@@ -12,10 +12,12 @@ of the object.
 import gc
 import struct
 
-from pdfrw.errors import PdfParseError, log
-from pdfrw.tokens import PdfTokens
-from pdfrw.objects import PdfDict, PdfArray, PdfName, PdfObject, PdfIndirect
-from pdfrw.uncompress import uncompress
+from .errors import PdfParseError, log
+from .tokens import PdfTokens
+from .objects import PdfDict, PdfArray, PdfName, PdfObject, PdfIndirect
+from .uncompress import uncompress
+from .py23_diffs import convert_load
+
 
 
 class PdfReader(PdfDict):
@@ -77,7 +79,8 @@ class PdfReader(PdfDict):
                 tok = next()
                 if value.isdigit() and tok.isdigit():
                     if next() != 'R':
-                        source.exception('Expected "R" following two integers')
+                        source.exception(
+                            'Expected "R" following two integers')
                     value = self.findindirect(value, tok)
                     tok = next()
             result[key] = value
@@ -136,7 +139,7 @@ class PdfReader(PdfDict):
         # The length attribute does not match the distance between the
         # stream and endstream keywords.
 
-        do_warn, self.warned_bad_stream_end = self.warned_bad_stream_end, False
+        self.private.warned_bad_stream_end = False
 
         # TODO:  Extract maxstream from dictionary of object offsets
         # and use rfind instead of find.
@@ -147,19 +150,25 @@ class PdfReader(PdfDict):
         if endstream < 0:
             source.error('Could not find endstream')
             return
-        if length == room + 1 and fdata[startstream - 2:startstream] == '\r\n':
-            source.warning(r"stream keyword terminated by \r without \n")
+        if (length == room + 1 and
+                fdata[startstream - 2:startstream] == '\r\n'):
+            if not self.warned_bad_stream_start:
+                source.warning(r"stream keyword terminated by \r without \n")
+                self.private.warned_bad_stream_start = True
             obj._stream = fdata[startstream - 1:target_endstream - 1]
             return
         source.floc = endstream
         if length > room:
-            source.error(('stream /Length attribute (%d) appears to be too big'
-                         ' (size %d) -- adjusting'), length, room)
+            source.error('stream /Length attribute (%d) appears to '
+                         'be too big (size %d) -- adjusting',
+                         length, room)
             obj.stream = fdata[startstream:endstream]
             return
         if fdata[target_endstream:endstream].rstrip():
-            source.error(('stream /Length attribute (%d) might be smaller'
-                          ' than data size (%d)'), length, room)
+            source.error('stream /Length attribute (%d) appears to '
+                         'be too small (size %d) -- adjusting',
+                         length, room)
+            obj.stream = fdata[startstream:endstream]
             return
         endobj = fdata.find('endobj', endstream, maxstream)
         if endobj < 0:
@@ -193,14 +202,14 @@ class PdfReader(PdfDict):
             source.next()
             objheader = '%d %d obj' % (objnum, gennum)
             fdata = source.fdata
-            offset2 = fdata.find('\n' + objheader) + 1 or \
-                      fdata.find('\r' + objheader) + 1
-            if not offset2 or \
-               fdata.find(fdata[offset2 - 1] + objheader, offset2) > 0:
+            offset2 = (fdata.find('\n' + objheader) + 1 or
+                       fdata.find('\r' + objheader) + 1)
+            if (not offset2 or
+                    fdata.find(fdata[offset2 - 1] + objheader, offset2) > 0):
                 source.warning("Expected indirect object '%s'" % objheader)
                 return None
-            source.warning(('Indirect object %s found at incorrect offset %d'
-                           ' (expected offset %d)') %
+            source.warning("Indirect object %s found at incorrect "
+                           "offset %d (expected offset %d)" %
                            (objheader, offset2, offset))
             source.floc = offset2 + len(objheader)
 
@@ -402,10 +411,10 @@ class PdfReader(PdfDict):
                     yield node
             else:
                 log.error('Expected /Page or /Pages dictionary, got %s' %
-                    repr(node))
+                          repr(node))
         try:
             return list(readnode(node))
-        except (AttributeError, TypeError), s:
+        except (AttributeError, TypeError) as s:
             log.error('Invalid page tree: %s' % s)
             return []
 
@@ -429,8 +438,8 @@ class PdfReader(PdfDict):
                         f.close()
                     except IOError:
                         raise PdfParseError('Could not read PDF file %s' %
-                            fname)
-
+                                            fname)
+                    fdata = convert_load(fdata)
             assert fdata is not None
             if not fdata.startswith('%PDF-'):
                 startloc = fdata.find('%PDF-')
@@ -441,14 +450,14 @@ class PdfReader(PdfDict):
                     if not lines:
                         raise PdfParseError('Empty PDF file!')
                     raise PdfParseError('Invalid PDF header: %s' %
-                        repr(lines[0]))
+                                        repr(lines[0]))
 
-            self.version = fdata[5:8]
+            self.private.version = fdata[5:8]
 
             endloc = fdata.rfind('%EOF')
             if endloc < 0:
                 raise PdfParseError('EOF mark not found: %s' %
-                    repr(fdata[-20:]))
+                                    repr(fdata[-20:]))
             endloc += 6
             junk = fdata[endloc:]
             fdata = fdata[:endloc]
@@ -495,7 +504,7 @@ class PdfReader(PdfDict):
 
             if trailer.Version and \
                     float(trailer.Version) > float(self.version):
-                self.version = trailer.Version
+                self.private.version = trailer.Version
 
             trailer = PdfDict(
                 Root=trailer.Root,
@@ -505,7 +514,7 @@ class PdfReader(PdfDict):
             )
             self.update(trailer)
 
-            #self.read_all_indirect(source)
+            # self.read_all_indirect(source)
             private.pages = self.readpages(self.Root)
             if decompress:
                 self.uncompress()
