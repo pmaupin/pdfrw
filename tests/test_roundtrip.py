@@ -3,9 +3,11 @@
 '''
 Run from the directory above like so:
 
-python -m tests.test_roundtrip
+   python -m tests.test_roundtrip
 
-NB:
+A PDF that has been determined to be good or bad
+should be added to expected.txt with either a good
+checksum, or just the word "fail".
 
 These tests are incomplete, but they allow us to try
 out various PDFs.  There is a collection of difficult
@@ -19,57 +21,88 @@ In order to use them:
      between the static_pdfs/global directory and the tmp_results
      directory after you run this.
 
-TODO: Automate true pass/fail reporting!!!
-
-Thoughts on this:  Collect good MD5s for passing results, and
-save the good MD5s in a file for comparison.  Modify tests
-to assume failure unless MD5s match.
 
 '''
 import os
 import unittest
+import hashlib
 import pdfrw
+import static_pdfs
+import expected
 
-from static_pdfs import pdffiles
-
-result_dir = 'tmp_results'
-
-from pdfrw.pdfreader import PdfReader
-from pdfrw.pdfwriter import PdfWriter
-from pdfrw import IndirectPdfDict
-
+from pdfrw.py23_diffs import convert_store
 
 class TestOnePdf(unittest.TestCase):
 
-    def roundtrip(self, srcf):
-        dstf = os.path.join(result_dir, os.path.basename(srcf))
-        if os.path.exists(dstf):
-            os.remove(dstf)
-        trailer = PdfReader(srcf, decompress=False)
-        writer = PdfWriter(compress=False)
-        writer.write(dstf, trailer)
+    def roundtrip(self, testname, basename, srcf, decompress=False,
+                  compress=False, repaginate=False):
+        dstd = os.path.join(expected.result_dir, testname)
+        if not os.path.exists(dstd):
+            os.makedirs(dstd)
+        dstf = os.path.join(dstd, basename)
+        hashfile = os.path.join(expected.result_dir, 'hashes.txt')
+        hashkey = '%s/%s' % (testname, basename)
+        hash = '------no-file-generated---------'
+        expects = expected.results[hashkey]
 
+        # If the test has been deliberately skipped,
+        # we are done.  Otherwise, execute it even
+        # if we don't know about it yet, so we have
+        # results to compare.
 
-def test_generator(fname):
-    def test(self):
-        self.roundtrip(fname)
-    return test
+        if 'skip' in expects:
+            return self.skipTest('skip requested')
+        elif 'xfail' in expects:
+            return self.fail('xfail requested')
+
+        exists = os.path.exists(dstf)
+        try:
+            if expects or not exists:
+                if exists:
+                    os.remove(dstf)
+                trailer = pdfrw.PdfReader(srcf, decompress=decompress)
+                writer = pdfrw.PdfWriter(compress=compress)
+                if repaginate:
+                    writer.addpages(trailer.pages)
+                    trailer = None
+                writer.write(dstf, trailer)
+            with open(dstf, 'rb') as f:
+                data = f.read()
+            hash = hashlib.md5(data).hexdigest()
+            if expects:
+                if len(expects) == 1:
+                    expects, = expects
+                    self.assertEqual(hash, expects)
+                else:
+                    self.assertIn(hash, expects)
+            else:
+                self.skipTest('No hash available')
+        finally:
+            result = '%s %s\n' % (hashkey, hash)
+            with open(hashfile, 'ab') as f:
+                f.write(convert_store(result))
 
 
 def build_tests():
-    if not os.path.exists(result_dir):
-        os.mkdir(result_dir)
-    for fname in pdffiles[0]:
-        test_name = 'test_%s' % os.path.basename(fname)
-        test = test_generator(fname)
-        setattr(TestOnePdf, test_name, test)
+    def test_closure(*args, **kw):
+        def test(self):
+            self.roundtrip(*args, **kw)
+        return test
+    for mytest, repaginate in (
+        ('simple', False),
+        ('repaginate', True)
+        ):
+        for srcf in static_pdfs.pdffiles[0]:
+            basename = os.path.basename(srcf)
+            test_name = 'test_%s_%s' % (mytest, basename)
+            test = test_closure(mytest, basename, srcf,
+                                repaginate=repaginate)
+            setattr(TestOnePdf, test_name, test)
+build_tests()
 
 
 def main():
     unittest.main()
-
-
-build_tests()
 
 if __name__ == '__main__':
     main()

@@ -137,7 +137,7 @@ class PdfReader(PdfDict):
         # The length attribute does not match the distance between the
         # stream and endstream keywords.
 
-        self.warned_bad_stream_end = False
+        self.private.warned_bad_stream_end = False
 
         # TODO:  Extract maxstream from dictionary of object offsets
         # and use rfind instead of find.
@@ -163,9 +163,10 @@ class PdfReader(PdfDict):
             obj.stream = fdata[startstream:endstream]
             return
         if fdata[target_endstream:endstream].rstrip():
-            source.error('stream /Length attribute (%d) might be '
-                         'smaller than data size (%d)',
+            source.error('stream /Length attribute (%d) appears to '
+                         'be too small (size %d) -- adjusting',
                          length, room)
+            obj.stream = fdata[startstream:endstream]
             return
         endobj = fdata.find('endobj', endstream, maxstream)
         if endobj < 0:
