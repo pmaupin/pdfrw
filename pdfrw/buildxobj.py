@@ -31,6 +31,7 @@ Reference for content:   Adobe PDF reference, sixth edition, version 1.7
 from .objects import PdfDict, PdfArray, PdfName
 from .pdfreader import PdfReader
 from .errors import log, PdfNotImplementedError
+from .py23_diffs import iteritems
 
 
 class ViewInfo(object):
@@ -64,7 +65,7 @@ class ViewInfo(object):
                 setattr(self, key, [float(x) for x in value])
             else:
                 log.error('Unknown option: %s', key)
-        for key, value in kw.iteritems():
+        for key, value in iteritems(kw):
             assert hasattr(self, key), key
             setattr(self, key, value)
 
@@ -169,7 +170,7 @@ def _build_cache(contents, allow_compressed):
     if not allow_compressed:
         # Make sure there are no compression parameters
         for cdict in array:
-            keys = [x[0] for x in cdict.iteritems()]
+            keys = [x[0] for x in iteritems(cdict)]
             if len(keys) != 1:
                 raise PdfNotImplementedError(
                     'Xobjects with compression parameters not supported: %s' %

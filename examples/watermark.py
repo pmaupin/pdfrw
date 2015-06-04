@@ -77,14 +77,14 @@ def batch_watermark(pdfdir, watermark_fname, outputdir='tmp'):
         try:
             total_pages += fix_pdf(fname, watermark_fname, pdfdir, outputdir)
             good_files += 1
-            print "%s OK" % fname
+            print("%s OK" % fname)
         except Exception:
-            print "%s Failed miserably" % fname
-            print traceback.format_exc()[:2000]
+            print("%s Failed miserably" % fname)
+            print(traceback.format_exc()[:2000])
             # raise
 
-    print "success %.2f%% %s pages" % (
-        (float(good_files) / len(fnames)) * 100, total_pages)
+    print("success %.2f%% %s pages" % (
+        (float(good_files) / len(fnames)) * 100, total_pages))
 
 if __name__ == "__main__":
 
