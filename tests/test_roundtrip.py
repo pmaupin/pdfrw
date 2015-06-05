@@ -56,11 +56,16 @@ class TestOnePdf(unittest.TestCase):
             return self.fail('xfail requested')
 
         exists = os.path.exists(dstf)
+        result = 'fail'
+        size = 0
         try:
             if expects or not exists:
                 if exists:
                     os.remove(dstf)
                 trailer = pdfrw.PdfReader(srcf, decompress=decompress)
+                if trailer.Encrypt:
+                    result = 'skip -- encrypt'
+                    return self.skipTest('File encrypted')
                 writer = pdfrw.PdfWriter(compress=compress)
                 if repaginate:
                     writer.addpages(trailer.pages)
@@ -68,17 +73,23 @@ class TestOnePdf(unittest.TestCase):
                 writer.write(dstf, trailer)
             with open(dstf, 'rb') as f:
                 data = f.read()
-            hash = hashlib.md5(data).hexdigest()
+            size = len(data)
+            if data:
+                hash = hashlib.md5(data).hexdigest()
+            else:
+                os.remove(dstf)
             if expects:
                 if len(expects) == 1:
                     expects, = expects
                     self.assertEqual(hash, expects)
                 else:
                     self.assertIn(hash, expects)
+                result = 'pass'
             else:
+                result = 'skip'
                 self.skipTest('No hash available')
         finally:
-            result = '%s %s\n' % (hashkey, hash)
+            result = '%8d %-20s %s %s\n' % (size, result, hashkey, hash)
             with open(hashfile, 'ab') as f:
                 f.write(convert_store(result))
 

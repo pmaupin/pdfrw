@@ -2,10 +2,11 @@
 # Copyright (C) 2006-2015 Patrick Maupin, Austin, Texas
 # MIT license -- See LICENSE.txt for details
 
-from .pdfname import PdfName
+from .pdfname import PdfName, BasePdfName
 from .pdfindirect import PdfIndirect
 from .pdfobject import PdfObject
 from ..py23_diffs import iteritems
+from ..errors import PdfParseError
 
 
 class _DictSearch(object):
@@ -101,8 +102,10 @@ class PdfDict(dict):
                     _stream=('stream', False),
                     )
 
-    def __setitem__(self, name, value, setter=dict.__setitem__):
-        assert name.startswith('/'), name
+    def __setitem__(self, name, value, setter=dict.__setitem__,
+                    BasePdfName=BasePdfName, isinstance=isinstance):
+        if not isinstance(name, BasePdfName):
+            raise PdfParseError('Dict key %s is not a PdfName' % repr(name))
         if value is not None:
             setter(self, name, value)
         elif name in self:
@@ -155,14 +158,16 @@ class PdfDict(dict):
                 self.Length = notnone and PdfObject(len(value)) or None
 
     def iteritems(self, dictiter=iteritems,
-                  isinstance=isinstance, PdfIndirect=PdfIndirect):
+                  isinstance=isinstance, PdfIndirect=PdfIndirect,
+                  BasePdfName=BasePdfName):
         ''' Iterate over the dictionary, resolving any unresolved objects
         '''
         for key, value in list(dictiter(self)):
             if isinstance(value, PdfIndirect):
                 self[key] = value = value.real_value()
             if value is not None:
-                assert key.startswith('/'), (key, value)
+                if not isinstance(key, BasePdfName):
+                    raise PdfParseError('Dict key %s is not a PdfName' % repr(name))
                 yield key, value
 
     def items(self):
