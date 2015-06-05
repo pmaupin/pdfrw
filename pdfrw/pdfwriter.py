@@ -136,12 +136,12 @@ def FormatObjects(f, trailer, version='1.3', compress=True, killobj=(),
                 elif isinstance(obj, PdfDict):
                     if compress and obj.stream:
                         do_compress([obj])
+                    pairs = sorted((x, y, getattr(x, 'encoded', x))
+                                   for (x, y) in obj.iteritems())
                     myarray = []
-                    dictkeys = [str(x) for x in obj.keys()]
-                    dictkeys.sort()
-                    for key in dictkeys:
-                        myarray.append(key)
-                        myarray.append(add(obj[key]))
+                    for key, value, encoding in pairs:
+                        myarray.append(encoding)
+                        myarray.append(add(value))
                     result = format_array(myarray, '<<%s>>')
                     stream = obj.stream
                     if stream is not None:
