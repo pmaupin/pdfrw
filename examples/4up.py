@@ -29,12 +29,12 @@ def get4(allpages):
         x = x_max * (index & 1) / 2.0
         y = y_max * (index <= 1) / 2.0
         index = '/P%s' % index
-        stream.append('q 0.5 0 0 0.5 %s %s cm %s Do Q\n' % (x, y, index))
+        stream.append('q 0.5 0 0 0.5 %s %s cm %s Do Q' % (x, y, index))
         xobjdict[index] = page
 
     return PdfDict(
         Type=PdfName.Page,
-        Contents=PdfDict(stream=''.join(stream)),
+        Contents=PdfDict(stream='\n'.join(x.rstrip() for x in stream)),
         MediaBox=PdfArray([0, 0, x_max, y_max]),
         Resources=PdfDict(XObject=xobjdict),
     )

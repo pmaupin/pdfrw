@@ -167,7 +167,8 @@ class PdfDict(dict):
                 self[key] = value = value.real_value()
             if value is not None:
                 if not isinstance(key, BasePdfName):
-                    raise PdfParseError('Dict key %s is not a PdfName' % repr(name))
+                    raise PdfParseError('Dict key %s is not a PdfName' %
+                                        repr(key))
                 yield key, value
 
     def items(self):

@@ -56,7 +56,8 @@ for subdir in sorted(os.listdir(result_dir)):
             if sel == 'n':
                 break
             if sel == 'c':
-                subprocess.call(('compare', '-verbose', srcf, dstf, 'foobar.pdf'))
+                subprocess.call(('compare', '-verbose', srcf, dstf,
+                                 'foobar.pdf'))
                 builtdiff = True
                 continue
             if sel == 'f':

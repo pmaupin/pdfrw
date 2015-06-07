@@ -15,6 +15,7 @@ and
 addpage() assumes that the pages are part of a valid
 tree/forest of PDF objects.
 '''
+import gc
 
 from .objects import (PdfName, PdfArray, PdfDict, IndirectPdfDict,
                       PdfObject, PdfString)
@@ -299,19 +300,25 @@ class PdfWriter(object):
 
     trailer = property(_get_trailer, _set_trailer)
 
-    def write(self, fname, trailer=None, user_fmt=user_fmt):
+    def write(self, fname, trailer=None, user_fmt=user_fmt,
+              disable_gc=True):
         trailer = trailer or self.trailer
 
         # Dump the data.  We either have a filename or a preexisting
         # file object.
         preexisting = hasattr(fname, 'write')
         f = preexisting and fname or open(fname, 'wb')
+        if disable_gc:
+            gc.disable()
+
         try:
             FormatObjects(f, trailer, self.version, self.compress,
                           self.killobj, user_fmt=user_fmt)
         finally:
             if not preexisting:
                 f.close()
+            if disable_gc:
+                gc.enable()
 
     def make_canonical(self):
         ''' Canonicalizes a PDF.  Assumes everything

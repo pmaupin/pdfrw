@@ -162,10 +162,11 @@ class PdfTokens(object):
                     break
                 raise StopIteration
 
-    def __init__(self, fdata, startloc=0, strip_comments=True):
+    def __init__(self, fdata, startloc=0, strip_comments=True, verbose=True):
         self.fdata = fdata
         self.strip_comments = strip_comments
         self.iterator = iterator = self._gettoks(startloc)
+        self.msgs_dumped = None if verbose else set()
         self.next = getattr(iterator, nextattr)
 
     def setstart(self, startloc):
@@ -203,6 +204,11 @@ class PdfTokens(object):
         return default
 
     def msg(self, msg, *arg):
+        dumped = self.msgs_dumped
+        if dumped is not None:
+            if msg in dumped:
+                return
+            dumped.add(msg)
         if arg:
             msg %= arg
         fdata = self.fdata
@@ -217,10 +223,14 @@ class PdfTokens(object):
         return '%s (line=%d, col=%d)' % (msg, line, col)
 
     def warning(self, *arg):
-        log.warning(self.msg(*arg))
+        s = self.msg(*arg)
+        if s:
+            log.warning(s)
 
     def error(self, *arg):
-        log.error(self.msg(*arg))
+        s = self.msg(*arg)
+        if s:
+            log.error(s)
 
     def exception(self, *arg):
         raise PdfParseError(self.msg(*arg))

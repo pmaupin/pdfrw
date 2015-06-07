@@ -33,7 +33,7 @@ def go(inpfn, firstpage, lastpage):
     canvas = Canvas(outfn)
 
     for page in pages:
-        canvas.setPageSize(tuple(page.BBox[2:]))
+        canvas.setPageSize((page.BBox[2], page.BBox[3]))
         canvas.doForm(makerl(canvas, page))
         canvas.showPage()
 

@@ -29,7 +29,7 @@ def fixpage(*pages):
         index = '/P%s' % i
         shift_right = x and '1 0 0 1 %s 0 cm ' % x or ''
         stuff = PageStuff((index, page))
-        stuff.stream = 'q %s%s Do Q\n' % (shift_right, index)
+        stuff.stream = 'q %s%s Do Q' % (shift_right, index)
         x += page.BBox[2]
         y = max(y, page.BBox[3])
         pages[i] = stuff
@@ -42,7 +42,8 @@ def fixpage(*pages):
 
     return IndirectPdfDict(
         Type=PdfName.Page,
-        Contents=PdfDict(stream=''.join(page.stream for page in pages)),
+        Contents=PdfDict(stream='\n'.join(page.stream.rstrip()
+                                          for page in pages)),
         MediaBox=PdfArray([0, 0, x, y]),
         Resources=PdfDict(
             XObject=PdfDict(pages),

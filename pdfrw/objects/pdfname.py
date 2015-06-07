@@ -8,6 +8,7 @@ from ..errors import log
 
 warn = log.warning
 
+
 class BasePdfName(str):
     ''' A PdfName is an identifier that starts with
         a slash.
