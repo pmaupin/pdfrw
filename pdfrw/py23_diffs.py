@@ -4,7 +4,6 @@
 
 # Deal with Python2/3 differences
 
-
 try:
     import zlib
 except ImportError:
@@ -19,6 +18,10 @@ except NameError:
 
     def convert_store(s):
         return s.encode('Latin-1')
+
+    def from_array(a):
+        return a.tobytes()
+
 else:
 
     def convert_load(s):
@@ -27,9 +30,17 @@ else:
     def convert_store(s):
         return s
 
+    def from_array(a):
+        return a.tostring()
+
 nextattr, = (x for x in dir(iter([])) if 'next' in x)
 
 try:
     iteritems = dict.iteritems
 except AttributeError:
     iteritems = dict.items
+
+try:
+    xrange = xrange
+except NameError:
+    xrange = range

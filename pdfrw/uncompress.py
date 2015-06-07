@@ -1,15 +1,20 @@
 # A part of pdfrw (pdfrw.googlecode.com)
 # Copyright (C) 2006-2015 Patrick Maupin, Austin, Texas
+# Copyright (C) 2012-2015 Nerijus Mika
 # MIT license -- See LICENSE.txt for details
+# Copyright (c) 2006, Mathieu Fenniak
+# BSD license -- see LICENSE.txt for details
+'''
+A small subset of decompression filters.  Should add more later.
 
+I believe, after looking at the code, that portions of the flate
+PNG predictor were originally transcribed from PyPDF2, which is
+probably an excellent source of additional filters.
 '''
-Currently, this sad little file only knows how to decompress
-using the flate (zlib) algorithm.  Maybe more later, but it's
-not a priority for me...
-'''
+import array
 from .objects import PdfDict, PdfName
 from .errors import log
-from .py23_diffs import zlib
+from .py23_diffs import zlib, xrange, from_array, convert_load, convert_store
 
 
 def streamobjects(mylist, isinstance=isinstance, PdfDict=PdfDict):
@@ -21,9 +26,9 @@ def streamobjects(mylist, isinstance=isinstance, PdfDict=PdfDict):
 decompressobj = zlib if zlib is None else zlib.decompressobj
 
 
-def uncompress(mylist, warnings=set(), flate=PdfName.FlateDecode,
-               decompress=decompressobj, isinstance=isinstance,
-               list=list, len=len):
+def uncompress(mylist, leave_raw=False, warnings=set(),
+               flate=PdfName.FlateDecode, decompress=decompressobj,
+               isinstance=isinstance, list=list, len=len):
     ok = True
     for obj in streamobjects(mylist):
         ftype = obj.Filter
@@ -33,20 +38,28 @@ def uncompress(mylist, warnings=set(), flate=PdfName.FlateDecode,
             # todo: multiple filters
             ftype = ftype[0]
         parms = obj.DecodeParms
-        if ftype != flate or parms is not None:
-            msg = ('Not decompressing: cannot use filter %s '
-                   'with parameters %s' % (repr(ftype), repr(parms)))
+        if ftype != flate:
+            msg = ('Not decompressing: cannot use filter %s'
+                   ' with parameters %s') % (repr(ftype), repr(parms))
             if msg not in warnings:
                 warnings.add(msg)
                 log.warning(msg)
             ok = False
         else:
             dco = decompress()
-            error = None
             try:
-                data = dco.decompress(obj.stream)
+                data = dco.decompress(convert_store(obj.stream))
             except Exception as s:
                 error = str(s)
+            else:
+                error = None
+                if parms:
+                    predictor = int(parms.Predictor or 1)
+                    if 10 <= predictor <= 15:
+                        data, error = flate_png(data, parms)
+                    elif predictor != 1:
+                        error = ('Unsupported flatedecode predictor %s' %
+                                 repr(predictor))
             if error is None:
                 assert not dco.unconsumed_tail
                 if dco.unused_data.strip():
@@ -54,7 +67,40 @@ def uncompress(mylist, warnings=set(), flate=PdfName.FlateDecode,
                              repr(dco.unused_data[:20]))
             if error is None:
                 obj.Filter = None
-                obj.stream = data
+                obj.stream = data if leave_raw else convert_load(data)
             else:
                 log.error('%s %s' % (error, repr(obj.indirect)))
+                ok = False
     return ok
+
+
+def flate_png(data, parms):
+    ''' PNG prediction is used to make certain kinds of data
+        more compressible.  Before the compression, each data
+        byte is either left the same, or is set to be a delta
+        from the previous byte, or is set to be a delta from
+        the previous row.  This selection is done on a per-row
+        basis, and is indicated by a compression type byte
+        prepended to each row of data.
+
+        Within more recent PDF files, it is normal to use
+        this technique for Xref stream objects, which are
+        quite regular.
+    '''
+    columns = int(parms.Columns)
+    data = array.array('B', data)
+    rowlen = columns + 1
+    assert len(data) % rowlen == 0
+    rows = xrange(0, len(data), rowlen)
+    for row_index in rows:
+        offset = data[row_index]
+        if offset >= 2:
+            if offset > 2:
+                return None, 'Unsupported PNG filter %d' % offset
+            offset = rowlen if row_index else 0
+        if offset:
+            for index in xrange(row_index + 1, row_index + rowlen):
+                data[index] = (data[index] + data[index - offset]) % 256
+    for row_index in reversed(rows):
+        data.pop(row_index)
+    return from_array(data), None

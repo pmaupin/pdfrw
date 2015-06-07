@@ -16,7 +16,10 @@ import collections
 from pdfrw.py23_diffs import convert_load
 
 root_dir = os.path.dirname(__file__)
-result_dir = os.path.join(root_dir, 'tmp_results')
+result_dir = 'tmp_results'
+if os.path.exists('ramdisk'):
+    result_dir = os.path.join('ramdisk', 'tmp_results')
+result_dir = os.path.join(root_dir, result_dir)
 
 for sourcef in ('mytests.txt', 'expected.txt'):
     expectedf = os.path.join(root_dir, sourcef)

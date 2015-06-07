@@ -1,5 +1,6 @@
 # A part of pdfrw (pdfrw.googlecode.com)
 # Copyright (C) 2006-2015 Patrick Maupin, Austin, Texas
+# Copyright (C) 2012-2015 Nerijus Mika
 # MIT license -- See LICENSE.txt for details
 
 '''
@@ -10,12 +11,15 @@ document pages are stored in a list in the pages attribute
 of the object.
 '''
 import gc
+import binascii
+import collections
+import itertools
 
 from .errors import PdfParseError, log
 from .tokens import PdfTokens
 from .objects import PdfDict, PdfArray, PdfName, PdfObject, PdfIndirect
 from .uncompress import uncompress
-from .py23_diffs import convert_load
+from .py23_diffs import convert_load, iteritems
 
 
 class PdfReader(PdfDict):
@@ -120,7 +124,7 @@ class PdfReader(PdfDict):
                                r"by \r without \n")
         return startstream
 
-    def readstream(self, obj, startstream, source,
+    def readstream(self, obj, startstream, source, exact_required=False,
                    streamending='endstream endobj'.split(), int=int):
         fdata = source.fdata
         length = int(obj.Length)
@@ -129,6 +133,9 @@ class PdfReader(PdfDict):
         obj._stream = fdata[startstream:target_endstream]
         if endit == streamending:
             return
+
+        if exact_required:
+            source.exception('Expected endstream endobj')
 
         # The length attribute does not match the distance between the
         # stream and endstream keywords.
@@ -262,6 +269,45 @@ class PdfReader(PdfDict):
         self.read_all()
         uncompress(self.indirect_objects.itervalues())
 
+    def load_stream_objects(self, object_streams):
+        # read object streams
+        objs = []
+        for num in object_streams:
+            obj = self.findindirect(num, 0).real_value()
+            assert obj.Type == '/ObjStm'
+            objs.append(obj)
+
+        # read objects from stream
+        if objs:
+            uncompress(objs)
+            for obj in objs:
+                objsource = PdfTokens(obj.stream, 0, False)
+                snext = objsource.next
+                offsets = {}
+                firstoffset = int(obj.First)
+                num = snext()
+                while num.isdigit():
+                    offset = int(snext())
+                    offsets[int(num)] = firstoffset + offset
+                    num = snext()
+                for num, offset in iteritems(offsets):
+                    # Read the object, and call special code if it starts
+                    # an array or dictionary
+                    objsource.floc = offset
+                    sobj = snext()
+                    func = self.special.get(sobj)
+                    if func is not None:
+                        sobj = func(objsource)
+
+                    key = (num, 0)
+                    self.indirect_objects[key] = sobj
+                    if key in self.deferred_objects:
+                        self.deferred_objects.remove(key)
+
+                    # Mark the object as indirect, and
+                    # add it to the list of streams if it starts a stream
+                    sobj.indirect = key
+
     def findxref(self, fdata):
         ''' Find the cross reference section at the end of a file
         '''
@@ -278,11 +324,63 @@ class PdfReader(PdfDict):
             source.exception('Expected %%EOF')
         return startloc, PdfTokens(fdata, int(tableloc), True, self.verbose)
 
+    def parse_xref_stream(self, source, int=int, range=range,
+                          enumerate=enumerate, islice=itertools.islice,
+                          defaultdict=collections.defaultdict,
+                          hexlify=binascii.hexlify):
+        ''' Parse (one of) the cross-reference file section(s)
+        '''
+
+        def readint(s, lengths):
+            lengths = itertools.cycle(lengths)
+            offset = 0
+            for length in itertools.cycle(lengths):
+                next = offset + length
+                yield int(hexlify(s[offset:next]), 16) if length else None
+                offset = next
+
+        setdefault = source.obj_offsets.setdefault
+        next = source.next
+        # check for xref stream object
+        objid = source.multiple(3)
+        ok = len(objid) == 3
+        ok = ok and objid[0].isdigit()
+        ok = ok and objid[1] == 'obj'
+        ok = ok and objid[2] == '<<'
+        if not ok:
+            source.exception('Expected xref stream start')
+        obj = self.readdict(source)
+        if obj.Type != PdfName.XRef:
+            source.exception('Expected dict type of /XRef')
+        tok = next()
+        self.readstream(obj, self.findstream(obj, tok, source), source, True)
+        if not uncompress([obj], True):
+            source.exception('Could not decompress Xref stream')
+        num_pairs = obj.Index or PdfArray(['0', obj.Size])
+        num_pairs = [int(x) for x in num_pairs]
+        num_pairs = zip(num_pairs[0::2], num_pairs[1::2])
+        entry_sizes = [int(x) for x in obj.W]
+        if len(entry_sizes) != 3:
+            source.exception('Invalid entry size')
+        object_streams = defaultdict(list)
+        get = readint(obj.stream, entry_sizes)
+        for objnum, size in num_pairs:
+            for cnt in range(size):
+                xtype, p1, p2 = islice(get, 3)
+                if xtype in (1, None):
+                    if p1:
+                        setdefault((objnum, p2 or 0), p1)
+                elif xtype == 2:
+                    object_streams[p1].append((objnum, p2))
+                objnum += 1
+
+        obj.private.object_streams = object_streams
+        return obj
+
     def parse_xref_table(self, source, int=int, range=range):
         ''' Parse (one of) the cross-reference file section(s)
         '''
         setdefault = source.obj_offsets.setdefault
-        add_offset = source.all_offsets.append
         next = source.next
         # plain xref table
         start = source.floc
@@ -299,7 +397,6 @@ class PdfReader(PdfDict):
                     if inuse == 'n':
                         if offset != 0:
                             setdefault((objnum, generation), offset)
-                            add_offset(offset)
                     elif inuse != 'f':
                         raise ValueError
         except:
@@ -318,7 +415,6 @@ class PdfReader(PdfDict):
                                                  int(tokens[1]), tokens[2])
                     if offset != 0 and inuse == 'n':
                         setdefault((objnum, generation), offset)
-                        add_offset(offset)
                     objnum += 1
                 elif tokens:
                     log.error('Invalid line in xref table: %s' %
@@ -336,12 +432,14 @@ class PdfReader(PdfDict):
         '''
         next = source.next
         tok = next()
-        if tok == 'xref':
+        if tok.isdigit():
+            return self.parse_xref_stream(source), True
+        elif tok == 'xref':
             self.parse_xref_table(source)
             tok = next()
             if tok != '<<':
                 source.exception('Expected "<<" starting catalog')
-            return self.readdict(source)
+            return self.readdict(source), False
         else:
             source.exception('Expected "xref" keyword or xref stream object')
 
@@ -433,15 +531,13 @@ class PdfReader(PdfDict):
 
             startloc, source = self.findxref(fdata)
             private.source = source
+
+            # Find all the xref tables/streams, and
+            # then deal with them backwards.
             xref_list = []
-            source.all_offsets = []
             while 1:
                 source.obj_offsets = {}
-
-                # Loop through all the cross-reference tables/streams
-                trailer = self.parsexref(source)
-
-                # Loop if any previously-written xrefs.
+                trailer, is_stream = self.parsexref(source)
                 prev = trailer.Prev
                 if prev is None:
                     token = source.next()
@@ -449,26 +545,35 @@ class PdfReader(PdfDict):
                         source.warning('Expected "startxref" '
                                        'at end of xref table')
                     break
-                if not xref_list:
-                    trailer.Prev = None
-                    original_indirect = self.indirect_objects.copy()
-                    original_trailer = trailer
+                xref_list.append((source.obj_offsets, trailer, is_stream))
                 source.floc = int(prev)
-                xref_list.append(source.obj_offsets)
-                self.indirect_objects.clear()
 
-            if xref_list:
-                for update in reversed(xref_list):
-                    source.obj_offsets.update(update)
-                self.indirect_objects.clear()
-                self.indirect_objects.update(original_indirect)
-                trailer = original_trailer
+            if is_stream:
+                self.load_stream_objects(trailer.object_streams)
+
+            while xref_list:
+                later_offsets, later_trailer, is_stream = xref_list.pop()
+                source.obj_offsets.update(later_offsets)
+                if is_stream:
+                    trailer.update(later_trailer)
+                    self.load_stream_objects(later_trailer.object_streams)
+                else:
+                    trailer = later_trailer
+
+            trailer.Prev = None
 
             if (trailer.Version and
                     float(trailer.Version) > float(self.version)):
                 self.private.version = trailer.Version
 
-            self.update(trailer)
+            if is_stream:
+                self.Root = trailer.Root
+                self.Info = trailer.Info
+                self.ID = trailer.ID
+                self.Size = trailer.Size
+                self.Encrypt = trailer.Encrypt
+            else:
+                self.update(trailer)
 
             # self.read_all_indirect(source)
             private.pages = self.readpages(self.Root)
