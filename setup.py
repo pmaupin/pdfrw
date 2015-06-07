@@ -1,10 +1,6 @@
 #!/usr/bin/env python
 
 from distutils.core import setup
-try:
-    import setuptools
-except:
-    pass
 
 setup(
     name='pdfrw',

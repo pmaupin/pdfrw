@@ -17,7 +17,11 @@ from pdfrw.py23_diffs import convert_load
 
 root_dir = os.path.dirname(__file__)
 result_dir = os.path.join(root_dir, 'tmp_results')
-expectedf = os.path.join(root_dir, 'expected.txt')
+
+for sourcef in ('mytests.txt', 'expected.txt'):
+    expectedf = os.path.join(root_dir, sourcef)
+    if os.path.exists(expectedf):
+        break
 
 def results():
     results = collections.defaultdict(set)

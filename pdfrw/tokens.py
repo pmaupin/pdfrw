@@ -13,9 +13,9 @@ sixth edition, for PDF version 1.7, dated November 2006.
 import re
 import itertools
 from .objects import PdfString, PdfObject
+from .objects.pdfname import BasePdfName
 from .errors import log, PdfParseError
 from .py23_diffs import nextattr
-
 
 
 def linepos(fdata, loc):
@@ -63,7 +63,6 @@ class PdfTokens(object):
                          re.DOTALL).finditer
     findparen = re.compile('(%s)[%s]*' % (p_literal_string_extend,
                                           whitespace), re.DOTALL).finditer
-    splitname = re.compile(r'\#([0-9A-Fa-f]{2})').split
 
     def _cacheobj(cache, obj, constructor):
         ''' This caching relies on the constructors
@@ -77,25 +76,10 @@ class PdfTokens(object):
             cache[result] = result
         return result
 
-    def fixname(self, cache, token, constructor, splitname=splitname,
-                join=''.join, cacheobj=_cacheobj):
-        ''' Inside name tokens, a '#' character indicates that
-            the next two bytes are hex characters to be used
-            to form the 'real' character.
-        '''
-        substrs = splitname(token)
-        if '#' in join(substrs[::2]):
-            self.warning('Invalid /Name token')
-            return token
-        substrs[1::2] = (chr(int(x, 16)) for x in substrs[1::2])
-        result = cacheobj(cache, join(substrs), constructor)
-        result.encoded = token
-        return result
-
     def _gettoks(self, startloc, cacheobj=_cacheobj,
                  delimiters=delimiters, findtok=findtok,
                  findparen=findparen, PdfString=PdfString,
-                 PdfObject=PdfObject):
+                 PdfObject=PdfObject, BasePdfName=BasePdfName):
         ''' Given a source data string and a location inside it,
             gettoks generates tokens.  Each token is a tuple of the form:
              <starting file loc>, <ending file loc>, <token string>
@@ -110,7 +94,6 @@ class PdfTokens(object):
         '''
         fdata = self.fdata
         current = self.current = [(startloc, startloc)]
-        namehandler = (cacheobj, self.fixname)
         cache = {}
         while 1:
             for match in findtok(fdata, current[0][1]):
@@ -122,8 +105,10 @@ class PdfTokens(object):
                 elif firstch in '/<(%':
                     if firstch == '/':
                         # PDF Name
-                        token = namehandler['#' in token](cache, token,
-                                                          PdfObject)
+                        encoded = token
+                        token = cache.get(encoded)
+                        if token is None:
+                            token = cache[token] = BasePdfName(encoded)
                     elif firstch == '<':
                         # << dict delim, or < hex string >
                         if token[1:2] != '<':
@@ -177,10 +162,11 @@ class PdfTokens(object):
                     break
                 raise StopIteration
 
-    def __init__(self, fdata, startloc=0, strip_comments=True):
+    def __init__(self, fdata, startloc=0, strip_comments=True, verbose=True):
         self.fdata = fdata
         self.strip_comments = strip_comments
         self.iterator = iterator = self._gettoks(startloc)
+        self.msgs_dumped = None if verbose else set()
         self.next = getattr(iterator, nextattr)
 
     def setstart(self, startloc):
@@ -218,6 +204,11 @@ class PdfTokens(object):
         return default
 
     def msg(self, msg, *arg):
+        dumped = self.msgs_dumped
+        if dumped is not None:
+            if msg in dumped:
+                return
+            dumped.add(msg)
         if arg:
             msg %= arg
         fdata = self.fdata
@@ -232,10 +223,14 @@ class PdfTokens(object):
         return '%s (line=%d, col=%d)' % (msg, line, col)
 
     def warning(self, *arg):
-        log.warning(self.msg(*arg))
+        s = self.msg(*arg)
+        if s:
+            log.warning(s)
 
     def error(self, *arg):
-        log.error(self.msg(*arg))
+        s = self.msg(*arg)
+        if s:
+            log.error(s)
 
     def exception(self, *arg):
         raise PdfParseError(self.msg(*arg))

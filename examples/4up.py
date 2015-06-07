@@ -34,7 +34,7 @@ def get4(allpages):
 
     return PdfDict(
         Type=PdfName.Page,
-        Contents=PdfDict(stream='\n'.join(stream)),
+        Contents=PdfDict(stream='\n'.join(x.rstrip() for x in stream)),
         MediaBox=PdfArray([0, 0, x_max, y_max]),
         Resources=PdfDict(XObject=xobjdict),
     )

@@ -42,7 +42,8 @@ def fixpage(*pages):
 
     return IndirectPdfDict(
         Type=PdfName.Page,
-        Contents=PdfDict(stream='\n'.join(page.stream for page in pages)),
+        Contents=PdfDict(stream='\n'.join(page.stream.rstrip()
+                                          for page in pages)),
         MediaBox=PdfArray([0, 0, x, y]),
         Resources=PdfDict(
             XObject=PdfDict(pages),

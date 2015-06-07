@@ -32,6 +32,7 @@ import expected
 
 from pdfrw.py23_diffs import convert_store
 
+
 class TestOnePdf(unittest.TestCase):
 
     def roundtrip(self, testname, basename, srcf, decompress=False,
@@ -50,17 +51,26 @@ class TestOnePdf(unittest.TestCase):
         # if we don't know about it yet, so we have
         # results to compare.
 
-        if 'skip' in expects:
-            return self.skipTest('skip requested')
-        elif 'xfail' in expects:
-            return self.fail('xfail requested')
-
-        exists = os.path.exists(dstf)
+        result = 'fail'
+        size = 0
         try:
+            if 'skip' in expects:
+                result = 'skip requested'
+                return self.skipTest(result)
+            elif 'xfail' in expects:
+                result = 'xfail requested'
+                return self.fail(result)
+
+            exists = os.path.exists(dstf)
             if expects or not exists:
                 if exists:
                     os.remove(dstf)
-                trailer = pdfrw.PdfReader(srcf, decompress=decompress)
+                trailer = pdfrw.PdfReader(srcf, decompress=decompress,
+                                          verbose=False)
+                if trailer.Encrypt:
+                    result = 'skip -- encrypt'
+                    hash = '------skip-encrypt-no-file------'
+                    return self.skipTest('File encrypted')
                 writer = pdfrw.PdfWriter(compress=compress)
                 if repaginate:
                     writer.addpages(trailer.pages)
@@ -68,17 +78,23 @@ class TestOnePdf(unittest.TestCase):
                 writer.write(dstf, trailer)
             with open(dstf, 'rb') as f:
                 data = f.read()
-            hash = hashlib.md5(data).hexdigest()
+            size = len(data)
+            if data:
+                hash = hashlib.md5(data).hexdigest()
+            else:
+                os.remove(dstf)
             if expects:
                 if len(expects) == 1:
                     expects, = expects
                     self.assertEqual(hash, expects)
                 else:
                     self.assertIn(hash, expects)
+                result = 'pass'
             else:
+                result = 'skip'
                 self.skipTest('No hash available')
         finally:
-            result = '%s %s\n' % (hashkey, hash)
+            result = '%8d %-20s %s %s\n' % (size, result, hashkey, hash)
             with open(hashfile, 'ab') as f:
                 f.write(convert_store(result))
 
@@ -89,9 +105,9 @@ def build_tests():
             self.roundtrip(*args, **kw)
         return test
     for mytest, repaginate in (
-        ('simple', False),
-        ('repaginate', True)
-        ):
+            ('simple', False),
+            ('repaginate', True)
+            ):
         for srcf in static_pdfs.pdffiles[0]:
             basename = os.path.basename(srcf)
             test_name = 'test_%s_%s' % (mytest, basename)

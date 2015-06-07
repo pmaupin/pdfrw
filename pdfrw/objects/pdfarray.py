@@ -6,7 +6,6 @@ from .pdfindirect import PdfIndirect
 from .pdfobject import PdfObject
 
 
-
 def _resolved():
     pass
 
