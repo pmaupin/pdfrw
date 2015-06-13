@@ -83,7 +83,7 @@ def get_rotation(rotate):
         return 0
     if rotate % 90 != 0:
         return 0
-    return rotate / 90
+    return rotate // 90
 
 
 def rotate_point(point, rotation):
