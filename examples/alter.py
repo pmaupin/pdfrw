@@ -12,7 +12,6 @@ Demonstrates making a slight alteration to a preexisting PDF file.
 import sys
 import os
 
-import find_pdfrw
 from pdfrw import PdfReader, PdfWriter
 
 inpfn, = sys.argv[1:]

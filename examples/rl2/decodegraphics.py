@@ -13,7 +13,6 @@ Better to use Form XObjects for most things (see the example in rl1).
 '''
 from inspect import getargspec
 
-import find_pdfrw
 from pdfrw import PdfTokens
 from pdfrw.pdfobjects import PdfString
 

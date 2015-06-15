@@ -16,7 +16,6 @@ some reason.
 import sys
 import os
 
-import find_pdfrw
 from pdfrw import (PdfReader, PdfWriter, PdfDict,
                    PdfName, PdfArray, IndirectPdfDict)
 from pdfrw.buildxobj import pagexobj

@@ -12,7 +12,6 @@ Chops each page in half.
 import sys
 import os
 
-import find_pdfrw
 from pdfrw import (PdfReader, PdfWriter, PdfDict,
                    PdfArray, PdfName, IndirectPdfDict)
 from pdfrw.buildxobj import pagexobj

@@ -11,7 +11,6 @@ Creates subset.my.pdf
 import sys
 import os
 
-import find_pdfrw
 from pdfrw import PdfReader, PdfWriter
 
 inpfn = sys.argv[1]

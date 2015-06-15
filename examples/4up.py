@@ -10,7 +10,6 @@ Creates 4up.my.pdf
 import sys
 import os
 
-import find_pdfrw
 from pdfrw import PdfReader, PdfWriter, PdfDict, PdfName, PdfArray
 from pdfrw.buildxobj import pagexobj
 

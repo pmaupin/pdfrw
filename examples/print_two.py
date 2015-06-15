@@ -13,7 +13,6 @@ small documents.  Works for double-sided only right now.
 import sys
 import os
 
-import find_pdfrw
 from pdfrw import PdfReader, PdfWriter, PdfArray, IndirectPdfDict
 
 

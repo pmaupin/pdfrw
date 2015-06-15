@@ -12,7 +12,6 @@ Pages organized in a form suitable for booklet printing.
 import sys
 import os
 
-import find_pdfrw
 from pdfrw import (PdfReader, PdfWriter, PdfDict,
                    PdfArray, PdfName, IndirectPdfDict)
 from pdfrw.buildxobj import pagexobj

@@ -19,7 +19,6 @@ has a simpler interface to PdfWriter.
 import sys
 import os
 
-import find_pdfrw
 from pdfrw import PdfReader, PdfWriter, IndirectPdfDict
 
 inputs = sys.argv[1:]

@@ -13,7 +13,6 @@ Creates rotate.my.pdf with selected pages rotated.  Rotates all by default.
 import sys
 import os
 
-import find_pdfrw
 from pdfrw import PdfReader, PdfWriter
 
 inpfn = sys.argv[1]

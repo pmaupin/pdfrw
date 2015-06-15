@@ -12,7 +12,6 @@ Need to add code to write them out.....
 import sys
 import os
 
-import find_pdfrw
 from pdfrw import PdfReader, PdfDict, PdfArray, PdfName
 
 

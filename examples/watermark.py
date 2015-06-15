@@ -12,7 +12,6 @@ first page from single_page.pdf
 import sys
 import os
 
-import find_pdfrw
 from pdfrw import (PdfReader, PdfWriter, PdfDict, PdfName,
                    IndirectPdfDict, PdfArray)
 from pdfrw.buildxobj import pagexobj
