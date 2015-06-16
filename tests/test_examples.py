@@ -131,11 +131,12 @@ class TestOnePdf(unittest.TestCase):
         self.do_test('alter b1c400de699af29ea3f1983bb26870ab')
 
     def test_metadata(self):
-        self.do_test('metadata b1c400de699af29ea3f1983bb26870ab 06c86654f9a77e82f9adaa0086fc391c')
-
+        self.do_test('metadata b1c400de699af29ea3f1983bb26870ab '
+                     '06c86654f9a77e82f9adaa0086fc391c')
 
     def test_rotate(self):
-        self.do_test('rotate 707e3e2d17cbe9ec2273414b3b63f333 270 1-4 7-8 10-50 52-56')
+        self.do_test('rotate 707e3e2d17cbe9ec2273414b3b63f333 '
+                     '270 1-4 7-8 10-50 52-56')
 
     def test_poster(self):
         prev = [None]

@@ -225,7 +225,7 @@ class PageMerge(list):
             mbox[1] = min(0, mbox[1])
 
         page = PdfDict(indirect=True) if page is None else page
-        page.Type=PdfName.Page
+        page.Type = PdfName.Page
         page.Resources = resources
         page.MediaBox = mbox
         page.CropBox = cbox
