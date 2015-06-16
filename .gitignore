@@ -1,6 +1,16 @@
-bad.txt
-test_codegen_dump_1.txt
-test_codegen_dump_2.txt
+# Development artifacts
+diffs.txt
+examples/*.pdf
+examples/rl*/*.pdf
+tests/*.pdf
+examples/pdfrw
+examples/rl*/pdfrw
+tests/pdfrw
+tests/static_pdfs
+tests/ramdisk
+tests/saved_results
+wiki/
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
