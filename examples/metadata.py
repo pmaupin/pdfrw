@@ -3,7 +3,7 @@
 '''
 usage:   metadata.py <first.pdf> [<next.pdf> ...]
 
-Creates output.pdf
+Creates metadata.<first.pdf>
 
 This file demonstrates two features:
 
@@ -23,7 +23,7 @@ from pdfrw import PdfReader, PdfWriter, IndirectPdfDict
 
 inputs = sys.argv[1:]
 assert inputs
-outfn = 'output.pdf'
+outfn = 'metadata.' + os.path.basename(inputs[0])
 
 writer = PdfWriter()
 for inpfn in inputs:

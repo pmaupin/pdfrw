@@ -5,63 +5,35 @@ usage:   booklet.py my.pdf
 
 Creates booklet.my.pdf
 
-Pages organized in a form suitable for booklet printing.
-
+Pages organized in a form suitable for booklet printing, e.g.
+to print 4 8.5x11 pages using a single 11x17 sheet (double-sided).
 '''
 
 import sys
 import os
 
-from pdfrw import (PdfReader, PdfWriter, PdfDict,
-                   PdfArray, PdfName, IndirectPdfDict)
-from pdfrw.buildxobj import pagexobj
+from pdfrw import PdfReader, PdfWriter, PageMerge
 
 
 def fixpage(*pages):
-    pages = [pagexobj(x) for x in pages]
+    result = PageMerge() + (x for x in pages if x is not None)
+    result[-1].x += result[0].w
+    return result.render()
 
-    class PageStuff(tuple):
-        pass
-
-    x = y = 0
-    for i, page in enumerate(pages):
-        index = '/P%s' % i
-        shift_right = x and '1 0 0 1 %s 0 cm ' % x or ''
-        stuff = PageStuff((index, page))
-        stuff.stream = 'q %s%s Do Q' % (shift_right, index)
-        x += page.BBox[2]
-        y = max(y, page.BBox[3])
-        pages[i] = stuff
-
-    # Multiple copies of first page used as a placeholder to
-    # get blank page on back.
-    for p1, p2 in zip(pages, pages[1:]):
-        if p1[1] is p2[1]:
-            pages.remove(p1)
-
-    return IndirectPdfDict(
-        Type=PdfName.Page,
-        Contents=PdfDict(stream='\n'.join(page.stream.rstrip()
-                                          for page in pages)),
-        MediaBox=PdfArray([0, 0, x, y]),
-        Resources=PdfDict(
-            XObject=PdfDict(pages),
-        ),
-    )
 
 inpfn, = sys.argv[1:]
 outfn = 'booklet.' + os.path.basename(inpfn)
-pages = PdfReader(inpfn).pages
+ipages = PdfReader(inpfn).pages
 
-# Use page1 as a marker to print a blank at the end
-if len(pages) & 1:
-    pages.append(pages[0])
+# Make sure we have an even number
+if len(ipages) & 1:
+    ipages.append(None)
 
-bigpages = []
-while len(pages) > 2:
-    bigpages.append(fixpage(pages.pop(), pages.pop(0)))
-    bigpages.append(fixpage(pages.pop(0), pages.pop()))
+opages = []
+while len(ipages) > 2:
+    opages.append(fixpage(ipages.pop(), ipages.pop(0)))
+    opages.append(fixpage(ipages.pop(0), ipages.pop()))
 
-bigpages += pages
+opages += ipages
 
-PdfWriter().addpages(bigpages).write(outfn)
+PdfWriter().addpages(opages).write(outfn)
