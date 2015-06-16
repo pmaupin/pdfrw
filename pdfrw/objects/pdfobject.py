@@ -1,4 +1,4 @@
-# A part of pdfrw (pdfrw.googlecode.com)
+# A part of pdfrw (https://github.com/pmaupin/pdfrw)
 # Copyright (C) 2006-2015 Patrick Maupin, Austin, Texas
 # MIT license -- See LICENSE.txt for details
 

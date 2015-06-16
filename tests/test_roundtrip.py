@@ -1,5 +1,9 @@
 #! /usr/bin/env python
 
+# A part of pdfrw (https://github.com/pmaupin/pdfrw)
+# Copyright (C) 2015 Patrick Maupin, Austin, Texas
+# MIT license -- See LICENSE.txt for details
+
 '''
 Run from the directory above like so:
 

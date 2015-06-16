@@ -1,3 +1,5 @@
+#! /usr/bin/env python
+
 '''
 Run from the directory above like so:
 python -m tests.test_pdfstring
