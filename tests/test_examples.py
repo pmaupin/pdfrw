@@ -132,8 +132,8 @@ class TestOnePdf(unittest.TestCase):
     def test_alter(self):
         self.do_test('alter b1c400de699af29ea3f1983bb26870ab')
 
-    def test_metadata(self):
-        self.do_test('metadata b1c400de699af29ea3f1983bb26870ab '
+    def test_cat(self):
+        self.do_test('cat b1c400de699af29ea3f1983bb26870ab '
                      '06c86654f9a77e82f9adaa0086fc391c')
 
     def test_rotate(self):

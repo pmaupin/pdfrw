@@ -1,18 +1,15 @@
 #!/usr/bin/env python
 
 '''
-usage:   metadata.py <first.pdf> [<next.pdf> ...]
+usage:   cat.py <first.pdf> [<next.pdf> ...]
 
-Creates metadata.<first.pdf>
+Creates cat.<first.pdf>
 
 This file demonstrates two features:
 
 1) Concatenating multiple input PDFs.
 
 2) adding metadata to the PDF.
-
-If you do not need to add metadata, look at subset.py, which
-has a simpler interface to PdfWriter.
 
 '''
 
@@ -23,7 +20,7 @@ from pdfrw import PdfReader, PdfWriter, IndirectPdfDict
 
 inputs = sys.argv[1:]
 assert inputs
-outfn = 'metadata.' + os.path.basename(inputs[0])
+outfn = 'cat.' + os.path.basename(inputs[0])
 
 writer = PdfWriter()
 for inpfn in inputs:
