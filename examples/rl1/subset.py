@@ -15,6 +15,8 @@ Demonstrates use of pdfrw with reportlab.
 import sys
 import os
 
+import invariant
+
 from reportlab.pdfgen.canvas import Canvas
 
 from pdfrw import PdfReader
@@ -24,8 +26,7 @@ from pdfrw.toreportlab import makerl
 
 def go(inpfn, firstpage, lastpage):
     firstpage, lastpage = int(firstpage), int(lastpage)
-    outfn = 'subset_%s_to_%s.%s' % (firstpage, lastpage,
-                                    os.path.basename(inpfn))
+    outfn = 'subset.' + os.path.basename(inpfn)
 
     pages = PdfReader(inpfn).pages
     pages = [pagexobj(x) for x in pages[firstpage - 1:lastpage]]

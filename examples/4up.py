@@ -1,52 +1,33 @@
 #!/usr/bin/env python
 
 '''
-usage:   4up.py my.pdf firstpage lastpage
+usage:   4up.py my.pdf
 
-Creates 4up.my.pdf
-
+Creates 4up.my.pdf with a single output page for every
+4 input pages.
 '''
 
 import sys
 import os
 
-from pdfrw import PdfReader, PdfWriter, PdfDict, PdfName, PdfArray
-from pdfrw.buildxobj import pagexobj
+from pdfrw import PdfReader, PdfWriter, PageMerge
 
 
-def get4(allpages):
-    # Pull a maximum of 4 pages off the list
-    pages = [pagexobj(x) for x in allpages[:4]]
-    del allpages[:4]
-
-    x_max = max(page.BBox[2] for page in pages)
-    y_max = max(page.BBox[3] for page in pages)
-
-    stream = []
-    xobjdict = PdfDict()
-    for index, page in enumerate(pages):
-        x = x_max * (index & 1) / 2.0
-        y = y_max * (index <= 1) / 2.0
-        index = '/P%s' % index
-        stream.append('q 0.5 0 0 0.5 %s %s cm %s Do Q' % (x, y, index))
-        xobjdict[index] = page
-
-    return PdfDict(
-        Type=PdfName.Page,
-        Contents=PdfDict(stream='\n'.join(x.rstrip() for x in stream)),
-        MediaBox=PdfArray([0, 0, x_max, y_max]),
-        Resources=PdfDict(XObject=xobjdict),
-    )
+def get4(srcpages):
+    scale = 0.5
+    srcpages = PageMerge() + srcpages
+    x_increment, y_increment = (scale * i for i in srcpages.xobj_box[2:])
+    for i, page in enumerate(srcpages):
+        page.scale(scale)
+        page.x = x_increment if i & 1 else 0
+        page.y = 0 if i & 2 else y_increment
+    return srcpages.render()
 
 
-def go(inpfn, outfn):
-    pages = PdfReader(inpfn).pages
-    writer = PdfWriter()
-    while pages:
-        writer.addpage(get4(pages))
-    writer.write(outfn)
-
-if __name__ == '__main__':
-    inpfn, = sys.argv[1:]
-    outfn = '4up.' + os.path.basename(inpfn)
-    go(inpfn, outfn)
+inpfn, = sys.argv[1:]
+outfn = '4up.' + os.path.basename(inpfn)
+pages = PdfReader(inpfn).pages
+writer = PdfWriter()
+for index in range(0, len(pages), 4):
+    writer.addpage(get4(pages[index:index + 4]))
+writer.write(outfn)

@@ -8,6 +8,7 @@ from .objects import (PdfObject, PdfName, PdfArray,
                       PdfDict, IndirectPdfDict, PdfString)
 from .tokens import PdfTokens
 from .errors import PdfParseError
+from .pagemerge import PageMerge
 
 __version__ = '0.2a0'
 
@@ -18,4 +19,4 @@ PdfFileWriter = PdfWriter
 
 __all__ = [PdfWriter, PdfReader, PdfObject, PdfName, PdfArray,
            PdfTokens, PdfParseError, PdfDict, IndirectPdfDict,
-           PdfString]
+           PdfString, PageMerge]

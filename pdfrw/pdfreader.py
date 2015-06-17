@@ -267,7 +267,7 @@ class PdfReader(PdfDict):
 
     def uncompress(self):
         self.read_all()
-        uncompress(self.indirect_objects.itervalues())
+        uncompress(self.indirect_objects.values())
 
     def load_stream_objects(self, object_streams):
         # read object streams

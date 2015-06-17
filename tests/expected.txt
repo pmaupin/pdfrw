@@ -1,3 +1,30 @@
+# Example programs
+
+examples/4up_b1c400de699af29ea3f1983bb26870ab               1b73c612c40b5082d955ed72f63644bd
+examples/alter_b1c400de699af29ea3f1983bb26870ab             3c3ee465f45a685ba7098691be05a5ab
+examples/booklet_b1c400de699af29ea3f1983bb26870ab           d711b74110eefb4e9e6bf1a5bea16bfe
+examples/extract_1975ef8db7355b1d691bc79d0749574b           b4f5ee36a288da970ed040a9a733c8b0
+examples/extract_c5c895deecf7a7565393587e0d61be2b           539aad09ef80907bb396c3260eb87d7b
+examples/extract_d711b74110eefb4e9e6bf1a5bea16bfe           26ddfd09c6e6002228f06782c8544ac4
+examples/print_two_b1c400de699af29ea3f1983bb26870ab         73c8a16aba44548c2c06dae6e2551961
+examples/subset_b1c400de699af29ea3f1983bb26870ab_1-3_5      880a9578197130273ccb51265af08029
+examples/unspread_d711b74110eefb4e9e6bf1a5bea16bfe          780a9abe26a9de0b5b95ee22c4835e4b
+
+examples/metadata_b1c400de699af29ea3f1983bb26870ab_06c86654f9a77e82f9adaa0086fc391c     62bb9b746ff5932d3f1b88942d36a81d
+examples/rotate_707e3e2d17cbe9ec2273414b3b63f333_270_1-4_7-8_10-50_52-56                 841c980dfadf2cc47ad86e4649ca69b6
+examples/watermark_b1c400de699af29ea3f1983bb26870ab_06c86654f9a77e82f9adaa0086fc391c    41989bb2cb6225c6e14262ff5d4f151f
+examples/watermark_b1c400de699af29ea3f1983bb26870ab_06c86654f9a77e82f9adaa0086fc391c_-u e43e3ac0afe1cc242549424755dbf612
+
+# All these are in the poster test
+examples/subset_1975ef8db7355b1d691bc79d0749574b_21     5057f345f1a1109a0e54276a68e8f8df
+examples/rotate_5057f345f1a1109a0e54276a68e8f8df_90_1   881f4dc8dcf069e707bf61af95492d86
+examples/poster_881f4dc8dcf069e707bf61af95492d86        a34be06d22105b6c02394a9f278fec0d
+
+examples/rl1/platypus_pdf_template_b1c400de699af29ea3f1983bb26870ab ec98c37e11441ee3b24e79006f6327c4
+examples/rl1/4up_b1c400de699af29ea3f1983bb26870ab                   3fbc6062ddd008a61f11ade2434336f1
+examples/rl1/booklet_b1c400de699af29ea3f1983bb26870ab               997130df3da157a19be0024143402bc5
+examples/rl1/subset_b1c400de699af29ea3f1983bb26870ab_3_5            7bbea500c5af6f19f468efb12c375c47
+
 # List things that need work here (typically cause exceptions)
 
 # Bad info dict -- works otherwise
@@ -110,5 +137,4 @@ simple/d6fd9567078b48c86710e9c49173781f.pdf 77464ec5cfdacb61a73b506bc4945631
 simple/e9ab02aa769f4c040a6fa52f00d6e3f0.pdf 5bc96989bc4f4b6438da953443336124
 simple/ec00d5825f47b9d0faa953b1709163c3.pdf 708f66049169c28ac39b0553908dc318
 simple/ed81787b83cc317c9f049643b853bea3.pdf c227d627217dc6808c50e80063734d27
-
 

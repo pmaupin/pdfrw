@@ -37,12 +37,36 @@ from .py23_diffs import iteritems
 class ViewInfo(object):
     ''' Instantiate ViewInfo with a uri, and it will parse out
         the filename, page, and viewrect into object attributes.
+
+        Note 1:
+            Viewrects follow the adobe definition.  (See reference
+            above). They are arrays of 4 numbers:
+
+            - Distance from left of document in points
+            - Distance from top (NOT bottom) of document in points
+            - Width of rectangle in points
+            - Height of rectangle in points
+
+        Note 2:
+            For simplicity, Viewrects can also be specified
+            in fractions of the document.  If every number in
+            the viewrect is between 0 and 1 inclusive, then
+            viewrect elements 0 and 2 are multiplied by the
+            mediabox width before use, and viewrect elements
+            1 and 3 are multiplied by the mediabox height before
+            use.
+
+        Note 3:
+            By default, an XObject based on the view will be
+            cacheable.  It should not be cacheable if the XObject
+            will be subsequently modified.
     '''
     doc = None
     docname = None
     page = None
     viewrect = None
     rotate = None
+    cacheable = True
 
     def __init__(self, pageinfo='', **kw):
         pageinfo = pageinfo.split('#', 1)
@@ -113,14 +137,23 @@ def getrects(inheritable, pageinfo, rotation):
         media box and the calculated boundary (clip) box.
     '''
     mbox = tuple([float(x) for x in inheritable.MediaBox])
+    cbox = tuple([float(x) for x in (inheritable.CropBox or mbox)])
     vrect = pageinfo.viewrect
-    if vrect is None:
-        cbox = tuple([float(x) for x in (inheritable.CropBox or mbox)])
-    else:
+    if vrect is not None:
         # Rotate the media box to match what the user sees,
         # figure out the clipping box, then rotate back
-        mleft, mbot, mright, mtop = rotate_rect(mbox, rotation)
+        mleft, mbot, mright, mtop = rotate_rect(cbox, rotation)
         x, y, w, h = vrect
+
+        # Support operations in fractions of a page
+        if 0 <= min(vrect) < max(vrect) <= 1:
+            mw = mright - mleft
+            mh = mtop - mbot
+            x *= mw
+            w *= mw
+            y *= mh
+            h *= mh
+
         cleft = mleft + x
         ctop = mtop - y
         cright = cleft + w
@@ -178,17 +211,21 @@ def _build_cache(contents, allow_compressed):
     return xobj_copy
 
 
-def _cache_xobj(contents, resources, mbox, bbox, rotation):
+def _cache_xobj(contents, resources, mbox, bbox, rotation, cacheable=True):
     ''' Return a cached Form XObject, or create a new one and cache it.
         Adds private members x, y, w, h
     '''
     cachedict = contents.xobj_cachedict
     cachekey = mbox, bbox, rotation
-    result = cachedict.get(cachekey)
+    result = cachedict.get(cachekey) if cacheable else None
     if result is None:
-        func = (_get_fullpage, _get_subpage)[mbox != bbox]
+        # If we are not getting a full page, or if we are going to
+        # modify the results, first retrieve an underlying Form XObject
+        # that represents the entire page, so that we are not copying
+        # the full page data into the new file multiple times
+        func = (_get_fullpage, _get_subpage)[mbox != bbox or not cacheable]
         result = PdfDict(
-            func(contents, resources, mbox, bbox, rotation),
+            func(contents, resources, mbox),
             Type=PdfName.XObject,
             Subtype=PdfName.Form,
             FormType=1,
@@ -201,15 +238,17 @@ def _cache_xobj(contents, resources, mbox, bbox, rotation):
             result.Matrix = PdfArray(matrix + (0, 0))
             rect = rotate_rect(rect, rotation)
 
-        result.private.x = rect[0]
-        result.private.y = rect[1]
-        result.private.w = rect[2] - rect[0]
-        result.private.h = rect[3] - rect[1]
-        cachedict[cachekey] = result
+        private = result.private
+        private.x = rect[0]
+        private.y = rect[1]
+        private.w = rect[2] - rect[0]
+        private.h = rect[3] - rect[1]
+        if cacheable:
+            cachedict[cachekey] = result
     return result
 
 
-def _get_fullpage(contents, resources, mbox, bbox, rotation):
+def _get_fullpage(contents, resources, mbox):
     ''' fullpage is easy.  Just copy the contents,
         set up the resources, and let _cache_xobj handle the
         rest.
@@ -217,7 +256,7 @@ def _get_fullpage(contents, resources, mbox, bbox, rotation):
     return PdfDict(contents, Resources=resources)
 
 
-def _get_subpage(contents, resources, mbox, bbox, rotation):
+def _get_subpage(contents, resources, mbox):
     ''' subpages *could* be as easy as full pages, but we
         choose to complicate life by creating a Form XObject
         for the page, and then one that references it for
@@ -237,6 +276,8 @@ def _get_subpage(contents, resources, mbox, bbox, rotation):
 def pagexobj(page, viewinfo=ViewInfo(), allow_compressed=True):
     ''' pagexobj creates and returns a Form XObject for
         a given view within a page (Defaults to entire page.)
+
+        pagexobj is passed a page and a viewrect.
     '''
     inheritable = page.inheritable
     resources = inheritable.Resources
@@ -244,13 +285,23 @@ def pagexobj(page, viewinfo=ViewInfo(), allow_compressed=True):
     mbox, bbox = getrects(inheritable, viewinfo, rotation)
     rotation += get_rotation(viewinfo.rotate)
     contents = _build_cache(page.Contents, allow_compressed)
-    return _cache_xobj(contents, resources, mbox, bbox, rotation)
+    return _cache_xobj(contents, resources, mbox, bbox, rotation,
+                       viewinfo.cacheable)
 
 
 def docxobj(pageinfo, doc=None, allow_compressed=True):
-    ''' docxobj creates and returns an actual Form XObject.
+    ''' docinfo reads a page out of a document and uses
+        pagexobj to create the Form XObject based on
+        the page.
+
+        This is a convenience function for things like
+        rst2pdf that want to be able to pass in textual
+        filename/location descriptors and don't want to
+        know about using PdfReader.
+
         Can work standalone, or in conjunction with
         the CacheXObj class (below).
+
     '''
     if not isinstance(pageinfo, ViewInfo):
         pageinfo = ViewInfo(pageinfo)
@@ -278,6 +329,11 @@ class CacheXObj(object):
         and to keep from making the output too much
         bigger than it ought to be by replicating
         unnecessary object copies.
+
+        This is a convenience function for things like
+        rst2pdf that want to be able to pass in textual
+        filename/location descriptors and don't want to
+        know about using PdfReader.
     '''
     def __init__(self, decompress=False):
         ''' Set decompress true if you need

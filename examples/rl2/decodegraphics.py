@@ -14,7 +14,7 @@ Better to use Form XObjects for most things (see the example in rl1).
 from inspect import getargspec
 
 from pdfrw import PdfTokens
-from pdfrw.pdfobjects import PdfString
+from pdfrw.objects import PdfString
 
 #############################################################################
 # Graphics parsing
@@ -346,7 +346,7 @@ def findparsefuncs():
 
     dispatch = {}
     expected_args = 'self token params'.split()
-    for key, func in globals().iteritems():
+    for key, func in globals().items():
         if key.startswith('parse_'):
             args, varargs, keywords, defaults = getargspec(func)
             assert (args == expected_args and varargs is None and
@@ -396,7 +396,7 @@ class _ParseClass(object):
                     params[:] = []
                     continue
                 else:
-                    print "Unparsed parameters/commands:", params[:delta]
+                    print ("Unparsed parameters/commands: %s" % params[:delta])
                 del params[:delta]
             paraminfo = zip(paraminfo, params)
             try:
@@ -440,5 +440,5 @@ if __name__ == '__main__':
     fname, = sys.argv[1:]
     pdf = PdfReader(fname)
     for i, page in enumerate(pdf.pages):
-        print '\nPage %s ------------------------------------' % i
+        print ('\nPage %s ------------------------------------' % i)
         parse(page)

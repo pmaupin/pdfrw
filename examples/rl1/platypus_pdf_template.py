@@ -1,17 +1,20 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-usage: platypus_pdf_template.py output.pdf pdf_file_to_use_as_template.pdf
+usage: platypus_pdf_template.py source.pdf
 
-Example of using pdfrw to use a pdf (page one) as the background for all
-other pages together with platypus.
+Creates platypus.source.pdf
 
-There is a table of contents in this example for completeness sake.
+Example of using pdfrw to use page 1 of a source PDF as the background
+for other pages programmatically generated with Platypus.
 
 Contributed by user asannes
 
 """
 import sys
+import os
+
+import invariant
 
 from reportlab.platypus import PageTemplate, BaseDocTemplate, Frame
 from reportlab.platypus import NextPageTemplate, Paragraph, PageBreak
@@ -102,8 +105,6 @@ def create_pdf(filename, pdf_template_filename):
 
 
 if __name__ == '__main__':
-    try:
-        output, template = sys.argv[1:]
-        create_pdf(output, template)
-    except ValueError:
-        print "Usage: %s <output> <template>" % (sys.argv[0])
+    template, = sys.argv[1:]
+    output = 'platypus_pdf_template.' + os.path.basename(template)
+    create_pdf(output, template)
