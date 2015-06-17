@@ -3,6 +3,9 @@
 examples/4up_b1c400de699af29ea3f1983bb26870ab               1b73c612c40b5082d955ed72f63644bd
 examples/alter_b1c400de699af29ea3f1983bb26870ab             3c3ee465f45a685ba7098691be05a5ab
 examples/booklet_b1c400de699af29ea3f1983bb26870ab           d711b74110eefb4e9e6bf1a5bea16bfe
+examples/extract_1975ef8db7355b1d691bc79d0749574b           b4f5ee36a288da970ed040a9a733c8b0
+examples/extract_c5c895deecf7a7565393587e0d61be2b           539aad09ef80907bb396c3260eb87d7b
+examples/extract_d711b74110eefb4e9e6bf1a5bea16bfe           26ddfd09c6e6002228f06782c8544ac4
 examples/print_two_b1c400de699af29ea3f1983bb26870ab         73c8a16aba44548c2c06dae6e2551961
 examples/subset_b1c400de699af29ea3f1983bb26870ab_1-3_5      880a9578197130273ccb51265af08029
 examples/unspread_d711b74110eefb4e9e6bf1a5bea16bfe          780a9abe26a9de0b5b95ee22c4835e4b

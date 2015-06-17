@@ -31,7 +31,6 @@ import os
 import unittest
 import hashlib
 import subprocess
-import pdfrw
 import static_pdfs
 import expected
 
@@ -111,9 +110,10 @@ class TestOnePdf(unittest.TestCase):
 
     def test_booklet_unspread(self):
         prev = [None]
-        built = self.do_test('booklet b1c400de699af29ea3f1983bb26870ab', prev)
+        self.do_test('booklet b1c400de699af29ea3f1983bb26870ab', prev)
         if prev[0] is not None:
             self.do_test('unspread ' + prev[0])
+            self.do_test('extract  ' + prev[0])
 
     def test_print_two(self):
         self.do_test('print_two b1c400de699af29ea3f1983bb26870ab')
@@ -143,6 +143,10 @@ class TestOnePdf(unittest.TestCase):
         self.do_test('subset 1975ef8db7355b1d691bc79d0749574b 21', prev)
         self.do_test('rotate %s 90 1' % prev[0], prev)
         self.do_test('poster %s' % prev[0], prev)
+
+    def test_extract(self):
+        self.do_test('extract 1975ef8db7355b1d691bc79d0749574b')
+        self.do_test('extract c5c895deecf7a7565393587e0d61be2b')
 
 
 def main():
