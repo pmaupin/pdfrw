@@ -54,9 +54,11 @@ class TestOnePdf(unittest.TestCase):
         progname = params[0]
         params[0] = prog_dir % progname
         srcf = params[1]
-        if not os.path.exists(dstdir):
-            os.makedirs(dstdir)
-        os.chdir(dstdir)
+        subdir, progname = os.path.split(progname)
+        subdir = os.path.join(dstdir, subdir)
+        if not os.path.exists(subdir):
+            os.makedirs(subdir)
+        os.chdir(subdir)
         dstf = '%s.%s' % (progname, os.path.basename(srcf))
         hash = '------no-file-generated---------'
         expects = expected.results[hashkey]
@@ -148,6 +150,11 @@ class TestOnePdf(unittest.TestCase):
         self.do_test('extract 1975ef8db7355b1d691bc79d0749574b')
         self.do_test('extract c5c895deecf7a7565393587e0d61be2b')
 
+    def test_rl1(self):
+        self.do_test('rl1/platypus_pdf_template b1c400de699af29ea3f1983bb26870ab')
+        self.do_test('rl1/4up     b1c400de699af29ea3f1983bb26870ab')
+        self.do_test('rl1/booklet b1c400de699af29ea3f1983bb26870ab')
+        self.do_test('rl1/subset  b1c400de699af29ea3f1983bb26870ab 3 5')
 
 def main():
     unittest.main()

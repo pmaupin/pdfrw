@@ -20,7 +20,7 @@ from pdfrw import PdfReader, PdfWriter, PdfArray
 
 inpfn, = sys.argv[1:]
 outfn = 'copy.' + os.path.basename(inpfn)
-pages = PdfReader(inpfn).pages
+pages = PdfReader(inpfn, decompress=True).pages
 canvas = Canvas(outfn, pageCompression=0)
 
 for page in pages:
