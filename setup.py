@@ -1,12 +1,14 @@
 #!/usr/bin/env python
 
 from setuptools import setup
+from pdfrw import __version__ as version
+from pdfrw.py23_diffs import convert_load
 
 setup(
     name='pdfrw',
-    version='0.2',
+    version=version,
     description='PDF file reader/writer library',
-    long_description=open("README.rst", 'rb').read(),
+    long_description=convert_load(open("README.rst", 'rb').read()),
     author='Patrick Maupin',
     author_email='pmaupin@gmail.com',
     platforms='Independent',

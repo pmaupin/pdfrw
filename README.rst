@@ -641,6 +641,22 @@ Python 2 and Python 3.
 
 __ https://github.com/pmaupin/pdfrw/tree/master/pdfrw/py23_diffs.py
 
+Testing
+===============
+
+The tests associated with pdfrw require a large number of PDFs,
+which are not distributed with the library.
+
+To run the tests:
+
+* Download or clone the full package from github.com/pmaupin/pdfrw
+* cd into the tests directory, and then clone the package
+  github.com/pmaupin/static_pdfs into a subdirectory (also named
+  static_pdfs).
+* Now the tests may be run from that directory using unittest, or
+  py.test, or nose.
+* travisci is used at github, and runs the tests with py.test
+
 Other libraries
 =====================
 
@@ -713,7 +729,7 @@ Release information
 
 Revisions:
 
-0.2 -- In development.  Will support Python 2.6, 2.7, 3.3, and 3.4.
+0.2 -- Released 21 June, 2015.  Supports Python 2.6, 2.7, 3.3, and 3.4.
 
     - Several bugs have been fixed
     - New regression test functionally tests core with dozens of
