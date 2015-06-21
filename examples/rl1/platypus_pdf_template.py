@@ -14,8 +14,6 @@ Contributed by user asannes
 import sys
 import os
 
-import invariant
-
 from reportlab.platypus import PageTemplate, BaseDocTemplate, Frame
 from reportlab.platypus import NextPageTemplate, Paragraph, PageBreak
 from reportlab.platypus.tableofcontents import TableOfContents
@@ -87,7 +85,7 @@ def create_toc():
 
 def create_pdf(filename, pdf_template_filename):
     """Create the pdf, with all the contents"""
-    pdf_report = open(filename, "w")
+    pdf_report = open(filename, "wb")
     document = MyDocTemplate(pdf_report)
     templates = [MyTemplate(pdf_template_filename, name='background')]
     document.addPageTemplates(templates)

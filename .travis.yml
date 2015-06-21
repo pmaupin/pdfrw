@@ -10,5 +10,8 @@ before_install:
   - "git clone https://github.com/pmaupin/static_pdfs tests/static_pdfs"
 install:
   - "pip install ."
+  - "pip install reportlab || true"
+  - "pip install zlib || true"
+  - "pip install unittest2 || true"
 # command to run tests
-script: "cd tests; py.test"
+script: "cd tests; /usr/bin/env PYTHONPATH=. py.test"

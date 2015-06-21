@@ -67,10 +67,6 @@ class PdfString(str):
 
     def encode(cls, source, usehex=False):
         assert not usehex, "Not supported yet"
-        if isinstance(source, unicode):
-            source = source.encode('utf-8')
-        else:
-            source = str(source)
         source = source.replace('\\', '\\\\')
         source = source.replace('(', '\\(')
         source = source.replace(')', '\\)')

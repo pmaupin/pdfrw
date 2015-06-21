@@ -27,14 +27,21 @@ In order to use them:
 
 
 '''
+import sys
 import os
-import unittest
 import hashlib
 import subprocess
 import static_pdfs
 import expected
 
 from pdfrw.py23_diffs import convert_store
+from pdfrw import PdfReader, PdfWriter
+
+try:
+    import unittest2 as unittest
+except ImportError:
+    import unittest
+
 
 prog_dir = os.path.join(expected.root_dir, '..', 'examples', '%s.py')
 prog_dir = os.path.abspath(prog_dir)
@@ -47,19 +54,22 @@ lookup = dict((os.path.basename(x)[:-4], x) for x in lookup)
 
 class TestOnePdf(unittest.TestCase):
 
-    def do_test(self, params, prev_results=['']):
+    def do_test(self, params, prev_results=[''], scrub=False):
         params = params.split()
         hashkey = 'examples/%s' % '_'.join(params)
         params = [lookup.get(x, x) for x in params]
         progname = params[0]
         params[0] = prog_dir % progname
         srcf = params[1]
+        params.insert(0, sys.executable)
         subdir, progname = os.path.split(progname)
         subdir = os.path.join(dstdir, subdir)
         if not os.path.exists(subdir):
             os.makedirs(subdir)
         os.chdir(subdir)
         dstf = '%s.%s' % (progname, os.path.basename(srcf))
+        scrub = scrub and dstf
+        dstf = dstf if not scrub else 'final.%s' % dstf
         hash = '------no-file-generated---------'
         expects = expected.results[hashkey]
 
@@ -82,7 +92,11 @@ class TestOnePdf(unittest.TestCase):
             if expects or not exists:
                 if exists:
                     os.remove(dstf)
+                if scrub and os.path.exists(scrub):
+                    os.remove(scrub)
                 subprocess.call(params)
+                if scrub:
+                    PdfWriter().addpages(PdfReader(scrub).pages).write(dstf)
             with open(dstf, 'rb') as f:
                 data = f.read()
             size = len(data)
@@ -150,11 +164,29 @@ class TestOnePdf(unittest.TestCase):
         self.do_test('extract 1975ef8db7355b1d691bc79d0749574b')
         self.do_test('extract c5c895deecf7a7565393587e0d61be2b')
 
-    def test_rl1(self):
-        self.do_test('rl1/platypus_pdf_template b1c400de699af29ea3f1983bb26870ab')
-        self.do_test('rl1/4up     b1c400de699af29ea3f1983bb26870ab')
-        self.do_test('rl1/booklet b1c400de699af29ea3f1983bb26870ab')
-        self.do_test('rl1/subset  b1c400de699af29ea3f1983bb26870ab 3 5')
+    def test_rl1_4up(self):
+        if sys.version_info < (2, 7):
+            return
+        self.do_test('rl1/4up     b1c400de699af29ea3f1983bb26870ab',
+                     scrub=True)
+
+    def test_rl1_booklet(self):
+        if sys.version_info < (2, 7):
+            return
+        self.do_test('rl1/booklet b1c400de699af29ea3f1983bb26870ab',
+                     scrub=True)
+
+    def test_rl1_subset(self):
+        if sys.version_info < (2, 7):
+            return
+        self.do_test('rl1/subset  b1c400de699af29ea3f1983bb26870ab 3 5',
+                     scrub=True)
+
+    def test_rl1_platypus(self):
+        if sys.version_info < (2, 7):
+            return
+        self.do_test('rl1/platypus_pdf_template b1c400de699af29ea3f1983bb26870ab',
+                     scrub=True)
 
 def main():
     unittest.main()
