@@ -1,5 +1,5 @@
 =============
-pdfrw 0.2b1
+pdfrw 0.2
 =============
 
 :Author: Patrick Maupin
