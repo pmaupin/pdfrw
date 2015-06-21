@@ -1,5 +1,5 @@
 =============
-pdfrw 0.2
+pdfrw 0.2b1
 =============
 
 :Author: Patrick Maupin
@@ -14,19 +14,26 @@ Introduction
 
 **pdfrw** is a Python library and utility that reads and writes PDF files:
 
-* Version 0.2 works on Python 2.6, 2.7, 3.3, and 3.4.
+* Version 0.2 is tested and works on Python 2.6, 2.7, 3.3, and 3.4.
 * Operations include subsetting, merging, rotating, modifying metadata, etc.
-* The fastest pure PDF parser available
+* The fastest pure Python PDF parser available
 * Has been used for years by a printer in pre-press production
+* Can be used with rst2pdf to faithfully reproduce vector images
 * Can be used either standalone, or in conjunction with `reportlab`__
   to reuse existing PDFs in new ones
 * Permissively licensed
 
 __ http://www.reportlab.org/
 
-Although pdfrw is not as full-featured as some other libraries,
-it is small, fast, easy-to-understand, and quite useful for
-some scenarios.
+
+pdfrw will faithfully reproduce vector formats without
+rasterization, so the rst2pdf package has used pdfrw
+for PDF and SVG images by default since March 2010.
+
+pdfrw can also be used in conjunction with reportlab, in order
+to re-use portions of existing PDFs in new PDFs created with
+reportlab.
+
 
 Examples
 =========
@@ -35,8 +42,8 @@ The library comes with several examples that show operation both with
 and without reportlab.
 
 
-Introduction
-------------
+All examples
+------------------
 
 The examples directory has a few scripts which use the library.
 Note that if these examples do not work with your PDF, you should
@@ -65,8 +72,11 @@ try to use pdftk to uncompress and/or unencrypt them first.
 * `rl1/4up.py`__ Another 4up example, using reportlab canvas for output.
 * `rl1/booklet.py`__ Another booklet example, using reportlab canvas for
   output.
+* `rl1/subset.py`__ Another subsetting example, using reportlab canvas for
+  output.
 * `rl1/platypus_pdf_template.py`__ Aother watermarking example, using
-  reportlab canvas and generated output for the document.
+  reportlab canvas and generated output for the document.  Contributed
+  by user asannes.
 * `rl2`__ Experimental code for parsing graphics.  Needs work.
 
 __ https://github.com/pmaupin/pdfrw/tree/master/examples/4up.py
@@ -82,27 +92,28 @@ __ https://github.com/pmaupin/pdfrw/tree/master/examples/unspread.py
 __ https://github.com/pmaupin/pdfrw/tree/master/examples/watermark.py
 __ https://github.com/pmaupin/pdfrw/tree/master/examples/rl1/4up.py
 __ https://github.com/pmaupin/pdfrw/tree/master/examples/rl1/booklet.py
+__ https://github.com/pmaupin/pdfrw/tree/master/examples/rl1/subset.py
 __ https://github.com/pmaupin/pdfrw/tree/master/examples/rl1/platypus_pdf_template.py
 __ https://github.com/pmaupin/pdfrw/tree/master/examples/rl2/
 
 Notes on selected examples
 ------------------------------------
 
-`booklet.py`__
-````````````````
-
-__ https://github.com/pmaupin/pdfrw/tree/master/examples/booklet.py
+Reorganizing pages and placing them two-up
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 A printer with a fancy printer and/or a full-up copy of Acrobat can
 easily turn your small PDF into a little booklet (for example, print 4
 letter-sized pages on a single 11" x 17").
 
 But that assumes several things, including that the personnel know how
-to operate the hardware and software. booklet.py lets you turn your PDF
+to operate the hardware and software. `booklet.py`__ lets you turn your PDF
 into a preformatted booklet, to give them fewer chances to mess it up.
 
+__ https://github.com/pmaupin/pdfrw/tree/master/examples/booklet.py
+
 Adding or modifying metadata
-----------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The `cat.py`__ example will accept multiple input files on the command
 line, concatenate them and output them to output.pdf, after adding some
@@ -126,7 +137,7 @@ cat.py it will be stripped.
 
 
 Rotating and doubling
------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If you ever want to print something that is like a small booklet, but
 needs to be spiral bound, you either have to do some fancy rearranging,
@@ -141,7 +152,7 @@ But, every other page is flipped, so that you can print double-sided and
 the pages will line up properly and be pre-collated.
 
 Graphics stream parsing proof of concept
-----------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The `copy.py`__ script shows a simple example of reading in a PDF, and
 using the decodegraphics.py module to try to write the same information
@@ -189,26 +200,6 @@ Examples
 
 The philosophy of the examples is to provide small, easily-understood
 examples that showcase pdfrw functionality.
-
-
-Release information
-=======================
-
-Revisions:
-
-0.2 -- In development.  Will support Python 2.6, 2.7, 3.3, and 3.4.
-
-    - Several bugs have been fixed
-    - New regression test functionally tests core with dozens of
-      PDFs, and also tests examples.
-    - Core has been ported and tested on Python3 by round-tripping
-      several difficult files and observing binary matching results
-      across the different Python versions.
-    - Still only minimal support for compression and no support
-      for encryption or newer PDF features.  (pdftk is useful
-      to put PDFs in a form that pdfrw can use.)
-
-0.1 -- Released to PyPI.  Supports Python 2.5 - 2.7
 
 
 PDF files and Python
@@ -286,6 +277,9 @@ object index accesses. So usage of PdfDict objects is normally via
 attribute access, although non-standard names (though still with a
 leading slash) can be accessed via dictionary index lookup.
 
+Reading PDFs
+~~~~~~~~~~~~~~~
+
 The PdfReader object is a subclass of PdfDict, which allows easy access
 to an entire document::
 
@@ -302,10 +296,11 @@ to an entire document::
 Info, Size, and Root are retrieved from the trailer of the PDF file.
 
 In addition to the tree structure, pdfrw creates a special attribute
-named pages, that is a list of all the pages in the document. It is created
-because the PDF format allows arbitrarily complicated nested
-dictionaries to describe the page order. Each entry in the pages list is
-the PdfDict object for one of the pages in the file, in order.
+named *pages*, that is a list of all the pages in the document. pdfrw
+creates the *pages* attribute as a simplification for the user, because
+the PDF format allows arbitrarily complicated nested dictionaries to
+describe the page order. Each entry in the *pages* list is the PdfDict
+object for one of the pages in the file, in order.
 
 ::
 
@@ -321,6 +316,9 @@ the PdfDict object for one of the pages in the file, in order.
     'q\n1 1 1 rg /a0 gs\n0 0 0 RG 0.657436
       w\n0 J\n0 j\n[] 0.0 d\n4 M q' ... (Lots more stuff snipped)
 
+Writing PDFs
+~~~~~~~~~~~~~~~
+
 As you can see, it is quite easy to dig down into a PDF document. But
 what about when it's time to write it out?
 
@@ -331,16 +329,401 @@ what about when it's time to write it out?
     >>> y.addpage(x.pages[0])
     >>> y.write('result.pdf')
 
-That's all it takes to create a new PDF. You still need to read the
+That's all it takes to create a new PDF. You may still need to read the
 `Adobe PDF reference manual`__ to figure out what needs to go *into*
 the PDF, but at least you don't have to sweat actually building it
 and getting the file offsets right.
 
 __ http://www.adobe.com/devnet/acrobat/pdfs/pdf_reference_1-7.pdf
 
+Manipulating PDFs in memory
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Library internals and other libraries
-========================================
+For the most part, pdfrw tries to be agnostic about the contents of
+PDF files, and support them as containers, but to do useful work,
+something a little higher-level is required, so pdfrw works to
+understand a bit about the contents of the containers.  For example:
 
-Coming soon!  For now, please peruse the wiki -- not all material has
-been migrated from there yet.
+-  PDF pages. pdfrw knows enough to find the pages in PDF files you read
+   in, and to write a set of pages back out to a new PDF file.
+-  Form XObjects. pdfrw can take any page or rectangle on a page, and
+   convert it to a Form XObject, suitable for use inside another PDF
+   file.  It knows enough about these to perform scaling, rotation,
+   and positioning.
+-  reportlab objects. pdfrw can recursively create a set of reportlab
+   objects from its internal object format. This allows, for example,
+   Form XObjects to be used inside reportlab, so that you can reuse
+   content from an existing PDF file when building a new PDF with
+   reportlab.
+
+There are several examples that demonstrate these features in
+the example code directory.
+
+Missing features
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Even as a pure PDF container library, pdfrw comes up a bit short. It
+does not currently support:
+
+-  Most compression/decompression filters
+-  encryption
+
+`pdftk`__ is a wonderful command-line
+tool that can convert your PDFs to remove encryption and compression.
+However, in most cases, you can do a lot of useful work with PDFs
+without actually removing compression, because only certain elements
+inside PDFs are actually compressed.
+
+__ https://www.pdflabs.com/tools/pdftk-the-pdf-toolkit/
+
+Library internals
+==================
+
+Introduction
+------------
+
+**pdfrw** currently consists of 19 modules organized into a main
+package and one sub-package.
+
+The `__init.py__`__ module does the usual thing of importing a few
+major attributes from some of the submodules, and the `errors.py`__
+module supports logging and exception generation.
+
+__ https://github.com/pmaupin/pdfrw/tree/master/pdfrw/__init__.py
+__ https://github.com/pmaupin/pdfrw/tree/master/pdfrw/errors.py
+
+
+PDF object model support
+--------------------------
+
+The `objects`__ sub-package contains one module for each of the
+internal representations of the kinds of basic objects that exist
+in a PDF file, with the `objects/__init__.py`__ module in that
+package simply gathering them up and making them available to the
+main pdfrw package.
+
+One feature that all the PDF object classes have in common is the
+inclusion of an 'indirect' attribute. If 'indirect' exists and evaluates
+to True, then when the object is written out, it is written out as an
+indirect object. That is to say, it is addressable in the PDF file, and
+could be referenced by any number (including zero) of container objects.
+This indirect object capability saves space in PDF files by allowing
+objects such as fonts to be referenced from multiple pages, and also
+allows PDF files to contain internal circular references.  This latter
+capability is used, for example, when each page object has a "parent"
+object in its dictionary.
+
+__ https://github.com/pmaupin/pdfrw/tree/master/pdfrw/objects/
+__ https://github.com/pmaupin/pdfrw/tree/master/pdfrw/objects/__init__.py
+
+Ordinary objects
+~~~~~~~~~~~~~~~~
+
+The `objects/pdfobject.py`__ module contains the PdfObject class, which is
+a subclass of str, and is the catch-all object for any PDF file elements
+that are not explicitly represented by other objects, as described below.
+
+__ https://github.com/pmaupin/pdfrw/tree/master/pdfrw/objects/pdfobject.py
+
+Name objects
+~~~~~~~~~~~~
+
+The `objects/pdfname.py`__ module contains the PdfName singleton object,
+which will convert a string into a PDF name by prepending a slash. It can
+be used either by calling it or getting an attribute, e.g.::
+
+    PdfName.Rotate == PdfName('Rotate') == PdfObject('/Rotate')
+
+In the example above, there is a slight difference between the objects
+returned from PdfName, and the object returned from PdfObject.  The
+PdfName objects are actually objects of class "BasePdfName".  This
+is important, because only these may be used as keys in PdfDict objects.
+
+__ https://github.com/pmaupin/pdfrw/tree/master/pdfrw/objects/pdfname.py
+
+String objects
+~~~~~~~~~~~~~~
+
+The `objects/pdfstring.py`__
+module contains the PdfString class, which is a subclass of str that is
+used to represent encoded strings in a PDF file. The class has encode
+and decode methods for the strings.
+
+__ https://github.com/pmaupin/pdfrw/tree/master/pdfrw/objects/pdfstring.py
+
+
+Array objects
+~~~~~~~~~~~~~
+
+The `objects/pdfarray.py`__
+module contains the PdfArray class, which is a subclass of list that is
+used to represent arrays in a PDF file. A regular list could be used
+instead, but use of the PdfArray class allows for an indirect attribute
+to be set, and also allows for proxying of unresolved indirect objects
+(that haven't been read in yet) in a manner that is transparent to pdfrw
+clients.
+
+__ https://github.com/pmaupin/pdfrw/tree/master/pdfrw/objects/pdfarray.py
+
+Dict objects
+~~~~~~~~~~~~
+
+The `objects/pdfdict.py`__
+module contains the PdfDict class, which is a subclass of dict that is
+used to represent dictionaries in a PDF file. A regular dict could be
+used instead, but the PdfDict class matches the requirements of PDF
+files more closely:
+
+* Transparent (from the library client's viewpoint) proxying
+  of unresolved indirect objects
+* Return of None for non-existent keys (like dict.get)
+* Mapping of attribute accesses to the dict itself
+  (pdfdict.Foo == pdfdict[NameObject('Foo')])
+* Automatic management of following stream and /Length attributes
+  for content dictionaries
+* Indirect attribute
+* Other attributes may be set for private internal use of the
+  library and/or its clients.
+* Support for searching parent dictionaries for PDF "inheritable"
+  attributes.
+
+__ https://github.com/pmaupin/pdfrw/tree/master/pdfrw/objects/pdfdict.py
+
+If a PdfDict has an associated data stream in the PDF file, the stream
+is accessed via the 'stream' (all lower-case) attribute.  Setting the
+stream attribute on the PdfDict will automatically set the /Length attribute
+as well.  If that is not what is desired (for example if the the stream
+is compressed), then _stream (same name with an underscore) may be used
+to associate the stream with the PdfDict without setting the length.
+
+To set private attributes (that will not be written out to a new PDF
+file) on a dictionary, use the 'private' attribute::
+
+    mydict.private.foo = 1
+
+Once the attribute is set, it may be accessed directly as an attribute
+of the dictionary::
+
+    foo = mydict.foo
+
+Some attributes of PDF pages are "inheritable."  That is, they may
+belong to a parent dictionary (or a parent of a parent dictionary, etc.)
+The "inheritable" attribute allows for easy discovery of these::
+
+    mediabox = mypage.inheritable.MediaBox
+
+
+Proxy objects
+~~~~~~~~~~~~~
+
+The `objects/pdfindirect.py`__
+module contains the PdfIndirect class, which is a non-transparent proxy
+object for PDF objects that have not yet been read in and resolved from
+a file. Although these are non-transparent inside the library, client code
+should never see one of these -- they exist inside the PdfArray and PdfDict
+container types, but are resolved before being returned to a client of
+those types.
+
+__ https://github.com/pmaupin/pdfrw/tree/master/pdfrw/objects/pdfindirect.py
+
+
+File reading, tokenization and parsing
+--------------------------------------
+
+`pdfreader.py`__
+contains the PdfReader class, which can read a PDF file (or be passed a
+file object or already read string) and parse it. It uses the PdfTokens
+class in `tokens.py`__  for low-level tokenization.
+
+__ https://github.com/pmaupin/pdfrw/tree/master/pdfrw/pdfreader.py
+__ https://github.com/pmaupin/pdfrw/tree/master/pdfrw/tokens.py
+
+
+The PdfReader class does not, in general, parse into containers (e.g.
+inside the content streams). There is a proof of concept for doing that
+inside the examples/rl2 subdirectory, but that is slow and not well-developed,
+and not useful for most applications.
+
+An instance of the PdfReader class is an instance of a PdfDict -- the
+trailer dictionary of the PDF file, to be exact.  It will have a private
+attribute set on it that is named 'pages' that is a list containing all
+the pages in the file.
+
+When instantiating a PdfReader object, there are options available
+for decompressing all the objects in the file.  pdfrw does not currently
+have very many options for decompression, so this is not all that useful,
+except in the specific case of compressed object streams.
+
+Also, there are no options for decryption yet.  If you have PDF files
+that are encrypted or heavily compressed, you may find that using another
+program like pdftk on them can make them readable by pdfrw.
+
+In general, the objects are read from the file lazily, but this is not
+currently true with compressed object streams -- all of these are decompressed
+and read in when the PdfReader is instantiated.
+
+
+File output
+-----------
+
+`pdfwriter.py`__
+contains the PdfWriter class, which can create and output a PDF file.
+
+__ https://github.com/pmaupin/pdfrw/tree/master/pdfrw/pdfwriter.py
+
+There are a few options available when creating and using this class.
+
+In the simplest case, an instance of PdfWriter is instantiated, and
+then pages are added to it from one or more source files (or created
+programmatically), and then the write method is called to dump the
+results out to a file.
+
+If you have a source PDF and do not want to disturb the structure
+of it too badly, then you may pass its trailer directly to PdfWriter
+rather than letting PdfWriter construct one for you.  There is an
+example of this (alter.py) in the examples directory.
+
+
+Advanced features
+-----------------
+
+`buildxobj.py`__
+contains functions to build Form XObjects out of pages or rectangles on
+pages.  These may be reused in new PDFs essentially as if they were images.
+
+buildxobj is careful to cache any page used so that it only appears in
+the output once.
+
+__ https://github.com/pmaupin/pdfrw/tree/master/pdfrw/buildxobj.py
+
+
+`toreportlab.py`__
+provides the makerl function, which will translate pdfrw objects into a
+format which can be used with `reportlab <http://www.reportlab.org/>`__.
+It is normally used in conjunction with buildxobj, to be able to reuse
+parts of existing PDFs when using reportlab.
+
+__ https://github.com/pmaupin/pdfrw/tree/master/pdfrw/toreportlab.py
+
+
+`pagemerge.py`__ builds on the foundation laid by buildxobj.  It
+contains classes to create a new page (or overlay an existing page)
+using one or more rectangles from other pages.  There are examples
+showing its use for watermarking, scaling, 4-up output, splitting
+each page in 2, etc.
+
+__ https://github.com/pmaupin/pdfrw/tree/master/pdfrw/pagemerge.py
+
+`findobjs.py`__ contains code that can find specific kinds of objects
+inside a PDF file.  The extract.py example uses this module to create
+a new PDF that places each image and Form XObject from a source PDF onto
+its own page, e.g. for easy reuse with some of the other examples or
+with reportlab.
+
+__ https://github.com/pmaupin/pdfrw/tree/master/pdfrw/findobjs.py
+
+
+Miscellaneous
+----------------
+
+`compress.py`__ and `uncompress.py`__
+contains compression and decompression functions. Very few filters are
+currently supported, so an external tool like pdftk might be good if you
+require the ability to decompress (or, for that matter, decrypt) PDF
+files.
+
+__ https://github.com/pmaupin/pdfrw/tree/master/pdfrw/compress.py
+__ https://github.com/pmaupin/pdfrw/tree/master/pdfrw/uncompress.py
+
+
+`py23_diffs.py`__ contains code to help manage the differences between
+Python 2 and Python 3.
+
+__ https://github.com/pmaupin/pdfrw/tree/master/pdfrw/py23_diffs.py
+
+Other libraries
+=====================
+
+Pure Python
+-----------
+
+-  `reportlab <http://www.reportlab.org/>`__
+
+    reportlab is must-have software if you want to programmatically
+    generate arbitrary PDFs.
+
+-  `pyPdf <https://github.com/mstamy2/PyPDF2>`__
+
+    pyPdf is, in some ways, very full-featured. It can do decompression
+    and decryption and seems to know a lot about items inside at least
+    some kinds of PDF files. In comparison, pdfrw knows less about
+    specific PDF file features (such as metadata), but focuses on trying
+    to have a more Pythonic API for mapping the PDF file container
+    syntax to Python, and (IMO) has a simpler and better PDF file
+    parser.  The Form XObject capability of pdfrw means that, in many
+    cases, it does not actually need to decompress objects -- they
+    can be left compressed.
+
+-  `pdftools <http://www.boddie.org.uk/david/Projects/Python/pdftools/index.html>`__
+
+    pdftools feels large and I fell asleep trying to figure out how it
+    all fit together, but many others have done useful things with it.
+
+-  `pagecatcher <http://www.reportlab.com/docs/pagecatcher-ds.pdf>`__
+
+    My understanding is that pagecatcher would have done exactly what I
+    wanted when I built pdfrw. But I was on a zero budget, so I've never
+    had the pleasure of experiencing pagecatcher. I do, however, use and
+    like `reportlab <http://www.reportlab.org/>`__ (open source, from
+    the people who make pagecatcher) so I'm sure pagecatcher is great,
+    better documented and much more full-featured than pdfrw.
+
+-  `pdfminer <http://www.unixuser.org/~euske/python/pdfminer/index.html>`__
+
+    This looks like a useful, actively-developed program. It is quite
+    large, but then, it is trying to actively comprehend a full PDF
+    document. From the website:
+
+    "PDFMiner is a suite of programs that help extracting and analyzing
+    text data of PDF documents. Unlike other PDF-related tools, it
+    allows to obtain the exact location of texts in a page, as well as
+    other extra information such as font information or ruled lines. It
+    includes a PDF converter that can transform PDF files into other
+    text formats (such as HTML). It has an extensible PDF parser that
+    can be used for other purposes instead of text analysis."
+
+non-pure-Python libraries
+-------------------------
+
+-  `pyPoppler <https://launchpad.net/poppler-python/>`__ can read PDF
+   files.
+-  `pycairo <http://www.cairographics.org/pycairo/>`__ can write PDF
+   files.
+
+Other tools
+-----------
+
+-  `pdftk <https://www.pdflabs.com/tools/pdftk-the-pdf-toolkit/>`__ is a wonderful command
+   line tool for basic PDF manipulation. It complements pdfrw extremely
+   well, supporting many operations such as decryption and decompression
+   that pdfrw cannot do.
+
+Release information
+=======================
+
+Revisions:
+
+0.2 -- In development.  Will support Python 2.6, 2.7, 3.3, and 3.4.
+
+    - Several bugs have been fixed
+    - New regression test functionally tests core with dozens of
+      PDFs, and also tests examples.
+    - Core has been ported and tested on Python3 by round-tripping
+      several difficult files and observing binary matching results
+      across the different Python versions.
+    - Still only minimal support for compression and no support
+      for encryption or newer PDF features.  (pdftk is useful
+      to put PDFs in a form that pdfrw can use.)
+
+0.1 -- Released to PyPI in 2012.  Supports Python 2.5 - 2.7
+

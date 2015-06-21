@@ -1,0 +1,10 @@
+Notes on releasing, which is not yet fully automated:
+
+1) Update version number both in __init__ and in setup
+
+2) Use pyroma
+
+3) https://packaging.python.org/en/latest/distributing.html
+
+a) python setup.py sdist bdist_wheel
+b) twine upload dist/*
