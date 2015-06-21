@@ -4,7 +4,7 @@ from distutils.core import setup
 
 setup(
     name='pdfrw',
-    version='0.1',
+    version='0.2b1',
     description='PDF file reader/writer library',
     long_description='''
 pdfrw lets you read and write PDF files, including
@@ -20,7 +20,7 @@ March 2010.  Several small examples are provided.
     author='Patrick Maupin',
     author_email='pmaupin@gmail.com',
     platforms='Independent',
-    url='http://code.google.com/p/pdfrw/',
+    url='https://github.com/pmaupin/pdfrw',
     packages=['pdfrw', 'pdfrw.objects'],
     license='MIT',
     classifiers=[
@@ -30,9 +30,17 @@ March 2010.  Several small examples are provided.
         'License :: OSI Approved :: MIT License',
         'Operating System :: OS Independent',
         'Programming Language :: Python',
+        'Programming Language :: Python :: 2',
+        'Programming Language :: Python :: 2.6',
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.3',
+        'Programming Language :: Python :: 3.4',
+
         'Topic :: Multimedia :: Graphics :: Graphics Conversion',
         'Topic :: Software Development :: Libraries',
-        'Topic :: Utilities'
+        'Topic :: Text Processing',
+        'Topic :: Utilities',
     ],
-    keywords='pdf vector graphics',
+    keywords='pdf vector graphics PDF nup watermark',
 )
