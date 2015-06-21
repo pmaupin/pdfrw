@@ -15,8 +15,6 @@ Demonstrates use of pdfrw with reportlab.
 import sys
 import os
 
-import invariant
-
 from reportlab.pdfgen.canvas import Canvas
 
 from pdfrw import PdfReader

@@ -28,13 +28,17 @@ In order to use them:
 
 '''
 import os
-import unittest
 import hashlib
 import pdfrw
 import static_pdfs
 import expected
 
 from pdfrw.py23_diffs import convert_store
+
+try:
+    import unittest2 as unittest
+except ImportError:
+    import unittest
 
 
 class TestOnePdf(unittest.TestCase):
