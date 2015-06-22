@@ -715,6 +715,8 @@ non-pure-Python libraries
    files.
 -  `pycairo <http://www.cairographics.org/pycairo/>`__ can write PDF
    files.
+-  `PyMuPDF <https://github.com/rk700/PyMuPDF>`_ high performance rendering
+   of PDF, (Open)XPS, CBZ and EPUB
 
 Other tools
 -----------
@@ -723,6 +725,9 @@ Other tools
    line tool for basic PDF manipulation. It complements pdfrw extremely
    well, supporting many operations such as decryption and decompression
    that pdfrw cannot do.
+-  `MuPDF <http://www.mupdf.com/>`_ is a free top performance PDF, (Open)XPS, CBZ and EPUB rendering library
+   that also comes with some command line tools. One of those, ``mutool``, has big overlaps with pdftk's - 
+   except it is up to 10 times faster.
 
 Release information
 =======================
