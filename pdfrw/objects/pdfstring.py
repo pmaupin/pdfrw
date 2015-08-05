@@ -13,13 +13,13 @@ class PdfString(str):
         defaults to being a direct object.
     '''
     indirect = False
-    unescape_dict = {'\\b': '\b', '\\f': '\f', '\\n': '\n',
-                     '\\r': '\r', '\\t': '\t',
-                     '\\\r\n': '', '\\\r': '', '\\\n': '',
-                     '\\\\': '\\', '\\': '',
-                     }
+    unescape_dict = {'\\b':'\b', '\\f':'\f', '\\n':'\n',
+                     '\\r':'\r', '\\t':'\t',
+                     '\\\r\n': '', '\\\r':'', '\\\n':'',
+                     '\\\\':'\\', '\\':'', '\\(': '(', '\\)':')'
+                    }
     unescape_pattern = (r'(\\\\|\\b|\\f|\\n|\\r|\\t'
-                        r'|\\\r\n|\\\r|\\\n|\\[0-9]+|\\)')
+                        r'|\\\r\n|\\\r|\\\n|\\[0-9]{3}|\\)')
     unescape_func = re.compile(unescape_pattern).split
 
     hex_pattern = '([a-fA-F0-9][a-fA-F0-9]|[a-fA-F0-9])'
@@ -41,8 +41,8 @@ class PdfString(str):
             if chunk.startswith('\\') and len(chunk) > 1:
                 value = int(chunk[1:], 8)
                 # FIXME: TODO: Handle unicode here
-                if value > 127:
-                    value = 127
+                if value > 255:
+                    value = 255
                 chunk = remap(value)
             if chunk:
                 result.append(chunk)
