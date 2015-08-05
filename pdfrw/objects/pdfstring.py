@@ -13,11 +13,11 @@ class PdfString(str):
         defaults to being a direct object.
     '''
     indirect = False
-    unescape_dict = {'\\b':'\b', '\\f':'\f', '\\n':'\n',
-                     '\\r':'\r', '\\t':'\t',
-                     '\\\r\n': '', '\\\r':'', '\\\n':'',
-                     '\\\\':'\\', '\\':'', '\\(': '(', '\\)':')'
-                    }
+    unescape_dict = {'\\b': '\b', '\\f': '\f', '\\n': '\n',
+                     '\\r': '\r', '\\t': '\t',
+                     '\\\r\n': '', '\\\r': '', '\\\n': '',
+                     '\\\\': '\\', '\\': '', '\\(': '(', '\\)': ')'
+                     }
     unescape_pattern = (r'(\\\\|\\b|\\f|\\n|\\r|\\t'
                         r'|\\\r\n|\\\r|\\\n|\\[0-9]{3}|\\)')
     unescape_func = re.compile(unescape_pattern).split
