@@ -232,6 +232,19 @@ def parse_text_out(self, token='Tj', params='t'):
     text = params[0].decode(self.curfont.remap, self.curfont.twobyte)
     self.tpath.textOut(text)
 
+def parse_lf_text_out(self, token="'", params='t'):
+    self.tpath.textLine()
+    text = params[0].decode(self.curfont.remap, self.curfont.twobyte)
+    self.tpath.textOut(text)
+
+
+def parse_lf_text_out_with_spacing(self, token='"', params='fft'):
+    self.tpath.setWordSpace(params[0])
+    self.tpath.setCharSpace(params[1])
+    self.tpath.textLine()
+    text = params[2].decode(self.curfont.remap, self.curfont.twobyte)
+    self.tpath.textOut(text)
+
 
 def parse_TJ(self, token='TJ', params='a'):
     remap = self.curfont.remap
@@ -377,7 +390,7 @@ class _ParseClass(object):
         self.gpath = None
         self.tpath = None
         self.fontdict = dict((x, FontInfo(y)) for
-                             (x, y) in page.Resources.Font.iteritems())
+                             (x, y) in page.Resources.Font.items())
 
         for token in self.tokens:
             info = dispatch(token)
@@ -424,7 +437,7 @@ def debugparser(undisturbed=set('parse_array'.split())):
                 myfunc = oldval[0]
             return myfunc, oldval[1]
         return dict((x, getvalue(y))
-                    for (x, y) in _ParseClass.dispatch.iteritems())
+                    for (x, y) in _ParseClass.dispatch.items())
 
     class _DebugParse(_ParseClass):
         dispatch = debugdispatch()
@@ -435,10 +448,10 @@ parsepage = _ParseClass.parsepage
 
 if __name__ == '__main__':
     import sys
-    from pdfreader import PdfReader
+    from pdfrw import PdfReader
     parse = debugparser()
     fname, = sys.argv[1:]
-    pdf = PdfReader(fname)
+    pdf = PdfReader(fname, decompress=True)
     for i, page in enumerate(pdf.pages):
         print ('\nPage %s ------------------------------------' % i)
         parse(page)
