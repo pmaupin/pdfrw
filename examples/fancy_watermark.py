@@ -95,7 +95,7 @@ for pagenum, page in enumerate(trailer.pages, 1):
 
         # Optimize the case where the watermark is same width
         # as page.
-        if page_x1 == wmark.w:
+        if page_w == wmark.w:
             wmark_cache[mbox, not odd] = wmark
 
     # Add the watermark to the page
