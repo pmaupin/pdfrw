@@ -9,10 +9,14 @@ Creates watermark.my.pdf, with every page overlaid with
 first page from single_page.pdf.  If -u is selected, watermark
 will be placed underneath page (painted first).
 
-NB:  At one point, this example was extremely complicated, with
-     multiple options.  That only led to errors in implementation,
-     so it has been re-simplified in order to show basic principles
-     of the library operation and to match the other examples better.
+NOTE 1: This program assumes that all pages (including the watermark
+        page) are the same size.  For other possibilities, see
+        the fancy_watermark.py example.
+
+NOTE 2: At one point, this example was extremely complicated, with
+        multiple options.  That only led to errors in implementation,
+        so it has been re-simplified in order to show basic principles
+        of the library operation and to match the other examples better.
 '''
 
 import sys
