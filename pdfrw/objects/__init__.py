@@ -15,5 +15,5 @@ from .pdfobject import PdfObject
 from .pdfstring import PdfString
 from .pdfindirect import PdfIndirect
 
-__all__ = [PdfName, PdfDict, IndirectPdfDict, PdfArray,
-           PdfObject, PdfString, PdfIndirect]
+__all__ = """PdfName PdfDict IndirectPdfDict PdfArray
+             PdfObject PdfString PdfIndirect""".split()

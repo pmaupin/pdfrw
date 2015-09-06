@@ -17,6 +17,7 @@ __version__ = '0.2'
 PdfFileReader = PdfReader
 PdfFileWriter = PdfWriter
 
-__all__ = [PdfWriter, PdfReader, PdfObject, PdfName, PdfArray,
-           PdfTokens, PdfParseError, PdfDict, IndirectPdfDict,
-           PdfString, PageMerge]
+__all__ = """PdfWriter PdfReader PdfObject PdfName PdfArray
+             PdfTokens PdfParseError PdfDict IndirectPdfDict
+             PdfString PageMerge""".split()
+
