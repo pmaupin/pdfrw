@@ -176,8 +176,8 @@ class PageMerge(list):
         return self
 
     def render(self):
-        def do_xobjs(xobj_list):
-            content = []
+        def do_xobjs(xobj_list, restore_first=False):
+            content = ['Q'] if restore_first else []
             for obj in xobj_list:
                 index = PdfName('pdfrw_%d' % (key_offset + len(xobjs)))
                 if xobjs.setdefault(index, obj) is not obj:
@@ -213,10 +213,12 @@ class PageMerge(list):
             index = self.index(None)
             if index:
                 new_contents.append(do_xobjs(self[:index]))
+            elif len(self) > 1:
+                new_contents.append(PdfDict(indirect=True, stream='q'))
             new_contents.extend(old_contents)
             index += 1
             if index < len(self):
-                new_contents.append(do_xobjs(self[index:]))
+                new_contents.append(do_xobjs(self[index:], True))
 
         if mbox is None:
             cbox = None
@@ -229,6 +231,7 @@ class PageMerge(list):
         page.Resources = resources
         page.MediaBox = mbox
         page.CropBox = cbox
+        print mbox, cbox
         page.Rotate = self.rotate
         page.Contents = new_contents
         return page
