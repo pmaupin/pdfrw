@@ -231,7 +231,6 @@ class PageMerge(list):
         page.Resources = resources
         page.MediaBox = mbox
         page.CropBox = cbox
-        print mbox, cbox
         page.Rotate = self.rotate
         page.Contents = new_contents
         return page
