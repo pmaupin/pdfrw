@@ -6,7 +6,7 @@ alter.py -- Simple example of making a very slight modification to a PDF.
 
 booklet.py -- Converts a PDF into a booklet.
 
-metadata.py -- Concatenates multiple PDFs, adds metadata.
+cat.py -- Concatenates multiple PDFs, adds metadata.
 
 poster.py -- Changes the size of a PDF to create a poster
 
