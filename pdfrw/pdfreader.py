@@ -14,12 +14,13 @@ import gc
 import binascii
 import collections
 import itertools
+import six
 
 from .errors import PdfParseError, log
 from .tokens import PdfTokens
 from .objects import PdfDict, PdfArray, PdfName, PdfObject, PdfIndirect
 from .uncompress import uncompress
-from .py23_diffs import convert_load, iteritems
+from .py23_diffs import iteritems
 
 
 class PdfReader(PdfDict):
@@ -474,12 +475,13 @@ class PdfReader(PdfDict):
 
     def __init__(self, fname=None, fdata=None, decompress=False,
                  disable_gc=True, verbose=True):
-
         self.private.verbose = verbose
+
         # Runs a lot faster with GC off.
         disable_gc = disable_gc and gc.isenabled()
         if disable_gc:
             gc.disable()
+
         try:
             if fname is not None:
                 assert fdata is None
@@ -494,8 +496,12 @@ class PdfReader(PdfDict):
                     except IOError:
                         raise PdfParseError('Could not read PDF file %s' %
                                             fname)
-                    fdata = convert_load(fdata)
+
             assert fdata is not None
+
+            if six.PY3 and isinstance(fdata, six.binary_type):
+                fdata = fdata.decode('Latin-1')
+
             if not fdata.startswith('%PDF-'):
                 startloc = fdata.find('%PDF-')
                 if startloc >= 0:
