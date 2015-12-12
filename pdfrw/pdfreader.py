@@ -14,7 +14,7 @@ import gc
 import binascii
 import collections
 import itertools
-import six
+from . import six
 
 from .errors import PdfParseError, log
 from .tokens import PdfTokens
