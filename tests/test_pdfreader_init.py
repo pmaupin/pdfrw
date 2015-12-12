@@ -9,13 +9,13 @@ except ImportError:
     import unittest
 
 
-class TestOnePdf(unittest.TestCase):
+class TestPdfReaderInit(unittest.TestCase):
 
-    def test_standard(self):
+    def test_fname_binary_filelike(self):
         with open(static_pdfs.pdffiles[0][0], 'rb') as pdf_file:
             PdfReader(pdf_file)
 
-    def test_with_fdata(self):
+    def test_fdata_binary(self):
         with open(static_pdfs.pdffiles[0][0], 'rb') as pdf_file:
             pdf_bytes = pdf_file.read()
             PdfReader(fdata=pdf_bytes)
