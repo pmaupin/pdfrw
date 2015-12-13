@@ -497,7 +497,7 @@ class PdfReader(PdfDict):
                                             fname)
 
             assert fdata is not None
-            convert_load(fdata)
+            fdata = convert_load(fdata)
 
             if not fdata.startswith('%PDF-'):
                 startloc = fdata.find('%PDF-')
