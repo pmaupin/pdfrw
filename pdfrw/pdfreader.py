@@ -14,13 +14,12 @@ import gc
 import binascii
 import collections
 import itertools
-from . import six
 
 from .errors import PdfParseError, log
 from .tokens import PdfTokens
 from .objects import PdfDict, PdfArray, PdfName, PdfObject, PdfIndirect
 from .uncompress import uncompress
-from .py23_diffs import iteritems
+from .py23_diffs import convert_load, iteritems
 
 
 class PdfReader(PdfDict):
@@ -498,9 +497,7 @@ class PdfReader(PdfDict):
                                             fname)
 
             assert fdata is not None
-
-            if six.PY3 and isinstance(fdata, six.binary_type):
-                fdata = fdata.decode('Latin-1')
+            convert_load(fdata)
 
             if not fdata.startswith('%PDF-'):
                 startloc = fdata.find('%PDF-')
