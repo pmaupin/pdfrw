@@ -1,3 +1,17 @@
+# OSX
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+
+# Thumbnails
+._*
+
+# Files that might appear on external disk
+.Spotlight-V100
+.Trashes
+
+
 # Development artifacts
 diffs.txt
 examples/*.pdf
@@ -9,6 +23,7 @@ tests/pdfrw
 tests/static_pdfs
 tests/ramdisk
 tests/saved_results
+tests/tmp_results
 wiki/
 
 

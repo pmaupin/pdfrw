@@ -474,12 +474,13 @@ class PdfReader(PdfDict):
 
     def __init__(self, fname=None, fdata=None, decompress=False,
                  disable_gc=True, verbose=True):
-
         self.private.verbose = verbose
+
         # Runs a lot faster with GC off.
         disable_gc = disable_gc and gc.isenabled()
         if disable_gc:
             gc.disable()
+
         try:
             if fname is not None:
                 assert fdata is None
@@ -494,8 +495,10 @@ class PdfReader(PdfDict):
                     except IOError:
                         raise PdfParseError('Could not read PDF file %s' %
                                             fname)
-                    fdata = convert_load(fdata)
+
             assert fdata is not None
+            fdata = convert_load(fdata)
+
             if not fdata.startswith('%PDF-'):
                 startloc = fdata.find('%PDF-')
                 if startloc >= 0:
