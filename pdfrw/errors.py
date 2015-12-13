@@ -9,11 +9,14 @@ PDF Exceptions and error handling
 import logging
 
 
-logging.basicConfig(
-    format='[%(levelname)s] %(filename)s:%(lineno)d %(message)s',
-           level=logging.WARNING)
+fmt = logging.Formatter('[%(levelname)s] %(filename)s:%(lineno)d %(message)s')
+
+handler = logging.StreamHandler()
+handler.setFormatter(fmt)
 
 log = logging.getLogger('pdfrw')
+log.setLevel(logging.WARNING)
+log.addHandler(handler)
 
 
 class PdfError(Exception):
