@@ -3,6 +3,7 @@
 # MIT license -- See LICENSE.txt for details
 
 import re
+import codecs
 
 
 class PdfString(str):
@@ -22,15 +23,6 @@ class PdfString(str):
                         r'|\\\r\n|\\\r|\\\n|\\[0-9]{3}|\\)')
     unescape_func = re.compile(unescape_pattern).split
 
-    hex_pattern = '([a-fA-F0-9][a-fA-F0-9]|[a-fA-F0-9])'
-    hex_func = re.compile(hex_pattern).split
-
-    hex_pattern2 = ('([a-fA-F0-9][a-fA-F0-9][a-fA-F0-9][a-fA-F0-9]|'
-                    '[a-fA-F0-9][a-fA-F0-9]|[a-fA-F0-9])')
-    hex_func2 = re.compile(hex_pattern2).split
-
-    hex_funcs = hex_func, hex_func2
-
     def decode_regular(self, remap=chr):
         assert self[0] == '(' and self[-1] == ')'
         mylist = self.unescape_func(self[1:-1])
@@ -48,25 +40,35 @@ class PdfString(str):
                 result.append(chunk)
         return ''.join(result)
 
-    def decode_hex(self, remap=chr, twobytes=False):
+    def decode_hex(self):
         data = ''.join(self.split())
-        data = self.hex_funcs[twobytes](data)
-        chars = data[1::2]
-        other = data[0::2]
-        assert (other[0] == '<' and
-                other[-1] == '>' and
-                ''.join(other) == '<>'), self
-        return ''.join([remap(int(x, 16)) for x in chars])
+        assert data[0] == '<' and data[-1] == '>', self
 
-    def decode(self, remap=chr, twobytes=False):
+        # ASCII encoded hex
+        content_hex = data[1:-1]
+        content_bytes = codecs.decode(content_hex, 'hex')
+        return codecs.decode(content_bytes, 'utf-16')
+
+    def decode(self, remap=chr):
         if self.startswith('('):
             return self.decode_regular(remap)
-
         else:
-            return self.decode_hex(remap, twobytes)
+            return self.decode_hex(remap)
 
-    def encode(cls, source, usehex=False):
-        assert not usehex, "Not supported yet"
+    def encode(cls, source, usehex=True):
+        try:
+            source.encode('ascii')
+        except (UnicodeEncodeError, TypeError) as e:
+            if not usehex:
+                raise e
+            # Encode a Unicode string as UTF-16 big endian, in bytes
+            utf16_bytes = source.encode('utf-16be')
+            # Prepend byte order mark and encode bytes as hexadecimal
+            ascii_hex_bytes = codecs.encode(b'\xfe\xff' + utf16_bytes, 'hex')
+            # Decode hexadecimal bytes to ASCII
+            ascii_hex_str = ascii_hex_bytes.decode('ascii').lower()
+            return cls('<' + ascii_hex_str + '>')
+
         source = source.replace('\\', '\\\\')
         source = source.replace('(', '\\(')
         source = source.replace(')', '\\)')
