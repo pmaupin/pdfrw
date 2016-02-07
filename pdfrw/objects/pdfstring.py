@@ -32,7 +32,7 @@ class PdfString(str):
             chunk = unescape(chunk, chunk)
             if chunk.startswith('\\') and len(chunk) > 1:
                 value = int(chunk[1:], 8)
-                # FIXME: TODO: Handle unicode here
+                # FIXME: TODO: Handle PDFDocEncoding
                 if value > 255:
                     value = 255
                 chunk = remap(value)
@@ -64,7 +64,8 @@ class PdfString(str):
             # Encode a Unicode string as UTF-16 big endian, in bytes
             utf16_bytes = source.encode('utf-16be')
             # Prepend byte order mark and encode bytes as hexadecimal
-            ascii_hex_bytes = codecs.encode(b'\xfe\xff' + utf16_bytes, 'hex')
+            ascii_hex_bytes = codecs.encode(
+                codecs.BOM_UTF16_BE + utf16_bytes, 'hex')
             # Decode hexadecimal bytes to ASCII
             ascii_hex_str = ascii_hex_bytes.decode('ascii').lower()
             return cls('<' + ascii_hex_str + '>')
