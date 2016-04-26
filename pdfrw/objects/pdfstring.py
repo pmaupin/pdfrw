@@ -3,6 +3,8 @@
 # MIT license -- See LICENSE.txt for details
 
 import re
+import codecs
+import binascii
 
 
 class PdfString(str):
@@ -21,15 +23,8 @@ class PdfString(str):
     unescape_pattern = (r'(\\\\|\\b|\\f|\\n|\\r|\\t'
                         r'|\\\r\n|\\\r|\\\n|\\[0-9]{3}|\\)')
     unescape_func = re.compile(unescape_pattern).split
-
-    hex_pattern = '([a-fA-F0-9][a-fA-F0-9]|[a-fA-F0-9])'
-    hex_func = re.compile(hex_pattern).split
-
-    hex_pattern2 = ('([a-fA-F0-9][a-fA-F0-9][a-fA-F0-9][a-fA-F0-9]|'
-                    '[a-fA-F0-9][a-fA-F0-9]|[a-fA-F0-9])')
-    hex_func2 = re.compile(hex_pattern2).split
-
-    hex_funcs = hex_func, hex_func2
+    escapes = [('\\', '\\\\'), ('(', '\\('), (')', '\\)'),
+                    ('\n', '\\n'), ('\t', '\\t')]
 
     def decode_regular(self, remap=chr):
         assert self[0] == '(' and self[-1] == ')'
@@ -48,27 +43,27 @@ class PdfString(str):
                 result.append(chunk)
         return ''.join(result)
 
-    def decode_hex(self, remap=chr, twobytes=False):
-        data = ''.join(self.split())
-        data = self.hex_funcs[twobytes](data)
-        chars = data[1::2]
-        other = data[0::2]
-        assert (other[0] == '<' and
-                other[-1] == '>' and
-                ''.join(other) == '<>'), self
-        return ''.join([remap(int(x, 16)) for x in chars])
+    def decode_hex(self):
+            return binascii.unhexlify(self[5:-1]).decode('utf-16-be')
 
-    def decode(self, remap=chr, twobytes=False):
+    def decode(self, remap=chr):
         if self.startswith('('):
             return self.decode_regular(remap)
 
-        else:
-            return self.decode_hex(remap, twobytes)
+        elif self.upper().startswith('<FEFF') and self.endswith('>'):
+            return self.decode_hex()
 
-    def encode(cls, source, usehex=False):
-        assert not usehex, "Not supported yet"
-        source = source.replace('\\', '\\\\')
-        source = source.replace('(', '\\(')
-        source = source.replace(')', '\\)')
-        return cls('(' + source + ')')
-    encode = classmethod(encode)
+        else:
+            raise ValueError('Invalid PDF string "%s"' % repr(self))
+
+    @classmethod
+    def encode(cls, source):
+        try:
+            asc = source.encode('ascii')
+            for a, b in cls.escapes:
+                source = source.replace(a, b)
+            return cls('(' + source + ')')
+
+        except UnicodeEncodeError:
+            encoded = codecs.BOM_UTF16_BE + source.encode('utf-16-be')
+            return '<' + binascii.hexlify(encoded).upper() + '>'
