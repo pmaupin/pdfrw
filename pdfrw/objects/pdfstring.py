@@ -4,6 +4,7 @@
 
 import re
 import codecs
+import binascii
 
 class PdfString(str):
     ''' A PdfString is an encoded string.  It has a decode
@@ -42,7 +43,7 @@ class PdfString(str):
         return ''.join(result)
 
     def decode_hex(self):
-            return codecs.decode(self[5:-1], 'hex').decode('utf-16-be')
+        return binascii.unhexlify(self[5:-1]).decode('utf-16-be')
 
     def decode(self, remap=chr):
         if self.startswith('('):
@@ -64,5 +65,5 @@ class PdfString(str):
 
         except UnicodeEncodeError:
             encoded = codecs.BOM_UTF16_BE + source.encode('utf-16-be')
-            printable = codecs.decode(codecs.encode(encoded, 'hex'), 'ascii').upper()
+            printable = codecs.decode(binascii.hexlify(encoded), 'ascii').upper()
             return '<' + printable + '>'
