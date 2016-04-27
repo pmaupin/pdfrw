@@ -199,9 +199,9 @@ class PageMerge(list):
             allkeys = xobjs.keys()
             if allkeys:
                 keys = (x for x in allkeys if x.startswith('/pdfrw_'))
-                keys = (x for x in keys if x[6:].isdigit())
-                keys = sorted(keys, key=lambda x: int(x[6:]))
-                key_offset = (int(keys[-1][6:]) + 1) if keys else 0
+                keys = (x for x in keys if x[7:].isdigit())
+                keys = sorted(keys, key=lambda x: int(x[7:]))
+                key_offset = (int(keys[-1][7:]) + 1) if keys else 0
                 key_offset -= len(allkeys)
 
         if old_contents is None:
