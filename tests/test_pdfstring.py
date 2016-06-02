@@ -48,6 +48,12 @@ class TestEncoding(unittest.TestCase):
         decoded = self.decode(continuation)
         self.assertEqual(test_string * 2, decoded)
 
+    def test_unicode_escaped(self):
+        # Some PDF producers happily put unicode strings in PdfDocEncoding,
+        # because the Unicode BOM and \0 are valid code points
+        decoded = self.decode('(\xfe\xff\0h\0e\0l\0l\0o)')
+        self.assertEqual(decoded, "hello")
+
 
 def main():
     unittest.main()

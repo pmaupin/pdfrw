@@ -100,9 +100,9 @@ class PdfString(str):
     def decode_escaped(self):
         def handle_escape(m):
             if m.group(2):  # direct escape
-                return self.unescapes[m.group(2)]
+                return self.unescapes[m.group(2).decode('ascii')]
             if m.group(3):  # octal
-                value = int(m.group(3), 8)
+                value = int(m.group(3).decode('ascii'), 8)
                 return bytes(bytearray([value]))
             if m.group(4):  # line continuation
                 return b''
@@ -110,7 +110,7 @@ class PdfString(str):
             # escape, the backslash is ignored.
             return m.group(1)
 
-        return self.unescape_re.sub(handle_escape, self[1:-1].encode())
+        return self.unescape_re.sub(handle_escape, bytearray(self[1:-1]))
 
     def decode_bytes(self, bytestr):
         if bytestr[:2] == codecs.BOM_UTF16_BE:
