@@ -74,7 +74,7 @@ try to use pdftk to uncompress and/or unencrypt them first.
   output.
 * `rl1/subset.py`__ Another subsetting example, using reportlab canvas for
   output.
-* `rl1/platypus_pdf_template.py`__ Aother watermarking example, using
+* `rl1/platypus_pdf_template.py`__ Another watermarking example, using
   reportlab canvas and generated output for the document.  Contributed
   by user asannes.
 * `rl2`__ Experimental code for parsing graphics.  Needs work.
