@@ -10,7 +10,7 @@ from .tokens import PdfTokens
 from .errors import PdfParseError
 from .pagemerge import PageMerge
 
-__version__ = '0.2'
+__version__ = '0.3'
 
 # Add a tiny bit of compatibility to pyPdf
 
