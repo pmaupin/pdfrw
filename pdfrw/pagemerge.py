@@ -213,12 +213,18 @@ class PageMerge(list):
             index = self.index(None)
             if index:
                 new_contents.append(do_xobjs(self[:index]))
-            elif len(self) > 1:
-                new_contents.append(PdfDict(indirect=True, stream='q'))
-            new_contents.extend(old_contents)
+
             index += 1
             if index < len(self):
-                new_contents.append(do_xobjs(self[index:], True))
+                # There are elements to add after the original page contents,
+                # so push the graphics state to the stack. Restored below.
+                new_contents.append(PdfDict(indirect=True, stream='q'))
+
+            new_contents.extend(old_contents)
+
+            if index < len(self):
+                # Restore graphics state and add other elements.
+                new_contents.append(do_xobjs(self[index:], restore_first=True))
 
         if mbox is None:
             cbox = None
