@@ -176,8 +176,8 @@ class PageMerge(list):
         return self
 
     def render(self):
-        def do_xobjs(xobj_list):
-            content = []
+        def do_xobjs(xobj_list, restore_first=False):
+            content = ['Q'] if restore_first else []
             for obj in xobj_list:
                 index = PdfName('pdfrw_%d' % (key_offset + len(xobjs)))
                 if xobjs.setdefault(index, obj) is not obj:
@@ -213,10 +213,18 @@ class PageMerge(list):
             index = self.index(None)
             if index:
                 new_contents.append(do_xobjs(self[:index]))
-            new_contents.extend(old_contents)
+
             index += 1
             if index < len(self):
-                new_contents.append(do_xobjs(self[index:]))
+                # There are elements to add after the original page contents,
+                # so push the graphics state to the stack. Restored below.
+                new_contents.append(PdfDict(indirect=True, stream='q'))
+
+            new_contents.extend(old_contents)
+
+            if index < len(self):
+                # Restore graphics state and add other elements.
+                new_contents.append(do_xobjs(self[index:], restore_first=True))
 
         if mbox is None:
             cbox = None

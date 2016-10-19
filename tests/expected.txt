@@ -13,6 +13,7 @@ examples/unspread_d711b74110eefb4e9e6bf1a5bea16bfe          780a9abe26a9de0b5b95
 examples/cat_b1c400de699af29ea3f1983bb26870ab_06c86654f9a77e82f9adaa0086fc391c          62bb9b746ff5932d3f1b88942d36a81d
 examples/rotate_707e3e2d17cbe9ec2273414b3b63f333_270_1-4_7-8_10-50_52-56                841c980dfadf2cc47ad86e4649ca69b6
 examples/watermark_b1c400de699af29ea3f1983bb26870ab_06c86654f9a77e82f9adaa0086fc391c    41989bb2cb6225c6e14262ff5d4f151f
+examples/watermark_b1c400de699af29ea3f1983bb26870ab_06c86654f9a77e82f9adaa0086fc391c    fe2330d42b3bfc06212415f295752f0e
 examples/watermark_b1c400de699af29ea3f1983bb26870ab_06c86654f9a77e82f9adaa0086fc391c_-u e43e3ac0afe1cc242549424755dbf612
 
 # All these are in the poster test
