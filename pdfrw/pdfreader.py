@@ -282,17 +282,16 @@ class PdfReader(PdfDict):
             uncompress(objs)
             for obj in objs:
                 objsource = PdfTokens(obj.stream, 0, False)
-                snext = objsource.next
-                offsets = {}
+                next = objsource.next
+                offsets = []
                 firstoffset = int(obj.First)
                 while objsource.floc < firstoffset:
-                    dest = int(snext())
-                    offsets[dest] = firstoffset + int(snext())
-                for num, offset in iteritems(offsets):
+                    offsets.append((int(next()), firstoffset + int(next())))
+                for num, offset in offsets:
                     # Read the object, and call special code if it starts
                     # an array or dictionary
                     objsource.floc = offset
-                    sobj = snext()
+                    sobj = next()
                     func = self.special.get(sobj)
                     if func is not None:
                         sobj = func(objsource)
