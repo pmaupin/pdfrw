@@ -213,6 +213,8 @@ class PdfTokens(object):
             msg %= arg
         fdata = self.fdata
         begin, end = self.current[0]
+        if begin >= len(fdata):
+            return '%s (filepos %s past EOF %s)' % (msg, begin, len(fdata))
         line, col = linepos(fdata, begin)
         if end > begin:
             tok = fdata[begin:end].rstrip()

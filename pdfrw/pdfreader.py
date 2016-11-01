@@ -289,6 +289,8 @@ class PdfReader(PdfDict):
                 while num.isdigit():
                     offset = int(snext())
                     offsets[int(num)] = firstoffset + offset
+                    if objsource.floc >= firstoffset:
+                        break
                     num = snext()
                 for num, offset in iteritems(offsets):
                     # Read the object, and call special code if it starts
@@ -431,7 +433,10 @@ class PdfReader(PdfDict):
         ''' Parse (one of) the cross-reference file section(s)
         '''
         next = source.next
-        tok = next()
+        try:
+            tok = next()
+        except StopIteration:
+            tok = ''
         if tok.isdigit():
             return self.parse_xref_stream(source), True
         elif tok == 'xref':
