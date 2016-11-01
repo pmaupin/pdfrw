@@ -285,13 +285,9 @@ class PdfReader(PdfDict):
                 snext = objsource.next
                 offsets = {}
                 firstoffset = int(obj.First)
-                num = snext()
-                while num.isdigit():
-                    offset = int(snext())
-                    offsets[int(num)] = firstoffset + offset
-                    if objsource.floc >= firstoffset:
-                        break
-                    num = snext()
+                while objsource.floc < firstoffset:
+                    dest = int(snext())
+                    offsets[dest] = firstoffset + int(snext())
                 for num, offset in iteritems(offsets):
                     # Read the object, and call special code if it starts
                     # an array or dictionary

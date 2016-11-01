@@ -168,6 +168,7 @@ class PdfTokens(object):
         self.iterator = iterator = self._gettoks(startloc)
         self.msgs_dumped = None if verbose else set()
         self.next = getattr(iterator, nextattr)
+        self.current = [(startloc, startloc)]
 
     def setstart(self, startloc):
         ''' Change the starting location.
