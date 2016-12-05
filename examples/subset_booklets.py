@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 '''
-usage:   subset_booklet.py my.pdf
+usage: subset_booklet.py my.pdf
 
 Creates subset_booklet.my.pdf
 
