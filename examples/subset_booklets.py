@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 
 '''
-usage:   subset_booklet.py my.pdf
+usage: subset_booklets.py my.pdf
 
-Creates subset_booklet.my.pdf
+Creates subset_booklets.my.pdf
 
 Pages organized in a form suitable for booklet printing, e.g.
 to print 4 8.5x11 pages using a single 11x17 sheet (double-sided).
