@@ -1,12 +1,20 @@
 #!/usr/bin/env python
 
 '''
-usage:   subsetBooklet.py my.pdf
+usage:   subset_booklet.py my.pdf
 
-Creates subsetBooklet.my.pdf
+Creates subset_booklet.my.pdf
 
 Pages organized in a form suitable for booklet printing, e.g.
 to print 4 8.5x11 pages using a single 11x17 sheet (double-sided).
+Instead of a large booklet, the pdf is divided into several mini
+booklets. The reason is: professional printing works this way:
+    - Print all of several mini booklets(subsets of booklet);
+    - Saw each mini booklet individually;
+    - glue them all together;
+    - Insert the cover.
+
+    Take a look at http://www.wikihow.com/Bind-a-Book
 '''
 
 import sys
@@ -14,7 +22,7 @@ import os
 import time
 from pdfrw import PdfReader, PdfWriter, PageMerge
 
-bookletSize = 20
+BOOKLET_SIZE = 20
 start = time.time()
 
 def fixpage(*pages):
@@ -31,18 +39,18 @@ print 'The pdf file '+str(inpfn)+' has '+str(len(allipages))+' pages.'
 if len(allipages) & 1:
    allipages.append(None)
    print 'Inserting one more blank page to make pages number even.'
-numOfIter, leftIter = divmod(len(allipages), bookletSize)
+num_of_iter, iters_left = divmod(len(allipages), BOOKLET_SIZE)
 
-print 'Making '+str(numOfIter)+' subbooklets of '+str(bookletSize)+' pages each.'
+print 'Making '+str(num_of_iter)+' subbooklets of '+str(BOOKLET_SIZE)+' pages each.'
 opages = []
-for iteration in range(0,numOfIter):
-	ipages = allipages[iteration*bookletSize:(iteration+1)*bookletSize]
-	while len(ipages) > 2:
-	    opages.append(fixpage(ipages.pop(), ipages.pop(0)))
-	    opages.append(fixpage(ipages.pop(0), ipages.pop()))
+for iteration in range(0,num_of_iter):
+    ipages = allipages[iteration*BOOKLET_SIZE:(iteration+1)*BOOKLET_SIZE]
+    while len(ipages) > 2:
+        opages.append(fixpage(ipages.pop(), ipages.pop(0)))
+        opages.append(fixpage(ipages.pop(0), ipages.pop()))
 
 # Making one more subbooklet with the left pages
-ipages = allipages[len(allipages)-leftIter:len(allipages)]
+ipages = allipages[len(allipages)-iters_left:len(allipages)]
 while len(ipages) > 2:
     opages.append(fixpage(ipages.pop(), ipages.pop(0)))
     opages.append(fixpage(ipages.pop(0), ipages.pop()))
