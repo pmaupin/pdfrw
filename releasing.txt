@@ -1,6 +1,6 @@
 Notes on releasing, which is not yet fully automated:
 
-1) Update version number both in __init__ and in setup
+1) Update version number in pdfrw/__init__.py
 
 2) Use pyroma
 
