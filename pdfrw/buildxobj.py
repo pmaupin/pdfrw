@@ -32,6 +32,8 @@ from .objects import PdfDict, PdfArray, PdfName
 from .pdfreader import PdfReader
 from .errors import log, PdfNotImplementedError
 from .py23_diffs import iteritems
+from .uncompress import uncompress
+from .compress import compress
 
 
 class ViewInfo(object):
@@ -169,6 +171,10 @@ def _build_cache(contents, allow_compressed):
         and save it along with private cache info.
         Assumes validity has been pre-checked if
         we have a non-None xobj_copy.
+
+        Also, the spec says nothing about nested arrays,
+        so we assume those don't exist until we see one
+        in the wild.
     '''
     try:
         xobj_copy = contents.xobj_copy
@@ -183,9 +189,20 @@ def _build_cache(contents, allow_compressed):
         array = [contents]
         private = contents.private
 
-    # The spec says nothing about nested arrays.  Will
-    # assume that's not a problem until we encounter them...
+    # If we don't allow compressed objects, OR if we have multiple compressed
+    # objects, we try to decompress them, and fail if we cannot do that.
 
+    if not allow_compressed or len(array) > 1:
+        keys = set(x[0] for cdict in array for x in iteritems(cdict))
+        was_compressed = len(keys) > 1
+        if was_compressed:
+            # Make copies of the objects before we uncompress them.
+            array = [PdfDict(x) for x in array]
+            if not uncompress(array):
+                raise PdfNotImplementedError(
+                    'Xobjects with these compression parameters not supported: %s' %
+                    keys)
+    
     xobj_copy = PdfDict(array[0])
     xobj_copy.private.xobj_cachedict = {}
     private.xobj_copy = xobj_copy
@@ -195,19 +212,9 @@ def _build_cache(contents, allow_compressed):
         newlength = sum(int(x.Length) for x in array) + len(array) - 1
         assert newlength == len(newstream)
         xobj_copy.stream = newstream
+        if was_compressed and allow_compressed:
+            compress(xobj_copy)
 
-        # Cannot currently cope with different kinds of
-        # compression in the array, so just disallow it.
-        allow_compressed = False
-
-    if not allow_compressed:
-        # Make sure there are no compression parameters
-        for cdict in array:
-            keys = [x[0] for x in iteritems(cdict)]
-            if len(keys) != 1:
-                raise PdfNotImplementedError(
-                    'Xobjects with compression parameters not supported: %s' %
-                    keys)
     return xobj_copy
 
 
