@@ -25,9 +25,9 @@ inpfn, = sys.argv[1:]
 outfn = 'booklet.' + os.path.basename(inpfn)
 ipages = PdfReader(inpfn).pages
 
-# Make sure we have an even number of sheets
-# Each sheet contains 4 original pages
-ipages += [None]*(4-len(ipages)%4)
+# Make sure we have an even number of sides
+# Each sheet contains 2 sides and 4 original pages in total
+ipages += [None]*(-len(ipages)%4)
 
 opages = []
 while len(ipages) > 2:
