@@ -78,6 +78,9 @@ try to use pdftk to uncompress and/or unencrypt them first.
   reportlab canvas and generated output for the document.  Contributed
   by user asannes.
 * `rl2`__ Experimental code for parsing graphics.  Needs work.
+* `subset_booklets.py`__ shows an example of creating a full printable pdf
+  version in a more professional and pratical way ( take a look at
+  http://www.wikihow.com/Bind-a-Book )
 
 __ https://github.com/pmaupin/pdfrw/tree/master/examples/4up.py
 __ https://github.com/pmaupin/pdfrw/tree/master/examples/alter.py
@@ -95,6 +98,7 @@ __ https://github.com/pmaupin/pdfrw/tree/master/examples/rl1/booklet.py
 __ https://github.com/pmaupin/pdfrw/tree/master/examples/rl1/subset.py
 __ https://github.com/pmaupin/pdfrw/tree/master/examples/rl1/platypus_pdf_template.py
 __ https://github.com/pmaupin/pdfrw/tree/master/examples/rl2/
+__ https://github.com/pmaupin/pdfrw/tree/master/examples/subset_booklets.py
 
 Notes on selected examples
 ------------------------------------
