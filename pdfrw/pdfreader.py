@@ -282,19 +282,16 @@ class PdfReader(PdfDict):
             uncompress(objs)
             for obj in objs:
                 objsource = PdfTokens(obj.stream, 0, False)
-                snext = objsource.next
-                offsets = {}
+                next = objsource.next
+                offsets = []
                 firstoffset = int(obj.First)
-                num = snext()
-                while num.isdigit():
-                    offset = int(snext())
-                    offsets[int(num)] = firstoffset + offset
-                    num = snext()
-                for num, offset in iteritems(offsets):
+                while objsource.floc < firstoffset:
+                    offsets.append((int(next()), firstoffset + int(next())))
+                for num, offset in offsets:
                     # Read the object, and call special code if it starts
                     # an array or dictionary
                     objsource.floc = offset
-                    sobj = snext()
+                    sobj = next()
                     func = self.special.get(sobj)
                     if func is not None:
                         sobj = func(objsource)
@@ -431,7 +428,10 @@ class PdfReader(PdfDict):
         ''' Parse (one of) the cross-reference file section(s)
         '''
         next = source.next
-        tok = next()
+        try:
+            tok = next()
+        except StopIteration:
+            tok = ''
         if tok.isdigit():
             return self.parse_xref_stream(source), True
         elif tok == 'xref':

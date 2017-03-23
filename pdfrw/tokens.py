@@ -168,6 +168,7 @@ class PdfTokens(object):
         self.iterator = iterator = self._gettoks(startloc)
         self.msgs_dumped = None if verbose else set()
         self.next = getattr(iterator, nextattr)
+        self.current = [(startloc, startloc)]
 
     def setstart(self, startloc):
         ''' Change the starting location.
@@ -213,6 +214,8 @@ class PdfTokens(object):
             msg %= arg
         fdata = self.fdata
         begin, end = self.current[0]
+        if begin >= len(fdata):
+            return '%s (filepos %s past EOF %s)' % (msg, begin, len(fdata))
         line, col = linepos(fdata, begin)
         if end > begin:
             tok = fdata[begin:end].rstrip()
