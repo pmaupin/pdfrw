@@ -25,15 +25,18 @@ inpfn, = sys.argv[1:]
 outfn = 'booklet.' + os.path.basename(inpfn)
 ipages = PdfReader(inpfn).pages
 
-# Make sure we have an even number
-if len(ipages) & 1:
-    ipages.append(None)
+# Create blank page
+blank = PageMerge()
+blank.mbox = ipages[0].MediaBox
+blank = blank.render()
+
+# Make sure we have a multiple of 4 pages
+while len(ipages) % 4:
+    ipages.append(blank)
 
 opages = []
-while len(ipages) > 2:
+while ipages:
     opages.append(fixpage(ipages.pop(), ipages.pop(0)))
     opages.append(fixpage(ipages.pop(0), ipages.pop()))
-
-opages += ipages
 
 PdfWriter().addpages(opages).write(outfn)
