@@ -21,10 +21,10 @@ examples/subset_1975ef8db7355b1d691bc79d0749574b_21     5057f345f1a1109a0e54276a
 examples/rotate_5057f345f1a1109a0e54276a68e8f8df_90_1   881f4dc8dcf069e707bf61af95492d86
 examples/poster_881f4dc8dcf069e707bf61af95492d86        a34be06d22105b6c02394a9f278fec0d
 
-examples/rl1/4up_b1c400de699af29ea3f1983bb26870ab                   959d6246ad8bda72bd023e8681216d17
-examples/rl1/booklet_b1c400de699af29ea3f1983bb26870ab               45b4ae29a038271896b7264bbed63bdf
-examples/rl1/subset_b1c400de699af29ea3f1983bb26870ab_3_5            822bce1cb9e053f1f3f6b922bf27fab8
-examples/rl1/platypus_pdf_template_b1c400de699af29ea3f1983bb26870ab 97ad6a8ca3fe7cc4e1f0ffb8475355e9
+examples/rl1/4up_b1c400de699af29ea3f1983bb26870ab                   e21dfdd9ae56ddb261dc3d02bf6da198
+examples/rl1/booklet_b1c400de699af29ea3f1983bb26870ab               410063b7fbae1c6d5af33758e2b43450
+examples/rl1/subset_b1c400de699af29ea3f1983bb26870ab_3_5            745f1ac31a18d86afb294a449b72cb98
+examples/rl1/platypus_pdf_template_b1c400de699af29ea3f1983bb26870ab 50fd8765869f2575434819e51566eaba
 
 # List things that need work here (typically cause exceptions)
 
