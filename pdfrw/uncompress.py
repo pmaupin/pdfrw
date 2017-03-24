@@ -102,7 +102,7 @@ def flate_png(data, predictor=1, columns=1, colors=1, bpc=8):
         this technique for Xref stream objects, which are
         quite regular.
     '''
-    columnbytes = ((columns * colors * bpc) + 7) / 8
+    columnbytes = ((columns * colors * bpc) + 7) // 8
     data = array.array('B', data)
     rowlen = columnbytes + 1
     if predictor == 15:
