@@ -19,7 +19,7 @@ from .errors import PdfParseError, log
 from .tokens import PdfTokens
 from .objects import PdfDict, PdfArray, PdfName, PdfObject, PdfIndirect
 from .uncompress import uncompress
-from .py23_diffs import convert_load, iteritems
+from .py23_diffs import convert_load, convert_store, iteritems
 
 
 class PdfReader(PdfDict):
@@ -329,7 +329,6 @@ class PdfReader(PdfDict):
         '''
 
         def readint(s, lengths):
-            lengths = itertools.cycle(lengths)
             offset = 0
             for length in itertools.cycle(lengths):
                 next = offset + length
@@ -351,8 +350,13 @@ class PdfReader(PdfDict):
             source.exception('Expected dict type of /XRef')
         tok = next()
         self.readstream(obj, self.findstream(obj, tok, source), source, True)
+        old_strm = obj.stream
         if not uncompress([obj], True):
             source.exception('Could not decompress Xref stream')
+        stream = obj.stream
+        # Fix for issue #76 -- goofy compressed xref stream
+        # that is NOT ACTUALLY COMPRESSED
+        stream = stream if stream is not old_strm else convert_store(old_strm)
         num_pairs = obj.Index or PdfArray(['0', obj.Size])
         num_pairs = [int(x) for x in num_pairs]
         num_pairs = zip(num_pairs[0::2], num_pairs[1::2])
@@ -360,7 +364,7 @@ class PdfReader(PdfDict):
         if len(entry_sizes) != 3:
             source.exception('Invalid entry size')
         object_streams = defaultdict(list)
-        get = readint(obj.stream, entry_sizes)
+        get = readint(stream, entry_sizes)
         for objnum, size in num_pairs:
             for cnt in range(size):
                 xtype, p1, p2 = islice(get, 3)
