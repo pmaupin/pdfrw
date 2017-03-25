@@ -12,7 +12,7 @@ PNG predictor were originally transcribed from PyPDF2, which is
 probably an excellent source of additional filters.
 '''
 import array
-from .objects import PdfDict, PdfName
+from .objects import PdfDict, PdfName, PdfArray
 from .errors import log
 from .py23_diffs import zlib, xrange, from_array, convert_load, convert_store
 
@@ -37,7 +37,7 @@ def uncompress(mylist, leave_raw=False, warnings=set(),
         if isinstance(ftype, list) and len(ftype) == 1:
             # todo: multiple filters
             ftype = ftype[0]
-        parms = obj.DecodeParms
+        parms = obj.DecodeParms or obj.DP
         if ftype != flate:
             msg = ('Not decompressing: cannot use filter %s'
                    ' with parameters %s') % (repr(ftype), repr(parms))
@@ -53,23 +53,16 @@ def uncompress(mylist, leave_raw=False, warnings=set(),
                 error = str(s)
             else:
                 error = None
+                if isinstance(parms, PdfArray):
+                    oldparms = parms
+                    parms = PdfDict()
+                    for x in oldparms:
+                        parms.update(x)
                 if parms:
-                    try:
-                        predictor = int(parms.Predictor or 1)
-                    except AttributeError:
-                        predictor = 1
-                    try:
-                        columns = int(parms.Columns or 1)
-                    except AttributeError:
-                        columns = 1
-                    try:
-                        colors = int(obj.Colors or 1)
-                    except AttributeError:
-                        colors = 1
-                    try:
-                        bpc = int(obj.BitsPerComponent or 8)
-                    except AttributeError:
-                        bpc = 1
+                    predictor = int(parms.Predictor or 1)
+                    columns = int(parms.Columns or 1)
+                    colors = int(parms.Colors or 1)
+                    bpc = int(parms.BitsPerComponent or 8)
                     if 10 <= predictor <= 15:
                         data, error = flate_png(data, predictor, columns, colors, bpc)
                     elif predictor != 1:
@@ -106,8 +99,8 @@ def flate_png(data, predictor=1, columns=1, colors=1, bpc=8):
     data = array.array('B', data)
     rowlen = columnbytes + 1
     if predictor == 15:
-        padding = (rowlen - len(data) % rowlen) % rowlen
-        data = data + array.array('B', '\x00' * padding)
+        padding = (rowlen - len(data)) % rowlen
+        data.extend([0] * padding)
     assert len(data) % rowlen == 0
     rows = xrange(0, len(data), rowlen)
     for row_index in rows:
