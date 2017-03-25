@@ -112,15 +112,17 @@ def build_tests():
         def test(self):
             self.roundtrip(*args, **kw)
         return test
-    for mytest, repaginate in (
-            ('simple', False),
-            ('repaginate', True)
+    for mytest, repaginate, decompress in (
+            ('simple', False, False),
+            ('repaginate', True, False),
+            ('decompress', False, True)
             ):
         for srcf in static_pdfs.pdffiles[0]:
             basename = os.path.basename(srcf)
             test_name = 'test_%s_%s' % (mytest, basename)
             test = test_closure(mytest, basename, srcf,
-                                repaginate=repaginate)
+                                repaginate=repaginate,
+                                decompress=decompress)
             setattr(TestOnePdf, test_name, test)
 build_tests()
 

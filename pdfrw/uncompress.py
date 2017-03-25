@@ -12,7 +12,7 @@ PNG predictor were originally transcribed from PyPDF2, which is
 probably an excellent source of additional filters.
 '''
 import array
-from .objects import PdfDict, PdfName
+from .objects import PdfDict, PdfName, PdfArray
 from .errors import log
 from .py23_diffs import zlib, xrange, from_array, convert_load, convert_store
 
@@ -37,7 +37,7 @@ def uncompress(mylist, leave_raw=False, warnings=set(),
         if isinstance(ftype, list) and len(ftype) == 1:
             # todo: multiple filters
             ftype = ftype[0]
-        parms = obj.DecodeParms
+        parms = obj.DecodeParms or obj.DP
         if ftype != flate:
             msg = ('Not decompressing: cannot use filter %s'
                    ' with parameters %s') % (repr(ftype), repr(parms))
@@ -53,10 +53,18 @@ def uncompress(mylist, leave_raw=False, warnings=set(),
                 error = str(s)
             else:
                 error = None
+                if isinstance(parms, PdfArray):
+                    oldparms = parms
+                    parms = PdfDict()
+                    for x in oldparms:
+                        parms.update(x)
                 if parms:
                     predictor = int(parms.Predictor or 1)
+                    columns = int(parms.Columns or 1)
+                    colors = int(parms.Colors or 1)
+                    bpc = int(parms.BitsPerComponent or 8)
                     if 10 <= predictor <= 15:
-                        data, error = flate_png(data, parms)
+                        data, error = flate_png(data, predictor, columns, colors, bpc)
                     elif predictor != 1:
                         error = ('Unsupported flatedecode predictor %s' %
                                  repr(predictor))
@@ -74,7 +82,7 @@ def uncompress(mylist, leave_raw=False, warnings=set(),
     return ok
 
 
-def flate_png(data, parms):
+def flate_png(data, predictor=1, columns=1, colors=1, bpc=8):
     ''' PNG prediction is used to make certain kinds of data
         more compressible.  Before the compression, each data
         byte is either left the same, or is set to be a delta
@@ -87,9 +95,12 @@ def flate_png(data, parms):
         this technique for Xref stream objects, which are
         quite regular.
     '''
-    columns = int(parms.Columns)
+    columnbytes = ((columns * colors * bpc) + 7) // 8
     data = array.array('B', data)
-    rowlen = columns + 1
+    rowlen = columnbytes + 1
+    if predictor == 15:
+        padding = (rowlen - len(data)) % rowlen
+        data.extend([0] * padding)
     assert len(data) % rowlen == 0
     rows = xrange(0, len(data), rowlen)
     for row_index in rows:
