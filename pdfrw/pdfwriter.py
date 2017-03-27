@@ -177,10 +177,10 @@ def FormatObjects(f, trailer, version='1.3', compress=True, killobj=(),
 
     # Don't reference old catalog or pages objects --
     # swap references to new ones.
-    swapobj = {PdfName.Catalog: trailer.Root,
+    type_remap = {PdfName.Catalog: trailer.Root,
                PdfName.Pages: trailer.Root.Pages, None: trailer}.get
-    swapobj = [(objid, swapobj(obj.Type))
-               for objid, obj in iteritems(killobj)]
+    swapobj = [(objid, type_remap(obj.Type) if new_obj is None else new_obj)
+               for objid, (obj, new_obj) in iteritems(killobj)]
     swapobj = dict((objid, obj is None and NullObject or obj)
                    for objid, obj in swapobj).get
 
@@ -251,13 +251,14 @@ class PdfWriter(object):
         # Add parents in the hierarchy to objects we
         # don't want to output
         killobj = self.killobj
-        obj = page.Parent
+        obj, new_obj = page, self.pagearray[-1]
         while obj is not None:
             objid = id(obj)
             if objid in killobj:
                 break
-            killobj[objid] = obj
+            killobj[objid] = obj, new_obj
             obj = obj.Parent
+            new_obj = None
         return self
 
     addPage = addpage  # for compatibility with pyPdf
