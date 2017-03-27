@@ -1,4 +1,5 @@
 #! /usr/bin/env python
+# encoding: utf-8
 
 '''
 Run from the directory above like so:
@@ -29,6 +30,13 @@ class TestEncoding(unittest.TestCase):
 
     def test_doubleslash(self):
         self.roundtrip('\\')
+
+    def test_unicode(self):
+        ustr = u'PDF™©®'
+
+        self.roundtrip(ustr)
+
+        self.assertEqual("<FEFF005000440046212200A900AE>", self.encode(ustr))
 
 
 def main():
