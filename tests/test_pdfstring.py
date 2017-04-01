@@ -102,7 +102,8 @@ class TestBaseEncoding(unittest.TestCase):
         self.roundtrip(u'\ufffe', '<FEFFFFFE>')
         self.roundtrip(u'\xfe\xff', '<FEFF00FE00FF>')
         self.roundtrip(u'\xff\xfe', '(\xff\xfe)')
-
+        self.assertRaises(UnicodeError, PdfString.from_unicode,
+                          u'þÿ blah', text_encoding='pdfdocencoding')
 
     def test_byte_encode(self):
         self.assertEqual(self.encode(b'ABC'), '(ABC)')

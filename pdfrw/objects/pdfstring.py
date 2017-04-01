@@ -329,10 +329,12 @@ class PdfString(str):
     indirect = False
 
 
-    # The byte order mark, in both bytes and unicode form
+    # The byte order mark, and unicode that could be
+    # wrongly encoded into the byte order mark by the
+    # pdfdocencoding codec.
 
     bytes_bom = codecs.BOM_UTF16_BE
-    uni_bom = bytes_bom.decode('latin-1')
+    bad_pdfdoc_prefix = bytes_bom.decode('latin-1')
 
     # Used by decode_literal; filled in on first use
 
@@ -521,7 +523,11 @@ class PdfString(str):
                 raise ValueError('Invalid text_encoding value: %s'
                                  % text_encoding)
 
-            if not source.startswith(cls.uni_bom):
+            if source.startswith(cls.bad_pdfdoc_prefix):
+                if force_pdfdoc:
+                    raise UnicodeError('Prefix of string %r cannot be encoded '
+                                       'in pdfdocencoding' % source[:20])
+            else:
                 try:
                     raw = source.encode('pdfdocencoding')
                 except UnicodeError:
@@ -537,7 +543,7 @@ class PdfString(str):
         return cls.from_bytes(raw, encoding)
 
     @classmethod
-    def encode(cls, source, uni_type = type(uni_bom), isinstance=isinstance):
+    def encode(cls, source, uni_type = type(u''), isinstance=isinstance):
         """ The encode() constructor is a legacy function that is
             also a convenience for the PdfWriter.
         """
