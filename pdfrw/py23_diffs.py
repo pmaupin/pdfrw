@@ -46,3 +46,8 @@ try:
     xrange = xrange
 except NameError:
     xrange = range
+
+try:
+    intern = intern
+except NameError:
+    from sys import intern

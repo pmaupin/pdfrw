@@ -15,7 +15,7 @@ import itertools
 from .objects import PdfString, PdfObject
 from .objects.pdfname import BasePdfName
 from .errors import log, PdfParseError
-from .py23_diffs import nextattr
+from .py23_diffs import nextattr, intern
 
 
 def linepos(fdata, loc):
@@ -64,19 +64,7 @@ class PdfTokens(object):
     findparen = re.compile('(%s)[%s]*' % (p_literal_string_extend,
                                           whitespace), re.DOTALL).finditer
 
-    def _cacheobj(cache, obj, constructor):
-        ''' This caching relies on the constructors
-            returning something that will compare as
-            equal to the original obj.  This works
-            fine with our PDF objects.
-        '''
-        result = cache.get(obj)
-        if result is None:
-            result = constructor(obj)
-            cache[result] = result
-        return result
-
-    def _gettoks(self, startloc, cacheobj=_cacheobj,
+    def _gettoks(self, startloc, intern=intern,
                  delimiters=delimiters, findtok=findtok,
                  findparen=findparen, PdfString=PdfString,
                  PdfObject=PdfObject, BasePdfName=BasePdfName):
@@ -95,24 +83,23 @@ class PdfTokens(object):
         fdata = self.fdata
         current = self.current = [(startloc, startloc)]
         cache = {}
+        get_cache = cache.get
         while 1:
             for match in findtok(fdata, current[0][1]):
                 current[0] = tokspan = match.span()
                 token = match.group(1)
                 firstch = token[0]
+                toktype = intern
                 if firstch not in delimiters:
-                    token = cacheobj(cache, token, PdfObject)
+                    toktype = PdfObject
                 elif firstch in '/<(%':
                     if firstch == '/':
                         # PDF Name
-                        encoded = token
-                        token = cache.get(encoded)
-                        if token is None:
-                            token = cache[token] = BasePdfName(encoded)
+                        toktype = BasePdfName
                     elif firstch == '<':
                         # << dict delim, or < hex string >
                         if token[1:2] != '<':
-                            token = cacheobj(cache, token, PdfString)
+                            toktype = PdfString
                     elif firstch == '(':
                         # Literal string
                         # It's probably simple, but maybe not
@@ -145,7 +132,7 @@ class PdfTokens(object):
                                 loc, ends, nest = ends
                                 token = fdata[m_start:loc] + ')' * nest
                                 current[0] = m_start, ends
-                        token = cacheobj(cache, token, PdfString)
+                        toktype = PdfString
                     elif firstch == '%':
                         # Comment
                         if self.strip_comments:
@@ -154,7 +141,10 @@ class PdfTokens(object):
                         self.exception(('Tokenizer logic incorrect -- '
                                         'should never get here'))
 
-                yield token
+                newtok = get_cache(token)
+                if newtok is None:
+                    newtok = cache[token] = toktype(token)
+                yield newtok
                 if current[0] is not tokspan:
                     break
             else:
