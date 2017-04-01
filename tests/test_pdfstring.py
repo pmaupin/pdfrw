@@ -17,25 +17,32 @@ from pdfrw.py23_diffs import convert_store
 import unittest
 
 
-def decode(value, to_bytestring=False):
-    return PdfString(value).decode(to_bytestring)
-
-def encode(value):
-    return PdfString.encode(value)
-
-def encode_decode(value):
-    return decode(encode(value))
-
 class TestBaseEncoding(unittest.TestCase):
+
+    def encode(self, value):
+        x = PdfString.encode(value)
+        if isinstance(value, type(u'')):
+            y = PdfString.from_unicode(value)
+        else:
+            y = PdfString.from_bytes(value)
+        self.assertEqual(x, y)
+        return x
+
+    def decode(self, value):
+        s = PdfString(value)
+        x = s.to_unicode()
+        y = s.decode()
+        self.assertEqual(x, y)
+        return x
 
     def decode_bytes(self, decode_this, expected):
         """ Decode to bytes"""
-        self.assertEqual(PdfString(decode_this).decode(True),
+        self.assertEqual(PdfString(decode_this).to_bytes(),
                          convert_store(expected))
 
     def roundtrip(self, value, expected=None):
-        result = encode(value)
-        self.assertEqual(value, decode(result))
+        result = self.encode(value)
+        self.assertEqual(value, self.decode(result))
         if expected is not None:
             self.assertEqual(result, expected)
         return result
@@ -71,12 +78,12 @@ class TestBaseEncoding(unittest.TestCase):
 
     def test_hex_whitespace(self):
         # See PDF 1.7 ref section 3.2 page 56
-        self.assertEqual(decode('<41 \n\r\t\f\v42>'), 'AB')
+        self.assertEqual(self.decode('<41 \n\r\t\f\v42>'), 'AB')
 
     def test_unicode_escaped_decode(self):
         # Some PDF producers happily put unicode strings in PdfDocEncoding,
         # because the Unicode BOM and \0 are valid code points
-        decoded = decode('(\xfe\xff\0h\0e\0l\0l\0o)')
+        decoded = self.decode('(\xfe\xff\0h\0e\0l\0l\0o)')
         self.assertEqual(decoded, "hello")
 
 
@@ -89,6 +96,16 @@ class TestBaseEncoding(unittest.TestCase):
                           '\n\n\r\r\t\t\b\b\f\f()\001\023\f3')
         self.decode_bytes(r'(\\\nabc)', '\\\nabc')
         self.decode_bytes(r'(\ )', ' ')
+
+    def test_BOM_variants(self):
+        self.roundtrip(u'\ufeff', '<FEFFFEFF>')
+        self.roundtrip(u'\ufffe', '<FEFFFFFE>')
+        self.roundtrip(u'\xfe\xff', '<FEFF00FE00FF>')
+        self.roundtrip(u'\xff\xfe', '(\xff\xfe)')
+
+
+    def test_byte_encode(self):
+        self.assertEqual(self.encode(b'ABC'), '(ABC)')
 
 def main():
     unittest.main()
