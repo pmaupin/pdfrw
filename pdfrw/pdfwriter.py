@@ -29,7 +29,7 @@ NullObject.Type = 'Null object'
 
 
 def user_fmt(obj, isinstance=isinstance, float=float, str=str,
-             basestring=str, encode=PdfString.encode):
+             basestring=(type(u''), type(b'')), encode=PdfString.encode):
     ''' This function may be replaced by the user for
         specialized formatting requirements.
     '''
