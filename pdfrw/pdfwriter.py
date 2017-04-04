@@ -74,11 +74,7 @@ def FormatObjects(f, trailer, version='1.3', compress=True,
 
         if not indirect:
             if objid in visited:
-                log.warning('Replicating direct %s object, '
-                            'should be indirect for optimal file size' %
-                            type(obj))
-                obj = type(obj)(obj)
-                objid = id(obj)
+                raise PdfOutputError('Object cycle detected -- break it by using indirect')
             visiting(objid)
             result = format_obj(obj)
             leaving(objid)
@@ -203,15 +199,15 @@ def FormatObjects(f, trailer, version='1.3', compress=True,
 class PdfWriter(object):
 
     _trailer = None
+    _pagearray = None
+    built = False
     canonicalize = False
 
     def __init__(self, version='1.3', compress=False):
-        self.pagearray = PdfArray()
         self.compress = compress
         self.version = version
 
     def addpage(self, page):
-        self._trailer = None
         if page.Type != PdfName.Page:
             raise PdfOutputError('Bad /Type:  Expected %s, found %s'
                                  % (PdfName.Page, page.Type))
@@ -234,13 +230,21 @@ class PdfWriter(object):
             self.addpage(page)
         return self
 
-    def _get_trailer(self):
+    @property
+    def pagearray(self):
+        pagearray = self._pagearray or (self.trailer and self._pagearray)
+        if pagearray is None:
+            raise PdfOutputError('Cannot set trailer and then add page')
+        return pagearray
+
+    @property
+    def trailer(self):
         trailer = self._trailer
         if trailer is not None:
             return trailer
 
-        if self.canonicalize:
-            self.make_canonical()
+        assert self._pagearray is None
+        pagearray = self._pagearray = PdfArray()
 
         # Create the basic object structure of the PDF file
         trailer = PdfDict(
@@ -248,39 +252,37 @@ class PdfWriter(object):
                 Type=PdfName.Catalog,
                 Pages=IndirectPdfDict(
                     Type=PdfName.Pages,
-                    Count=PdfObject(len(self.pagearray)),
-                    Kids=self.pagearray
+                    Kids=pagearray
                 )
             )
         )
-        # Make all the pages point back to the page dictionary and
-        # ensure they are indirect references
-        pagedict = trailer.Root.Pages
-        for page in pagedict.Kids:
-            # If source page was part of some other hierarchy,
-            # then kill any remnants of that prior hierarchy.
-            if page.Parent:
-                page.B = page.Annots = None
-            page.Parent = pagedict
-            page.indirect = True
+        self.built = True
         self._trailer = trailer
         return trailer
 
-    def _set_trailer(self, trailer):
+    @trailer.setter
+    def trailer(self, trailer):
         self._trailer = trailer
-
-    trailer = property(_get_trailer, _set_trailer)
 
     def write(self, fname, trailer=None, user_fmt=user_fmt,
               disable_gc=True):
-        trailer = trailer or self.trailer
+        if disable_gc:
+            gc.disable()
+
+        if self.built:
+            if trailer is not None:
+                raise PdfOutputError('Cannot write to pages and then set trailer')
+            trailer = self.trailer
+            self.finalize()
+        else:
+            trailer = trailer or self.trailer
+            if not trailer:
+                raise PdfOutputError('Nothing to do!')
 
         # Dump the data.  We either have a filename or a preexisting
         # file object.
         preexisting = hasattr(fname, 'write')
         f = preexisting and fname or open(fname, 'wb')
-        if disable_gc:
-            gc.disable()
 
         try:
             FormatObjects(f, trailer, self.version, self.compress,
@@ -290,6 +292,29 @@ class PdfWriter(object):
                 f.close()
             if disable_gc:
                 gc.enable()
+
+    def finalize(self):
+        """ Override this in a subclass to finish up any required work before
+            the document is serialized.
+        """
+        if self.canonicalize:
+            self.make_canonical()
+
+        self.finalize_pages()
+
+    def finalize_pages(self):
+        # Make all the pages point back to the page dictionary and
+        # ensure they are indirect references
+        pagedict = self.trailer.Root.Pages
+        kids = pagedict.Kids
+        pagedict.Count = len(kids)
+        for page in kids:
+            # If source page was part of some other hierarchy,
+            # then kill any remnants of that prior hierarchy.
+            if page.Parent:
+                page.B = page.Annots = None
+            page.Parent = pagedict
+            page.indirect = True
 
     def make_canonical(self):
         ''' Canonicalizes a PDF.  Assumes everything
