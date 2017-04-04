@@ -44,7 +44,7 @@ def user_fmt(obj, isinstance=isinstance, float=float, str=str,
     return str(obj)
 
 
-def FormatObjects(f, trailer, version='1.3', compress=True, killobj=(),
+def FormatObjects(f, trailer, version='1.3', compress=True,
                   user_fmt=user_fmt, do_compress=do_compress,
                   convert_store=convert_store, iteritems=iteritems,
                   id=id, isinstance=isinstance, getattr=getattr, len=len,
@@ -89,15 +89,6 @@ def FormatObjects(f, trailer, version='1.3', compress=True, killobj=(),
         # If we haven't seen the object yet, we need to
         # add it to the indirect object list.
         if objnum is None:
-            swapped = swapobj(objid)
-            if swapped is not None:
-                old_id = objid
-                obj = swapped
-                objid = id(obj)
-                objnum = indirect_dict_get(objid)
-                if objnum is not None:
-                    indirect_dict[old_id] = objnum
-                    return '%s 0 R' % objnum
             objnum = len(objlist) + 1
             objlist_append(None)
             indirect_dict[objid] = objnum
@@ -175,18 +166,6 @@ def FormatObjects(f, trailer, version='1.3', compress=True, killobj=(),
 
     deferred = []
 
-    # Don't reference old catalog or pages objects --
-    # swap references to new ones.
-    type_remap = {PdfName.Catalog: trailer.Root,
-               PdfName.Pages: trailer.Root.Pages, None: trailer}.get
-    swapobj = [(objid, type_remap(obj.Type) if new_obj is None else new_obj)
-               for objid, (obj, new_obj) in iteritems(killobj)]
-    swapobj = dict((objid, obj is None and NullObject or obj)
-                   for objid, obj in swapobj).get
-
-    for objid in killobj:
-        assert swapobj(objid) is not None
-
     # The first format of trailer gets all the information,
     # but we throw away the actual trailer formatting.
     format_obj(trailer)
@@ -230,7 +209,6 @@ class PdfWriter(object):
         self.pagearray = PdfArray()
         self.compress = compress
         self.version = version
-        self.killobj = {}
 
     def addpage(self, page):
         self._trailer = None
@@ -247,18 +225,6 @@ class PdfWriter(object):
                 Rotate=inheritable.Rotate,
             )
         )
-
-        # Add parents in the hierarchy to objects we
-        # don't want to output
-        killobj = self.killobj
-        obj, new_obj = page, self.pagearray[-1]
-        while obj is not None:
-            objid = id(obj)
-            if objid in killobj:
-                break
-            killobj[objid] = obj, new_obj
-            obj = obj.Parent
-            new_obj = None
         return self
 
     addPage = addpage  # for compatibility with pyPdf
@@ -291,6 +257,10 @@ class PdfWriter(object):
         # ensure they are indirect references
         pagedict = trailer.Root.Pages
         for page in pagedict.Kids:
+            # If source page was part of some other hierarchy,
+            # then kill any remnants of that prior hierarchy.
+            if page.Parent:
+                page.B = page.Annots = None
             page.Parent = pagedict
             page.indirect = True
         self._trailer = trailer
@@ -314,7 +284,7 @@ class PdfWriter(object):
 
         try:
             FormatObjects(f, trailer, self.version, self.compress,
-                          self.killobj, user_fmt=user_fmt)
+                          user_fmt=user_fmt)
         finally:
             if not preexisting:
                 f.close()
