@@ -8,7 +8,6 @@
 '''
 
 from .objects import PdfDict, PdfArray, PdfName
-from .pdfwriter import user_fmt
 
 
 def find_objects(source, valid_types=(PdfName.XObject, None),
@@ -81,7 +80,7 @@ def wrap_object(obj, width, margin):
         iw, ih = float(obj.Width), float(obj.Height)
         ch = 1.0 * cw / iw * ih
         height = ch + margin[1] + margin[3]
-        p = tuple(user_fmt(x) for x in (cw, ch, xoffset, yoffset))
+        p = tuple(('%.9f' % x).rstrip('0').rstrip('.') for x in (cw, ch, xoffset, yoffset))
         contents.stream = fmt % p
         resources = PdfDict(XObject=PdfDict(MyImage=obj))
         mbox = PdfArray((0, 0, width, height))

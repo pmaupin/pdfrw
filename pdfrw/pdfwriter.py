@@ -32,6 +32,7 @@ import gc
 from .old_serializer import old_serializer, user_fmt
 from .pdfbuilder import PdfBuilder
 from .errors import PdfOutputError
+from .py23_diffs import iteritems
 
 class PdfWriter(object):
     """
@@ -51,9 +52,41 @@ class PdfWriter(object):
     _trailer = None
     _builder = None
 
-    def __init__(self, version='1.3', compress=False):
-        self.compress = compress
+    def __init__(self, fname=None, version='1.3', compress=False, **kwargs):
+        """
+            Parameters:
+                fname -- Output file name, or file-like binary object
+                         with a write method
+                version -- PDF version to target.  Currently only 1.3 supported.
+                compress -- True to do compression on output.  Currently compresses
+                            stream objects.
+
+                **kwargs -- allows class attributes to be overridden without
+                            writing a subclass.
+        """
+        # Legacy support:  fname is new, was added in front
+        if fname is not None:
+            try:
+                float(fname)
+            except ValueError:
+                pass
+            else:
+                if version != '1.3':
+                    assert compress == False
+                    compress = version
+                version = fname
+                fname = None
+
+        self.fname = fname
         self.version = version
+        self.compress = compress
+
+        if kwargs:
+            for name, value in iteritems(kwargs):
+                if name not in self.replaceable:
+                    raise ValueError("Cannot set attribute %s on PdfWriter instance" % name)
+                setattr(self, name, value)
+
 
     def __getattr__(self, name):
         """
@@ -88,7 +121,7 @@ class PdfWriter(object):
             raise PdfOutputError('Cannot set trailer after starting to build')
         self._trailer = trailer
 
-    def write(self, fname, trailer=None, user_fmt=user_fmt,
+    def write(self, fname=None, trailer=None, user_fmt=user_fmt,
               disable_gc=True):
         """
             This function lets the builder cleanup (if we have a builder),
@@ -99,7 +132,11 @@ class PdfWriter(object):
         _builder = self._builder
         _trailer = self._trailer or (_builder and _builder.trailer)
 
-        if bool(trailer) == bool(_trailer):
+        if fname is not None and self.fname is not None:
+            raise PdfOutputError("PdfWriter fname must only be specified once")
+        fname = fname or self.fname
+
+        if trailer is not None and _trailer is not None:
             raise PdfOutputError('Cannot set trailer after starting to build'
                                 if _builder else
                                 'Cannot set trailer after starting to build'
@@ -124,3 +161,6 @@ class PdfWriter(object):
                 f.close()
             if disable_gc:
                 gc.enable()
+
+    # Attributes can be aliased on initialization
+    replaceable = set(vars())
