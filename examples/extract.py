@@ -22,6 +22,6 @@ outfn = 'extract.' + os.path.basename(inpfn)
 pages = list(page_per_xobj(PdfReader(inpfn).pages, margin=0.5*72))
 if not pages:
     raise IndexError("No XObjects found")
-writer = PdfWriter()
+writer = PdfWriter(outfn)
 writer.addpages(pages)
-writer.write(outfn)
+writer.write()

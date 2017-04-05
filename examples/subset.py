@@ -20,10 +20,10 @@ assert ranges, "Expected at least one range"
 ranges = ([int(y) for y in x.split('-')] for x in ranges)
 outfn = 'subset.%s' % os.path.basename(inpfn)
 pages = PdfReader(inpfn).pages
-outdata = PdfWriter()
+outdata = PdfWriter(outfn)
 
 for onerange in ranges:
     onerange = (onerange + onerange[-1:])[:2]
     for pagenum in range(onerange[0], onerange[1]+1):
         outdata.addpage(pages[pagenum-1])
-outdata.write(outfn)
+outdata.write()

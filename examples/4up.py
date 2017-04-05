@@ -27,7 +27,7 @@ def get4(srcpages):
 inpfn, = sys.argv[1:]
 outfn = '4up.' + os.path.basename(inpfn)
 pages = PdfReader(inpfn).pages
-writer = PdfWriter()
+writer = PdfWriter(outfn)
 for index in range(0, len(pages), 4):
     writer.addpage(get4(pages[index:index + 4]))
-writer.write(outfn)
+writer.write()

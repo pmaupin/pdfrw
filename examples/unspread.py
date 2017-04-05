@@ -26,7 +26,7 @@ def splitpage(src):
 
 inpfn, = sys.argv[1:]
 outfn = 'unspread.' + os.path.basename(inpfn)
-writer = PdfWriter()
+writer = PdfWriter(outfn)
 for page in PdfReader(inpfn).pages:
     writer.addpages(splitpage(page))
-writer.write(outfn)
+writer.write()
