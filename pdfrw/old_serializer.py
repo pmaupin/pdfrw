@@ -1,32 +1,33 @@
 # A part of pdfrw (https://github.com/pmaupin/pdfrw)
-# Copyright (C) 2006-2015 Patrick Maupin, Austin, Texas
+# Copyright (C) 2006-2017 Patrick Maupin, Austin, Texas
 # MIT license -- See LICENSE.txt for details
 
 '''
-The PdfWriter class writes an entire PDF file out to disk.
+This is the old PDF output serializer, backwards compatible
+with pdfrw 0.3 for users who need the user_fmt function.
 
-The writing process is not at all optimized or organized.
+The new serializer will have similar functionality, but
+implemented more efficiently, so this should not be used
+by new code.
 
-An instance of the PdfWriter class has two methods:
-    addpage(page)
-and
-    write(fname)
+Either serializer should know how to send a PDF to a
+file, but not know or care about how the pieces fit together.
 
-addpage() assumes that the pages are part of a valid
-tree/forest of PDF objects.
+A separate builder class, e.g. PdfBuilder, can build new PDF
+structures to be sent out to disk by the serializer, or,
+alternatively, user code can build it itself.
+
+PdfWriter instantiates the serializer and the builder,
+and should not really know much about the internals
+of either one.
 '''
+
 import gc
 
-from .objects import (PdfName, PdfArray, PdfDict, IndirectPdfDict,
-                      PdfObject, PdfString)
+from .objects import PdfDict, PdfObject, PdfString, PdfArray
 from .compress import compress as do_compress
-from .errors import PdfOutputError, log
+from .errors import PdfOutputError
 from .py23_diffs import iteritems, convert_store
-
-NullObject = PdfObject('null')
-NullObject.indirect = True
-NullObject.Type = 'Null object'
-
 
 def user_fmt(obj, isinstance=isinstance, float=float, str=str,
              basestring=(type(u''), type(b'')), encode=PdfString.encode):
@@ -44,14 +45,14 @@ def user_fmt(obj, isinstance=isinstance, float=float, str=str,
     return str(obj)
 
 
-def FormatObjects(f, trailer, version='1.3', compress=True,
+def old_serializer(f, trailer, version='1.3', compress=True,
                   user_fmt=user_fmt, do_compress=do_compress,
                   convert_store=convert_store, iteritems=iteritems,
                   id=id, isinstance=isinstance, getattr=getattr, len=len,
                   sum=sum, set=set, str=str, hasattr=hasattr, repr=repr,
                   enumerate=enumerate, list=list, dict=dict, tuple=tuple,
                   PdfArray=PdfArray, PdfDict=PdfDict, PdfObject=PdfObject):
-    ''' FormatObjects performs the actual formatting and disk write.
+    ''' old_streamer performs the actual formatting and disk write.
         Should be a class, was a class, turned into nested functions
         for performace (to reduce attribute lookups).
     '''
@@ -194,144 +195,3 @@ def FormatObjects(f, trailer, version='1.3', compress=True,
     for x in offsets:
         f_write('%010d %05d %s\r\n' % x)
     f_write('trailer\n\n%s\nstartxref\n%s\n%%%%EOF\n' % (trailer, offset))
-
-
-class PdfWriter(object):
-
-    _trailer = None
-    _pagearray = None
-    built = False
-    canonicalize = False
-
-    def __init__(self, version='1.3', compress=False):
-        self.compress = compress
-        self.version = version
-
-    def addpage(self, page):
-        if page.Type != PdfName.Page:
-            raise PdfOutputError('Bad /Type:  Expected %s, found %s'
-                                 % (PdfName.Page, page.Type))
-        inheritable = page.inheritable  # searches for resources
-        self.pagearray.append(
-            IndirectPdfDict(
-                page,
-                Resources=inheritable.Resources,
-                MediaBox=inheritable.MediaBox,
-                CropBox=inheritable.CropBox,
-                Rotate=inheritable.Rotate,
-            )
-        )
-        return self
-
-    addPage = addpage  # for compatibility with pyPdf
-
-    def addpages(self, pagelist):
-        for page in pagelist:
-            self.addpage(page)
-        return self
-
-    @property
-    def pagearray(self):
-        pagearray = self._pagearray or (self.trailer and self._pagearray)
-        if pagearray is None:
-            raise PdfOutputError('Cannot set trailer and then add page')
-        return pagearray
-
-    @property
-    def trailer(self):
-        trailer = self._trailer
-        if trailer is not None:
-            return trailer
-
-        assert self._pagearray is None
-        pagearray = self._pagearray = PdfArray()
-
-        # Create the basic object structure of the PDF file
-        trailer = PdfDict(
-            Root=IndirectPdfDict(
-                Type=PdfName.Catalog,
-                Pages=IndirectPdfDict(
-                    Type=PdfName.Pages,
-                    Kids=pagearray
-                )
-            )
-        )
-        self.built = True
-        self._trailer = trailer
-        return trailer
-
-    @trailer.setter
-    def trailer(self, trailer):
-        self._trailer = trailer
-
-    def write(self, fname, trailer=None, user_fmt=user_fmt,
-              disable_gc=True):
-        if disable_gc:
-            gc.disable()
-
-        if self.built:
-            if trailer is not None:
-                raise PdfOutputError('Cannot write to pages and then set trailer')
-            trailer = self.trailer
-            self.finalize()
-        else:
-            trailer = trailer or self.trailer
-            if not trailer:
-                raise PdfOutputError('Nothing to do!')
-
-        # Dump the data.  We either have a filename or a preexisting
-        # file object.
-        preexisting = hasattr(fname, 'write')
-        f = preexisting and fname or open(fname, 'wb')
-
-        try:
-            FormatObjects(f, trailer, self.version, self.compress,
-                          user_fmt=user_fmt)
-        finally:
-            if not preexisting:
-                f.close()
-            if disable_gc:
-                gc.enable()
-
-    def finalize(self):
-        """ Override this in a subclass to finish up any required work before
-            the document is serialized.
-        """
-        if self.canonicalize:
-            self.make_canonical()
-
-        self.finalize_pages()
-
-    def finalize_pages(self):
-        # Make all the pages point back to the page dictionary and
-        # ensure they are indirect references
-        pagedict = self.trailer.Root.Pages
-        kids = pagedict.Kids
-        pagedict.Count = len(kids)
-        for page in kids:
-            # If source page was part of some other hierarchy,
-            # then kill any remnants of that prior hierarchy.
-            if page.Parent:
-                page.B = page.Annots = None
-            page.Parent = pagedict
-            page.indirect = True
-
-    def make_canonical(self):
-        ''' Canonicalizes a PDF.  Assumes everything
-            is a Pdf object already.
-        '''
-        visited = set()
-        workitems = list(self.pagearray)
-        while workitems:
-            obj = workitems.pop()
-            objid = id(obj)
-            if objid in visited:
-                continue
-            visited.add(objid)
-            obj.indirect = False
-            if isinstance(obj, (PdfArray, PdfDict)):
-                obj.indirect = True
-                if isinstance(obj, PdfArray):
-                    workitems += obj
-                else:
-                    workitems += obj.values()
