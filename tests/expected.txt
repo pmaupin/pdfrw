@@ -35,12 +35,12 @@ repaginate/b1c400de699af29ea3f1983bb26870ab.pdf     4d7d6c5f6e14c6eac1dfc055cebf
 # 07b0ba4 is missing an object.  Best we can do is report it
 # (and we do)
 
-repaginate/07b0ba4cff1c6ff73fd468b04b013457.pdf     993c763e085bce7ecc941ba104f4c892
+repaginate/07b0ba4cff1c6ff73fd468b04b013457.pdf     5e970289336c07e5ac18c42004656f32
 simple/07b0ba4cff1c6ff73fd468b04b013457.pdf         499b9c1b1e1c76b7c5c0d5e3b62889e3
 
 #b107 has a single page, but with an empty contents dict.
 
-repaginate/b107669d1dd69eabb89765fabb2cb321.pdf     0652d2da25b50cad75863d0e2bbaa878
+repaginate/b107669d1dd69eabb89765fabb2cb321.pdf     86d5e6da47bb3b8c3fa9dc179b83e554
 simple/b107669d1dd69eabb89765fabb2cb321.pdf         56025c06ab8633575ddc6c6990d2fbf1
 
 # Encrypted files
@@ -67,7 +67,7 @@ simple/dbb807a878ac1da6b91ac15c9de4e209.pdf         skip
 repaginate/06c86654f9a77e82f9adaa0086fc391c.pdf 848966fe40a1e3de842f82700dc6d67b
 repaginate/08f69084d72dabc5dfdcf5c1ff2a719f.pdf b8c60878b0e0ce81cb6e8777038166b1
 repaginate/09715ec1a7b0f3a7ae02b3046f627b9f.pdf daf7cff9c0a15bbb347489f9fbda25f8
-repaginate/0a61de50b5ee0ea4d5d69c95dab817a3.pdf c6cd38b1131c4b856f60ebfcf51da6f5
+repaginate/0a61de50b5ee0ea4d5d69c95dab817a3.pdf 4358cc00c1cbe8ae15b5d5728ca0da9c
 repaginate/1975ef8db7355b1d691bc79d0749574b.pdf 7fab4d0b51f7f11c1170274be3201a94
 repaginate/1c2af1d2b0db6cac3c8e558a26efd38b.pdf 20dc3be2affe9082564c01b1146d7598
 repaginate/1f5dd128c3757420a881a155f2f8ace3.pdf c17d4cdae069fbd15daed198042665da
@@ -223,6 +223,3 @@ compress/d6fd9567078b48c86710e9c49173781f.pdf cbc8922b8bea08928463b287767ec229
 compress/e9ab02aa769f4c040a6fa52f00d6e3f0.pdf e893e407b3c2366d4ca822ce80b45c2c
 compress/ec00d5825f47b9d0faa953b1709163c3.pdf 9ba3db0dedec74c3d2a6f033f1b22a81
 compress/ed81787b83cc317c9f049643b853bea3.pdf 2ceda401f68a44a3fb1da4e0f9dfc578
-repaginate/07b0ba4cff1c6ff73fd468b04b013457.pdf 5e970289336c07e5ac18c42004656f32
-repaginate/0a61de50b5ee0ea4d5d69c95dab817a3.pdf 4358cc00c1cbe8ae15b5d5728ca0da9c
-repaginate/b107669d1dd69eabb89765fabb2cb321.pdf 86d5e6da47bb3b8c3fa9dc179b83e554
