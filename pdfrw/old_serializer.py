@@ -22,8 +22,6 @@ and should not really know much about the internals
 of either one.
 '''
 
-import gc
-
 from .objects import PdfDict, PdfObject, PdfString, PdfArray
 from .compress import compress as do_compress
 from .errors import PdfOutputError

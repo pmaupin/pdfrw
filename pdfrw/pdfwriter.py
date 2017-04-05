@@ -27,7 +27,6 @@ if they did, it is easy enough to recreate in user code with
 the new version.)
 """
 
-import sys
 import gc
 
 from .old_serializer import old_serializer, user_fmt

@@ -17,9 +17,8 @@ and should not really know much about the internals
 of either one.
 '''
 
-from .objects import (PdfName, PdfArray, PdfDict, IndirectPdfDict,
-                      PdfObject, PdfString)
-from .errors import PdfOutputError, log
+from .objects import PdfName, PdfArray, PdfDict, IndirectPdfDict
+from .errors import PdfOutputError
 
 class PdfBuilder(object):
 
