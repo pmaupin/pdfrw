@@ -23,6 +23,7 @@ class BasePdfName(str):
     '''
 
     indirect = False
+    encoded = None
 
     whitespace = '\x00 \t\f\r\n'
     delimiters = '()<>{}[]/%'
