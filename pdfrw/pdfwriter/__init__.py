@@ -31,8 +31,8 @@ import gc
 
 from .old_serializer import old_serializer, user_fmt
 from .pdfbuilder import PdfBuilder
-from .errors import PdfOutputError
-from .py23_diffs import iteritems
+from ..errors import PdfOutputError
+from ..py23_diffs import iteritems
 
 class PdfWriter(object):
     """

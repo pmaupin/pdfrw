@@ -22,10 +22,10 @@ and should not really know much about the internals
 of either one.
 '''
 
-from .objects import PdfDict, PdfObject, PdfString, PdfArray
-from .compress import compress as do_compress
-from .errors import PdfOutputError
-from .py23_diffs import iteritems, convert_store
+from ..objects import PdfDict, PdfObject, PdfString, PdfArray
+from ..compress import compress as do_compress
+from ..errors import PdfOutputError
+from ..py23_diffs import iteritems, convert_store
 
 def user_fmt(obj, isinstance=isinstance, float=float, str=str,
              basestring=(type(u''), type(b'')), encode=PdfString.encode):
