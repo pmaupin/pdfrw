@@ -29,10 +29,15 @@ the new version.)
 
 import gc
 
+from .serializer13 import Serialize13
+from .streamer import StreamWriter
+from .formatter import FormatHandlers
 from .old_serializer import old_serializer, user_fmt
 from .pdfbuilder import PdfBuilder
+
 from ..errors import PdfOutputError
 from ..py23_diffs import iteritems
+
 
 class PdfWriter(object):
     """
@@ -45,9 +50,13 @@ class PdfWriter(object):
         a new serializer.
     """
 
-    # This could be overridden before instantiation, or by
-    # passing a new function to init.
+    # These could be overridden before instantiation, or by
+    # passing new functions to init.
     Builder = PdfBuilder
+    Serializer = Serialize13
+    StreamWriter = StreamWriter
+    Formatter = FormatHandlers
+    old_user_fmt = staticmethod(user_fmt)
 
     _trailer = None
     _builder = None
@@ -68,7 +77,7 @@ class PdfWriter(object):
         if fname is not None:
             try:
                 float(fname)
-            except ValueError:
+            except (ValueError, TypeError):
                 pass
             else:
                 if version != '1.3':
@@ -121,7 +130,7 @@ class PdfWriter(object):
             raise PdfOutputError('Cannot set trailer after starting to build')
         self._trailer = trailer
 
-    def write(self, fname=None, trailer=None, user_fmt=user_fmt,
+    def write(self, fname=None, trailer=None, user_fmt=None,
               disable_gc=True):
         """
             This function lets the builder cleanup (if we have a builder),
@@ -154,8 +163,13 @@ class PdfWriter(object):
         f = preexisting and fname or open(fname, 'wb')
 
         try:
-            old_serializer(f, trailer or _trailer, self.version,
-                           self.compress, user_fmt=user_fmt)
+            if user_fmt:
+                old_serializer(f, trailer or _trailer, self.version,
+                            self.compress, user_fmt=user_fmt)
+            else:
+                serializer = self.Serializer(f, self.version, self.compress,
+                            self.Formatter, self.StreamWriter)
+                serializer.write(trailer or _trailer)
         finally:
             if not preexisting:
                 f.close()
