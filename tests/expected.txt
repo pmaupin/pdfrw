@@ -12,8 +12,8 @@ examples/unspread_d182ec0b058d4b992bbfc5cb9a3a6f2c          a0384451c7c5a6c67d8b
 
 examples/cat_b1c400de699af29ea3f1983bb26870ab_06c86654f9a77e82f9adaa0086fc391c          30f1a3a3fd84446c33c111df6099ee59
 examples/rotate_707e3e2d17cbe9ec2273414b3b63f333_270_1-4_7-8_10-50_52-56                2abff335d9feaf825b3aa32463cf2c7b
-examples/watermark_b1c400de699af29ea3f1983bb26870ab_06c86654f9a77e82f9adaa0086fc391c    fe2330d42b3bfc06212415f295752f0e
-examples/watermark_b1c400de699af29ea3f1983bb26870ab_06c86654f9a77e82f9adaa0086fc391c_-u e43e3ac0afe1cc242549424755dbf612
+examples/watermark_b1c400de699af29ea3f1983bb26870ab_06c86654f9a77e82f9adaa0086fc391c    4ca605bb7cf8a154cc11d445b47997b4
+examples/watermark_b1c400de699af29ea3f1983bb26870ab_06c86654f9a77e82f9adaa0086fc391c_-u c862fa86377c2888dce84a3cffa9335f
 
 # All these are in the poster test
 examples/subset_1975ef8db7355b1d691bc79d0749574b_21     92a0c295d4761c7b7a77214c85f3c839
