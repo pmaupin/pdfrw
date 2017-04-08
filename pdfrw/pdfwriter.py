@@ -137,11 +137,11 @@ def FormatObjects(f, trailer, version='1.3', compress=True, killobj=(),
                 elif isinstance(obj, PdfDict):
                     if compress and obj.stream:
                         do_compress([obj])
-                    pairs = sorted((x, y, getattr(x, 'encoded', x))
+                    pairs = sorted((getattr(x, 'encoded', None) or x, y)
                                    for (x, y) in obj.iteritems())
                     myarray = []
-                    for key, value, encoding in pairs:
-                        myarray.append(encoding)
+                    for key, value in pairs:
+                        myarray.append(key)
                         myarray.append(add(value))
                     result = format_array(myarray, '<<%s>>')
                     stream = obj.stream
@@ -155,7 +155,7 @@ def FormatObjects(f, trailer, version='1.3', compress=True, killobj=(),
             # We assume that an object with an indirect
             # attribute knows how to represent itself to us.
             if hasattr(obj, 'indirect'):
-                return str(getattr(obj, 'encoded', obj))
+                return str(getattr(obj, 'encoded', None) or obj)
             return user_fmt(obj)
 
     def format_deferred():
