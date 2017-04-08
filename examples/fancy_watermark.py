@@ -102,4 +102,4 @@ for pagenum, page in enumerate(trailer.pages, 1):
     PageMerge(page).add(wmark, prepend=underneath).render()
 
 # Write out the destination file
-PdfWriter().write(outfn, trailer)
+PdfWriter(outfn, trailer=trailer).write()

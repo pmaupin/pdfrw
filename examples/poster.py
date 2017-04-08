@@ -37,7 +37,7 @@ def adjust(page, margin=36, scale=4.8):
 inpfn, = sys.argv[1:]
 outfn = 'poster.' + os.path.basename(inpfn)
 reader = PdfReader(inpfn)
-writer = PdfWriter()
+writer = PdfWriter(outfn)
 writer.addpage(adjust(reader.pages[0]))
 writer.trailer.Info = IndirectPdfDict(reader.Info or {})
-writer.write(outfn)
+writer.write()

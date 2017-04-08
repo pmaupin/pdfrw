@@ -57,5 +57,5 @@ while len(ipages) > 2:
 if len(ipages) >= 1:
     opages.append(fixpage(ipages.pop(), ipages.pop(0)))
 
-PdfWriter().addpages(opages).write(OUTFN)
+PdfWriter(OUTFN).addpages(opages).write()
 print 'It took '+ str(round(time.time()-START, 2))+' seconds to make the pdf subbooklets changes.'

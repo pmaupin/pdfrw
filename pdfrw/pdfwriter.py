@@ -225,11 +225,44 @@ class PdfWriter(object):
 
     _trailer = None
     canonicalize = False
+    fname = None
 
-    def __init__(self, version='1.3', compress=False):
-        self.pagearray = PdfArray()
-        self.compress = compress
+    def __init__(self, fname=None, version='1.3', compress=False, **kwargs):
+        """
+            Parameters:
+                fname -- Output file name, or file-like binary object
+                         with a write method
+                version -- PDF version to target.  Currently only 1.3
+                           supported.
+                compress -- True to do compression on output.  Currently
+                            compresses stream objects.
+        """
+
+        # Legacy support:  fname is new, was added in front
+        if fname is not None:
+            try:
+                float(fname)
+            except (ValueError, TypeError):
+                pass
+            else:
+                if version != '1.3':
+                    assert compress == False
+                    compress = version
+                version = fname
+                fname = None
+
+        self.fname = fname
         self.version = version
+        self.compress = compress
+
+        if kwargs:
+            for name, value in iteritems(kwargs):
+                if name not in self.replaceable:
+                    raise ValueError("Cannot set attribute %s "
+                                     "on PdfWriter instance" % name)
+                setattr(self, name, value)
+
+        self.pagearray = PdfArray()
         self.killobj = {}
 
     def addpage(self, page):
@@ -301,9 +334,17 @@ class PdfWriter(object):
 
     trailer = property(_get_trailer, _set_trailer)
 
-    def write(self, fname, trailer=None, user_fmt=user_fmt,
+    def write(self, fname=None, trailer=None, user_fmt=user_fmt,
               disable_gc=True):
+
         trailer = trailer or self.trailer
+
+        # Support fname for legacy applications
+        if (fname is not None) == (self.fname is not None):
+            raise PdfOutputError(
+                "PdfWriter fname must be specified exactly once")
+
+        fname = fname or self.fname
 
         # Dump the data.  We either have a filename or a preexisting
         # file object.
@@ -340,3 +381,5 @@ class PdfWriter(object):
                     workitems += obj
                 else:
                     workitems += obj.values()
+
+    replaceable = set(vars())

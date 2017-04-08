@@ -96,7 +96,7 @@ class TestOnePdf(unittest.TestCase):
                     os.remove(scrub)
                 subprocess.call(params)
                 if scrub:
-                    PdfWriter().addpages(PdfReader(scrub).pages).write(dstf)
+                    PdfWriter(dstf).addpages(PdfReader(scrub).pages).write()
             with open(dstf, 'rb') as f:
                 data = f.read()
             size = len(data)
