@@ -66,13 +66,15 @@ class PdfWriter(object):
             Parameters:
                 fname -- Output file name, or file-like binary object
                          with a write method
-                version -- PDF version to target.  Currently only 1.3 supported.
-                compress -- True to do compression on output.  Currently compresses
-                            stream objects.
+                version -- PDF version to target.  Currently only 1.3
+                           supported.
+                compress -- True to do compression on output.  Currently
+                            compresses stream objects.
 
                 **kwargs -- allows class attributes to be overridden without
                             writing a subclass.
         """
+
         # Legacy support:  fname is new, was added in front
         if fname is not None:
             try:
@@ -93,7 +95,8 @@ class PdfWriter(object):
         if kwargs:
             for name, value in iteritems(kwargs):
                 if name not in self.replaceable:
-                    raise ValueError("Cannot set attribute %s on PdfWriter instance" % name)
+                    raise ValueError("Cannot set attribute %s "
+                                     "on PdfWriter instance" % name)
                 setattr(self, name, value)
 
 
@@ -138,12 +141,16 @@ class PdfWriter(object):
             file-like object.
         """
 
+        # Support fname for legacy applications
+        if (fname is not None) == (self.fname is not None):
+            raise PdfOutputError(
+                "PdfWriter fname must be specified exactly once")
+
+        fname = fname or self.fname
+
+
         _builder = self._builder
         _trailer = self._trailer or (_builder and _builder.trailer)
-
-        if fname is not None and self.fname is not None:
-            raise PdfOutputError("PdfWriter fname must only be specified once")
-        fname = fname or self.fname
 
         if trailer is not None and _trailer is not None:
             raise PdfOutputError('Cannot set trailer after starting to build'
