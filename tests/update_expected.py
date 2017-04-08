@@ -70,7 +70,7 @@ for (srcpath, _, filenames) in os.walk('ramdisk/reference'):
         goodcount += 1
         print "OK"
         changes.append((src_digest, get_digest(dst)))
-        
+
 print count, goodcount
 
 for stuff in changes:
