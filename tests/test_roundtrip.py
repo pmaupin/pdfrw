@@ -79,11 +79,12 @@ class TestOnePdf(unittest.TestCase):
                     result = 'skip -- encrypt'
                     hash = '------skip-encrypt-no-file------'
                     return self.skipTest('File encrypted')
-                writer = pdfrw.PdfWriter(compress=compress)
+                writer = pdfrw.PdfWriter(dstf, compress=compress)
                 if repaginate:
                     writer.addpages(trailer.pages)
-                    trailer = None
-                writer.write(dstf, trailer)
+                else:
+                    writer.trailer = trailer
+                writer.write()
             with open(dstf, 'rb') as f:
                 data = f.read()
             size = len(data)
