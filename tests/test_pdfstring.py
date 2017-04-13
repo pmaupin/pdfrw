@@ -108,6 +108,10 @@ class TestBaseEncoding(unittest.TestCase):
     def test_byte_encode(self):
         self.assertEqual(self.encode(b'ABC'), '(ABC)')
 
+    def test_nullstring(self):
+        self.assertEqual(PdfString('<>').to_bytes(), b'')
+        self.assertEqual(PdfString('()').to_bytes(), b'')
+
 def main():
     unittest.main()
 
