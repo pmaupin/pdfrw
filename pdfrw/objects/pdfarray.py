@@ -65,3 +65,7 @@ class PdfArray(list):
     def pop(self, *args):
         self._resolve()
         return list.pop(self, *args)
+
+    def __reversed__(self):
+        self._resolve()
+        return list.__reversed__(self)
