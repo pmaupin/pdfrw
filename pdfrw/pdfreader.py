@@ -454,24 +454,24 @@ class PdfReader(PdfDict):
         typename = PdfName.Type
         kidname = PdfName.Kids
 
-        # PDFs can have arbitrarily nested Pages/Page
-        # dictionary structures.
-        def readnode(node):
-            nodetype = node[typename]
-            if nodetype == pagename:
-                yield node
-            elif nodetype == pagesname:
-                for node in node[kidname]:
-                    for node in readnode(node):
-                        yield node
-            elif nodetype == catalogname:
-                for node in readnode(node[pagesname]):
-                    yield node
-            else:
-                log.error('Expected /Page or /Pages dictionary, got %s' %
-                          repr(node))
         try:
-            return list(readnode(node))
+            result = []
+            stack = [node]
+            append = result.append
+            pop = stack.pop
+            while stack:
+                node = pop()
+                nodetype = node[typename]
+                if nodetype == pagename:
+                    append(node)
+                elif nodetype == pagesname:
+                    stack.extend(reversed(node[kidname]))
+                elif nodetype == catalogname:
+                    stack.append(node[pagesname])
+                else:
+                    log.error('Expected /Page or /Pages dictionary, got %s' %
+                            repr(node))
+            return result
         except (AttributeError, TypeError) as s:
             log.error('Invalid page tree: %s' % s)
             return []
