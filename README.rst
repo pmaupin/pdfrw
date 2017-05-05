@@ -1,6 +1,6 @@
-=============
-pdfrw 0.2
-=============
+==================
+pdfrw 0.3 + fixes
+==================
 
 :Author: Patrick Maupin
 
@@ -14,7 +14,11 @@ Introduction
 
 **pdfrw** is a Python library and utility that reads and writes PDF files:
 
-* Version 0.2 is tested and works on Python 2.6, 2.7, 3.3, and 3.4.
+The latest released version at pypi is 0.3.  There are several fixes in
+the git master branch since then, and a 0.4 release should be made soon.
+
+
+* Version 0.3 is tested and works on Python 2.6, 2.7, 3.3, 3.4, and 3.5
 * Operations include subsetting, merging, rotating, modifying metadata, etc.
 * The fastest pure Python PDF parser available
 * Has been used for years by a printer in pre-press production
@@ -737,6 +741,39 @@ Release information
 =======================
 
 Revisions:
+
+github master -- 0.4 not released yet
+
+    - Python 3.6 added to test matrix
+    - Proper unicode support for text strings in PDFs added
+    - buildxobj fixes allow better support creating form XObjects
+      out of compressed pages in some cases
+    - Compression fixes for Python 3+
+    - New subset_booklets.py example
+    - Bug with non-compressed indices into compressed object streams fixed
+    - Bug with distinguishing compressed object stream first objects fixed
+    - Better error reporting added for some invalid PDFs (e.g. when reading
+      past the end of file)
+    - Better scrubbing of old bookmark information when writing PDFs, to
+      remove dangling references
+    - Refactoring of pdfwriter, including updating API, to allow future
+      enhancements for things like incremental writing
+    - Minor tokenizer speedup
+    - Some flate decompressor bugs fixed
+    - Compression and decompression tests added
+    - Tests for new unicode handling added
+
+
+0.3 -- Released 19 October, 2016.
+
+    - Python 3.5 added to test matrix
+    - Better support under Python 3.x for in-memory PDF file-like objects
+    - Some pagemerge and Unicode patches added
+    - Changes to logging allow better coexistence with other packages
+    - Fix for "from pdfrw import *"
+    - New fancy_watermark.py example shows off capabilities of pagemerge.py
+    - metadata.py example renamed to cat.py
+
 
 0.2 -- Released 21 June, 2015.  Supports Python 2.6, 2.7, 3.3, and 3.4.
 
