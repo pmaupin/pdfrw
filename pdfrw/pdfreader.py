@@ -266,11 +266,16 @@ class PdfReader(PdfDict):
             for key in new:
                 self.loadindirect(key)
 
-    def uncompress(self):
+    def decrypt_all(self):
         self.read_all()
 
-        crypt_filter = self.stream_crypt_filter
-        crypt.decrypt_objects(crypt_filter, self.indirect_objects.values())
+        if self.crypt_filters is not None:
+            crypt.decrypt_objects(
+                self.indirect_objects.values(), self.stream_crypt_filter,
+                self.crypt_filters)
+
+    def uncompress(self):
+        self.read_all()
 
         uncompress(self.indirect_objects.values())
 
@@ -285,8 +290,9 @@ class PdfReader(PdfDict):
         # read objects from stream
         if objs:
             # Decrypt
-            crypt_filter = self.stream_crypt_filter
-            crypt.decrypt_objects(crypt_filter, objs)
+            if self.crypt_filters is not None:
+                crypt.decrypt_objects(
+                    objs, self.stream_crypt_filter, self.crypt_filters)
 
             # Decompress
             uncompress(objs)
@@ -490,10 +496,7 @@ class PdfReader(PdfDict):
     def _parse_encrypt_info(self, source, password, trailer):
         """Check password and initialize crypt filters."""
         # Create and check password key
-        if password is None:
-            key = crypt.create_key('', trailer)
-        else:
-            key = crypt.create_key(password, trailer)
+        key = crypt.create_key(password, trailer)
 
         if not crypt.check_user_password(key, trailer):
             source.warning('User password does not validate')
@@ -546,7 +549,7 @@ class PdfReader(PdfDict):
                 'Unsupported Encrypt version: {}'.format(version))
 
     def __init__(self, fname=None, fdata=None, decompress=False,
-                 password=None, disable_gc=True, verbose=True):
+                 decrypt=False, password='', disable_gc=True, verbose=True):
         self.private.verbose = verbose
 
         # Runs a lot faster with GC off.
@@ -625,20 +628,21 @@ class PdfReader(PdfDict):
                 source.floc = int(prev)
 
             # Handle document encryption
-            identity_filter = crypt.IdentityCryptFilter()
-            crypt_filters = {
-                PdfName.Identity: identity_filter
-            }
-            private.crypt_filters = crypt_filters
-            private.stream_crypt_filter = identity_filter
-            private.string_crypt_filter = identity_filter
+            private.crypt_filters = None
+            if decrypt and PdfName.Encrypt in trailer:
+                identity_filter = crypt.IdentityCryptFilter()
+                crypt_filters = {
+                    PdfName.Identity: identity_filter
+                }
+                private.crypt_filters = crypt_filters
+                private.stream_crypt_filter = identity_filter
+                private.string_crypt_filter = identity_filter
 
-            if PdfName.Encrypt in trailer:
                 if not crypt.HAS_CRYPTO:
-                    source.warning(
+                    raise PdfParseError(
                         'Install PyCrypto to enable encryption support')
-                else:
-                    self._parse_encrypt_info(source, password, trailer)
+
+                self._parse_encrypt_info(source, password, trailer)
 
             if is_stream:
                 self.load_stream_objects(trailer.object_streams)
@@ -657,6 +661,10 @@ class PdfReader(PdfDict):
             if (trailer.Version and
                     float(trailer.Version) > float(self.version)):
                 self.private.version = trailer.Version
+
+            if decrypt:
+                self.decrypt_all()
+                trailer.Encrypt = None
 
             if is_stream:
                 self.Root = trailer.Root
