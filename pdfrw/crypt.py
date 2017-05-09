@@ -13,7 +13,7 @@ try:
 except ImportError:
     HAS_CRYPTO = False
 
-from .objects import PdfDict
+from .objects import PdfDict, PdfName
 
 _PASSWORD_PAD = (
     '(\xbfN^Nu\x8aAd\x00NV\xff\xfa\x01\x08'
@@ -120,15 +120,31 @@ class IdentityCryptFilter(object):
         return data
 
 
-def decrypt_objects(default_filter, objects):
-    """Decrypt list of stream objects with the specified crypt filter."""
+def decrypt_objects(objects, default_filter, filters):
+    """Decrypt list of stream objects.
+
+    The parameter default_filter specifies the default filter to use. The
+    filters parameter is a dictionary of alternate filters to use when the
+    object specfies an alternate filter locally.
+    """
     for obj in streamobjects(objects):
         if getattr(obj, 'decrypted', False):
             continue
 
-        # TODO: Use the /Crypt entry to decide on the final filter to use.
         filter = default_filter
+
+        # Check whether a locally defined crypt filter should override the
+        # default filter.
+        ftype = obj.Filter
+        if ftype is not None:
+            if not isinstance(ftype, list):
+                ftype = [ftype]
+            if len(ftype) >= 1 and ftype[0] == PdfName.Crypt:
+                ftype = ftype[1:]
+                parms = obj.DecodeParms or obj.DP
+                filter = filters[parms.Name]
 
         num, gen = obj.indirect
         obj.stream = filter.decrypt_data(num, gen, obj.stream)
         obj.private.decrypted = True
+        obj.Filter = ftype or None
