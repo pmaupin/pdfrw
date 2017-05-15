@@ -19,6 +19,7 @@ from .errors import PdfParseError, log
 from .tokens import PdfTokens
 from .objects import PdfDict, PdfArray, PdfName, PdfObject, PdfIndirect
 from .uncompress import uncompress
+from . import crypt
 from .py23_diffs import convert_load, convert_store, iteritems
 
 
@@ -265,8 +266,17 @@ class PdfReader(PdfDict):
             for key in new:
                 self.loadindirect(key)
 
+    def decrypt_all(self):
+        self.read_all()
+
+        if self.crypt_filters is not None:
+            crypt.decrypt_objects(
+                self.indirect_objects.values(), self.stream_crypt_filter,
+                self.crypt_filters)
+
     def uncompress(self):
         self.read_all()
+
         uncompress(self.indirect_objects.values())
 
     def load_stream_objects(self, object_streams):
@@ -279,7 +289,14 @@ class PdfReader(PdfDict):
 
         # read objects from stream
         if objs:
+            # Decrypt
+            if self.crypt_filters is not None:
+                crypt.decrypt_objects(
+                    objs, self.stream_crypt_filter, self.crypt_filters)
+
+            # Decompress
             uncompress(objs)
+
             for obj in objs:
                 objsource = PdfTokens(obj.stream, 0, False)
                 next = objsource.next
@@ -476,8 +493,63 @@ class PdfReader(PdfDict):
             log.error('Invalid page tree: %s' % s)
             return []
 
+    def _parse_encrypt_info(self, source, password, trailer):
+        """Check password and initialize crypt filters."""
+        # Create and check password key
+        key = crypt.create_key(password, trailer)
+
+        if not crypt.check_user_password(key, trailer):
+            source.warning('User password does not validate')
+
+        # Create default crypt filters
+        private = self.private
+        crypt_filters = self.crypt_filters
+        version = int(trailer.Encrypt.V or 0)
+        if version in (1, 2):
+            crypt_filter = crypt.RC4CryptFilter(key)
+            private.stream_crypt_filter = crypt_filter
+            private.string_crypt_filter = crypt_filter
+        elif version == 4:
+            if PdfName.CF in trailer.Encrypt:
+                for name, params in iteritems(trailer.Encrypt.CF):
+                    if name == PdfName.Identity:
+                        continue
+
+                    cfm = params.CFM
+                    if cfm == PdfName.AESV2:
+                        crypt_filters[name] = crypt.AESCryptFilter(key)
+                    elif cfm == PdfName.V2:
+                        crypt_filters[name] = crypt.RC4CryptFilter(key)
+                    else:
+                        source.warning(
+                            'Unsupported crypt filter: {}, {}'.format(
+                                name, cfm))
+
+            # Read default stream filter
+            if PdfName.StmF in trailer.Encrypt:
+                name = trailer.Encrypt.StmF
+                if name in crypt_filters:
+                    private.stream_crypt_filter = crypt_filters[name]
+                else:
+                    source.warning(
+                        'Invalid crypt filter name in /StmF:'
+                        ' {}'.format(name))
+
+            # Read default string filter
+            if PdfName.StrF in trailer.Encrypt:
+                name = trailer.Encrypt.StrF
+                if name in crypt_filters:
+                    private.string_crypt_filter = crypt_filters[name]
+                else:
+                    source.warning(
+                        'Invalid crypt filter name in /StrF:'
+                        ' {}'.format(name))
+        else:
+            source.warning(
+                'Unsupported Encrypt version: {}'.format(version))
+
     def __init__(self, fname=None, fdata=None, decompress=False,
-                 disable_gc=True, verbose=True):
+                 decrypt=False, password='', disable_gc=True, verbose=True):
         self.private.verbose = verbose
 
         # Runs a lot faster with GC off.
@@ -555,6 +627,23 @@ class PdfReader(PdfDict):
                 xref_list.append((source.obj_offsets, trailer, is_stream))
                 source.floc = int(prev)
 
+            # Handle document encryption
+            private.crypt_filters = None
+            if decrypt and PdfName.Encrypt in trailer:
+                identity_filter = crypt.IdentityCryptFilter()
+                crypt_filters = {
+                    PdfName.Identity: identity_filter
+                }
+                private.crypt_filters = crypt_filters
+                private.stream_crypt_filter = identity_filter
+                private.string_crypt_filter = identity_filter
+
+                if not crypt.HAS_CRYPTO:
+                    raise PdfParseError(
+                        'Install PyCrypto to enable encryption support')
+
+                self._parse_encrypt_info(source, password, trailer)
+
             if is_stream:
                 self.load_stream_objects(trailer.object_streams)
 
@@ -572,6 +661,10 @@ class PdfReader(PdfDict):
             if (trailer.Version and
                     float(trailer.Version) > float(self.version)):
                 self.private.version = trailer.Version
+
+            if decrypt:
+                self.decrypt_all()
+                trailer.Encrypt = None
 
             if is_stream:
                 self.Root = trailer.Root
