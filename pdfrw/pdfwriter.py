@@ -16,6 +16,7 @@ addpage() assumes that the pages are part of a valid
 tree/forest of PDF objects.
 '''
 import gc
+import datetime
 
 from .objects import (PdfName, PdfArray, PdfDict, IndirectPdfDict,
                       PdfObject, PdfString)
@@ -33,6 +34,11 @@ def user_fmt(obj, isinstance=isinstance, float=float, str=str,
     ''' This function may be replaced by the user for
         specialized formatting requirements.
     '''
+
+    if isinstance(obj, datetime.datetime):
+        obj = obj.strftime('D:%Y%m%d%H%M%S')
+    elif isinstance(obj, datetime.date):
+        obj = obj.strftime('D:%Y%m%d')
 
     if isinstance(obj, basestring):
         return encode(obj)
