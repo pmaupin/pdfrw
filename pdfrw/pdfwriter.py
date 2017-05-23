@@ -44,7 +44,7 @@ def user_fmt(obj, isinstance=isinstance, float=float, str=str,
     return str(obj)
 
 
-def FormatObjects(f, trailer, version='1.3', compress=True, killobj=(),
+def FormatObjects(f, trailer, version='1.3', compress=True, killobj=(), objmap={},
                   user_fmt=user_fmt, do_compress=do_compress,
                   convert_store=convert_store, iteritems=iteritems,
                   id=id, isinstance=isinstance, getattr=getattr, len=len,
@@ -65,6 +65,10 @@ def FormatObjects(f, trailer, version='1.3', compress=True, killobj=(),
         '''
         # Can't hash dicts, so just hash the object ID
         objid = id(obj)
+
+        while objid in objmap:
+            obj = objmap[objid]
+            objid = id(obj)
 
         # Automatically set stream objects to indirect
         if isinstance(obj, PdfDict):
@@ -264,6 +268,7 @@ class PdfWriter(object):
 
         self.pagearray = PdfArray()
         self.killobj = {}
+        self.pagemap = {}
 
     def addpage(self, page):
         self._trailer = None
@@ -271,15 +276,15 @@ class PdfWriter(object):
             raise PdfOutputError('Bad /Type:  Expected %s, found %s'
                                  % (PdfName.Page, page.Type))
         inheritable = page.inheritable  # searches for resources
-        self.pagearray.append(
-            IndirectPdfDict(
-                page,
-                Resources=inheritable.Resources,
-                MediaBox=inheritable.MediaBox,
-                CropBox=inheritable.CropBox,
-                Rotate=inheritable.Rotate,
-            )
+        newpage = IndirectPdfDict(
+            page,
+            Resources=inheritable.Resources,
+            MediaBox=inheritable.MediaBox,
+            CropBox=inheritable.CropBox,
+            Rotate=inheritable.Rotate,
         )
+        self.pagearray.append(newpage)
+        self.pagemap[id(page)] = newpage
 
         # Add parents in the hierarchy to objects we
         # don't want to output
@@ -355,7 +360,7 @@ class PdfWriter(object):
 
         try:
             FormatObjects(f, trailer, self.version, self.compress,
-                          self.killobj, user_fmt=user_fmt)
+                          self.killobj, self.pagemap, user_fmt=user_fmt)
         finally:
             if not preexisting:
                 f.close()
