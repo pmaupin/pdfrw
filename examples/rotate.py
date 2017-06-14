@@ -36,6 +36,6 @@ for onerange in ranges:
         pages[pagenum].Rotate = (int(pages[pagenum].inheritable.Rotate or
                                      0) + rotate) % 360
 
-outdata = PdfWriter(outfn)
+outdata = PdfWriter()
 outdata.trailer = trailer
-outdata.write()
+outdata.write(outfn)
