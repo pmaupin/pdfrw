@@ -19,4 +19,4 @@ outfn = 'alter.' + os.path.basename(inpfn)
 
 trailer = PdfReader(inpfn)
 trailer.Info.Title = 'My New Title Goes Here'
-PdfWriter(outfn, trailer=trailer).write()
+PdfWriter().write(outfn, trailer=trailer)
