@@ -53,4 +53,4 @@ while len(ipages) > 2:
 
 opages += ipages
 
-PdfWriter(outfn).addpages(opages).write()
+PdfWriter(outfn).addpages(opages).write(outfn)
