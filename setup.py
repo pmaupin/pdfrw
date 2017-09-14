@@ -35,4 +35,5 @@ setup(
         'Topic :: Utilities',
     ],
     keywords='pdf vector graphics PDF nup watermark split join merge',
+    zip_safe=True,
 )
