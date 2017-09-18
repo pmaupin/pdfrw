@@ -738,7 +738,7 @@ Release information
 
 Revisions:
 
-0.4 -- Released 17 September, 2017
+0.4 -- Released 18 September, 2017
 
     - Python 3.6 added to test matrix
     - Proper unicode support for text strings in PDFs added
