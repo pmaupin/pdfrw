@@ -768,7 +768,7 @@ Revisions:
     - Better support under Python 3.x for in-memory PDF file-like objects
     - Some pagemerge and Unicode patches added
     - Changes to logging allow better coexistence with other packages
-    - Fix for "from pdfrw import *"
+    - Fix for "from pdfrw import \*"
     - New fancy_watermark.py example shows off capabilities of pagemerge.py
     - metadata.py example renamed to cat.py
 
