@@ -8,10 +8,22 @@ Mathieu Fenniak and licensed under the BSD license (also reproduced below).
 
 Please add any missing authors here:
 
-Copyright (c) 2006-2015  Patrick Maupin. All rights reserved.
+Copyright (c) 2006-2017  Patrick Maupin. All rights reserved.
 Copyright (c) 2006       Mathieu Fenniak. All rights reserved.
 Copyright (c) 2010       Attila Tajti. All rights reserved.
 Copyright (c) 2012       Nerijus Mika. All rights reserved.
+Copyright (c) 2015       Bastien Gandouet. All rights reserved.
+Copyright (c) 2015       Tzerjen Wei. All rights reserved.
+Copyright (c) 2015       Jorj X. McKie. All rights reserved.
+Copyright (c) 2015       Nicholas Devenish. All rights reserved.
+Copyright (c) 2015-2016  Jonatan Dellagostin. All rights reserved.
+Copyright (c) 2016-2017  Thomas Kluyver. All rights reserved.
+Copyright (c) 2016       James Laird-Wah. All rights reserved.
+Copyright (c) 2016       Marcus Brinkmann. All rights reserved.
+Copyright (c) 2016       Edward Betts. All rights reserved.
+Copyright (c) 2016       Patrick Mazulo. All rights reserved.
+Copyright (c) 2017       Haochen Wu. All rights reserved.
+Copyright (c) 2017       Jon Lund Steffensen. All rights reserved.
 
 
 MIT License:

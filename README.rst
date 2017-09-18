@@ -1,5 +1,5 @@
 ==================
-pdfrw 0.3 + fixes
+pdfrw 0.4
 ==================
 
 :Author: Patrick Maupin
@@ -14,11 +14,7 @@ Introduction
 
 **pdfrw** is a Python library and utility that reads and writes PDF files:
 
-The latest released version at pypi is 0.3.  There are several fixes in
-the git master branch since then, and a 0.4 release should be made soon.
-
-
-* Version 0.3 is tested and works on Python 2.6, 2.7, 3.3, 3.4, and 3.5
+* Version 0.4 is tested and works on Python 2.6, 2.7, 3.3, 3.4, 3.5, and 3.6
 * Operations include subsetting, merging, rotating, modifying metadata, etc.
 * The fastest pure Python PDF parser available
 * Has been used for years by a printer in pre-press production
@@ -742,7 +738,7 @@ Release information
 
 Revisions:
 
-github master -- 0.4 not released yet
+0.4 -- Released 17 September, 2017
 
     - Python 3.6 added to test matrix
     - Proper unicode support for text strings in PDFs added
@@ -762,6 +758,8 @@ github master -- 0.4 not released yet
     - Some flate decompressor bugs fixed
     - Compression and decompression tests added
     - Tests for new unicode handling added
+    - PdfReader.readpages() recursion error (issue #92) fixed.
+    - Initial crypt filter support added
 
 
 0.3 -- Released 19 October, 2016.

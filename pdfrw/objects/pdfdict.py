@@ -136,7 +136,15 @@ class PdfDict(dict):
         '''
         value = dictget(self, key)
         if isinstance(value, PdfIndirect):
-            self[key] = value = value.real_value()
+            # We used to use self[key] here, but that does an
+            # unwanted check on the type of the key (github issue #98).
+            # Python will keep the old key object in the dictionary,
+            # so that check is not necessary.
+            value = value.real_value()
+            if value is not None:
+                dict.__setitem__(self, key, value)
+            else:
+                del self[name]
         return value
 
     def __getitem__(self, key):
