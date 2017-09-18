@@ -13,7 +13,7 @@ setup(
     author_email='pmaupin@gmail.com',
     platforms='Independent',
     url='https://github.com/pmaupin/pdfrw',
-    packages=['pdfrw', 'pdfrw.objects'],
+    packages=['pdfrw', 'pdfrw.objects', 'pdfrw.pdfwriter'],
     license='MIT',
     classifiers=[
         'Development Status :: 4 - Beta',

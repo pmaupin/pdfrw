@@ -1,11 +1,7 @@
 #! /usr/bin/env python2
 """
-Put old (good) results in ramdisk/reference,
-then generate new (unknown) test results in ramdisk/tmp_results,
-THEN SWITCH BACK TO KNOWN GOOD SYSTEM, and finally:
+Put old results in ramdisk/reference, then run this to update expected.
 
-run this to update any checksums in expected.txt where both versions
-parse to same PDFs.
 """
 
 import os
@@ -62,13 +58,13 @@ for (srcpath, _, filenames) in os.walk('ramdisk/reference'):
         count += 1
         trailer = make_canonical(PdfReader(src))
         out = PdfWriter(tmp)
-        out.write(trailer=trailer)
+        out.write(trailer=trailer, user_fmt=PdfWriter.old_user_fmt)
         match_digest = get_digest(tmp)
         if not match_digest:
             continue
         trailer = make_canonical(PdfReader(dst))
         out = PdfWriter(tmp)
-        out.write(trailer=trailer)
+        out.write(trailer=trailer, user_fmt=PdfWriter.old_user_fmt)
         if get_digest(tmp) != match_digest:
             continue
         goodcount += 1
