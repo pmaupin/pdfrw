@@ -412,7 +412,7 @@ class PdfString(str):
         else:
             raise ValueError('Invalid PDF string "%s"' % repr(self))
 
-    def to_unicode(self):
+    def to_unicode(self, title=None):
         """ Decode a PDF string to a unicode string.  This is a
             convenience function for user code, in that (as of
             pdfrw 0.3) it is never actually used inside pdfrw.
@@ -422,11 +422,23 @@ class PdfString(str):
             is defined in the PDF spec.  The determination of
             which decoding method to use is done by examining the
             first two bytes for the byte order marker.
+
+            In case of PDFs created with Tesseract OCR, even
+            though PDF strings are encoded with UTF16_BE encoding
+            first two bytes are never the byto order marker. BOM is
+            located in Title object of the PDF which is '<FEFF>'.
+            Passing the object here makes it compatible with such
+            PDFs.
         """
         raw = self.to_bytes()
 
+        title_string = PdfString(title)
+        raw_title = title_string.to_bytes()
+
         if raw[:2] == self.bytes_bom:
             return raw[2:].decode('utf-16-be')
+        elif raw_title == self.bytes_bom:
+            return raw.decode('utf-16-be')
         else:
             return raw.decode('pdfdocencoding')
 
