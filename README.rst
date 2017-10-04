@@ -657,9 +657,23 @@ To run the tests:
 * cd into the tests directory, and then clone the package
   github.com/pmaupin/static_pdfs into a subdirectory (also named
   static_pdfs).
-* Now the tests may be run from that directory using unittest, or
+* Now the tests may be run from tests directory using unittest, or
   py.test, or nose.
 * travisci is used at github, and runs the tests with py.test
+
+.. code-block:: bash
+    $ pip install pytest
+    $ pip install reportlab
+    $ pwd
+    <...>/pdfrw/tests
+    $ git clone https://github.com/pmaupin/static_pdfs
+    $ ln -s ../pdfrw
+    $ pytest
+
+To run a single test-case:
+
+.. code-block:: bash
+    $ pytest test_roundtrip.py -k "test_compress_9f98322c243fe67726d56ccfa8e0885b.pdf"
 
 Other libraries
 =====================
