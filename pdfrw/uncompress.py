@@ -81,7 +81,6 @@ def uncompress(mylist, leave_raw=False, warnings=set(),
                 ok = False
     return ok
 
-
 def flate_png(data, predictor=1, columns=1, colors=1, bpc=8):
     ''' PNG prediction is used to make certain kinds of data
         more compressible.  Before the compression, each data
@@ -95,23 +94,100 @@ def flate_png(data, predictor=1, columns=1, colors=1, bpc=8):
         this technique for Xref stream objects, which are
         quite regular.
     '''
+
+    # http://www.libpng.org/pub/png/spec/1.2/PNG-Filters.html
+    # Reverse filter functions
+
+    def subfilter(data, prior_row_data, start, length, pixel_size):
+        # filter type 1: Sub
+        end = start + length
+        for index in xrange(start, end):
+            data[index] = (data[index] + data[index - pixel_size]) % 256
+
+    def upfilter(data, prior_row_data, start, length, pixel_size):
+        # filter type 2: Up
+        end = start + length
+        for index, i in zip(xrange(start, end), xrange(length)):
+            data[index] = (data[index] + prior_row_data[i]) % 256
+
+    def avgfilter(data, prior_row_data, start, length, pixel_size):
+        # filter type 3: Avg
+        end = start + length
+        for index, i in zip(xrange(start, end), xrange(length)):
+            left = data[index - pixel_size] if index != start else 0
+            floor = math.floor(left + prior_row_data[i]) / 2
+            data[index] = (data[index] + int(floor)) % 256
+
+    def paethfilter(data, prior_row_data, start, length, pixel_size):
+        # filter type 4: Paeth
+        def paeth_predictor(a, b, c):
+            p = a + b - c
+            pa = abs(p - a)
+            pb = abs(p - b)
+            pc = abs(p - c)
+            if pa <= pb and pa <= pc:
+                return a
+            elif pb <= pc:
+                return b
+            else:
+                return c
+        end = start + length
+        for index, i in zip(xrange(start, end), xrange(length)):
+            left = data[index - pixel_size] if index != start else 0
+            up = prior_row_data[i]
+            up_left = prior_row_data[i - pixel_size] if i != 0 else 0
+            data[index] = (data[index] + paeth_predictor(left, up, up_left)) % 256
+
     columnbytes = ((columns * colors * bpc) + 7) // 8
+    pixel_size = (colors * bpc + 7) // 8
     data = array.array('B', data)
     rowlen = columnbytes + 1
     if predictor == 15:
         padding = (rowlen - len(data)) % rowlen
         data.extend([0] * padding)
     assert len(data) % rowlen == 0
+
+#    print "columnbytes", columnbytes
+#    print "pixel_size", pixel_size
+#    print "data", data
+#    for i in xrange(0, len(data), rowlen):
+#        print "[%d]" % (i), data[i], data[i + 1 : i + 1 + columnbytes]
+#    print "rowlen", rowlen
+
     rows = xrange(0, len(data), rowlen)
+    prior_row_data = [ 0 for i in xrange(rowlen) ]
     for row_index in rows:
-        offset = data[row_index]
-        if offset >= 2:
-            if offset > 2:
-                return None, 'Unsupported PNG filter %d' % offset
-            offset = rowlen if row_index else 0
-        if offset:
-            for index in xrange(row_index + 1, row_index + rowlen):
-                data[index] = (data[index] + data[index - offset]) % 256
+
+        filter_type = data[row_index]
+        row_data = data[row_index + 1 : row_index + 1 + columnbytes] # without filter_type
+
+#        print "row_index:", row_index, "filter_type:", filter_type
+#        print "prior_row_data", prior_row_data
+#        print "row_data", row_data
+
+        if filter_type == 0: # None filter
+            pass
+
+        elif filter_type == 1: # Sub filter
+            subfilter(data, prior_row_data, row_index + 1, columnbytes, pixel_size)
+
+        elif filter_type == 2: # Up filter
+            upfilter(data, prior_row_data, row_index + 1, columnbytes, pixel_size)
+
+        elif filter_type == 3: # Average filter
+            avgfilter(data, prior_row_data, row_index + 1, columnbytes, pixel_size)
+
+        elif filter_type == 4: # Paeth filter
+            paethfilter(data, prior_row_data, row_index + 1, columnbytes, pixel_size)
+
+        else:
+            return None, 'Unsupported PNG filter %d' % filter_type
+
+        prior_row_data = row_data
+
+#        print
+
     for row_index in reversed(rows):
         data.pop(row_index)
+
     return from_array(data), None
