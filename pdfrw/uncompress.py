@@ -15,7 +15,7 @@ import array
 from .objects import PdfDict, PdfName, PdfArray
 from .errors import log
 from .py23_diffs import zlib, xrange, from_array, convert_load, convert_store
-
+import math
 
 def streamobjects(mylist, isinstance=isinstance, PdfDict=PdfDict):
     for obj in mylist:
@@ -191,3 +191,38 @@ def flate_png(data, predictor=1, columns=1, colors=1, bpc=8):
         data.pop(row_index)
 
     return from_array(data), None
+
+def flate_png_orig(data, predictor=1, columns=1, colors=1, bpc=8):
+    ''' PNG prediction is used to make certain kinds of data
+        more compressible.  Before the compression, each data
+        byte is either left the same, or is set to be a delta
+        from the previous byte, or is set to be a delta from
+        the previous row.  This selection is done on a per-row
+        basis, and is indicated by a compression type byte
+        prepended to each row of data.
+
+        Within more recent PDF files, it is normal to use
+        this technique for Xref stream objects, which are
+        quite regular.
+    '''
+    columnbytes = ((columns * colors * bpc) + 7) // 8
+    data = array.array('B', data)
+    rowlen = columnbytes + 1
+    if predictor == 15:
+        padding = (rowlen - len(data)) % rowlen
+        data.extend([0] * padding)
+    assert len(data) % rowlen == 0
+    rows = xrange(0, len(data), rowlen)
+    for row_index in rows:
+        offset = data[row_index]
+        if offset >= 2:
+            if offset > 2:
+                return None, 'Unsupported PNG filter %d' % offset
+            offset = rowlen if row_index else 0
+        if offset:
+            for index in xrange(row_index + 1, row_index + rowlen):
+                data[index] = (data[index] + data[index - offset]) % 256
+    for row_index in reversed(rows):
+        data.pop(row_index)
+    return from_array(data), None
+
