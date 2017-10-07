@@ -144,7 +144,7 @@ class PdfDict(dict):
             if value is not None:
                 dict.__setitem__(self, key, value)
             else:
-                del self[name]
+                del self[key]
         return value
 
     def __getitem__(self, key):
