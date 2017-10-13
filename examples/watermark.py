@@ -34,4 +34,4 @@ wmark = PageMerge().add(PdfReader(wmarkfn).pages[0])[0]
 trailer = PdfReader(inpfn)
 for page in trailer.pages:
     PageMerge(page).add(wmark, prepend=underneath).render()
-PdfWriter(outfn, trailer=trailer).write()
+PdfWriter().write(outfn, trailer=trailer)
