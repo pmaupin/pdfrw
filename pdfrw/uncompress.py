@@ -114,7 +114,7 @@ def flate_png(data, predictor=1, columns=1, colors=1, bpc=8):
         # filter type 3: Avg
         end = start + length
         for index, i in zip(xrange(start, end), xrange(length)):
-            left = data[index - pixel_size]
+            left = data[index - pixel_size] if index != start else 0
             floor = math.floor((left + prior_row_data[i]) / 2)
             data[index] = (data[index] + int(floor)) % 256
 
@@ -133,13 +133,13 @@ def flate_png(data, predictor=1, columns=1, colors=1, bpc=8):
                 return c
         end = start + length
         for index, i in zip(xrange(start, end), xrange(length)):
-            left = data[index - pixel_size]
+            left = data[index - pixel_size] if index != start else 0
             up = prior_row_data[i]
-            up_left = prior_row_data[i - pixel_size]
+            up_left = prior_row_data[i - pixel_size] if i != 0 else 0
             data[index] = (data[index] + paeth_predictor(left, up, up_left)) % 256
 
     columnbytes = ((columns * colors * bpc) + 7) // 8
-    pixel_size = ((colors * bpc) + 7) // 8
+    pixel_size = (colors * bpc + 7) // 8
     data = array.array('B', data)
     rowlen = columnbytes + 1
     if predictor == 15:
@@ -169,16 +169,16 @@ def flate_png(data, predictor=1, columns=1, colors=1, bpc=8):
             pass
 
         elif filter_type == 1: # Sub filter
-            subfilter(data, prior_row_data, row_index + 2, columnbytes - 1, pixel_size)
+            subfilter(data, prior_row_data, row_index + 1, columnbytes, pixel_size)
 
         elif filter_type == 2: # Up filter
-            upfilter(data, prior_row_data, row_index + 2, columnbytes - 1, pixel_size)
+            upfilter(data, prior_row_data, row_index + 1, columnbytes, pixel_size)
 
         elif filter_type == 3: # Average filter
-            avgfilter(data, prior_row_data, row_index + 2, columnbytes - 1, pixel_size)
+            avgfilter(data, prior_row_data, row_index + 1, columnbytes, pixel_size)
 
         elif filter_type == 4: # Paeth filter
-            paethfilter(data, prior_row_data, row_index + 2, columnbytes - 1, pixel_size)
+            paethfilter(data, prior_row_data, row_index + 1, columnbytes, pixel_size)
 
         else:
             return None, 'Unsupported PNG filter %d' % filter_type
