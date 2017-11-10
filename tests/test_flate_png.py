@@ -12,6 +12,7 @@ python -m tests.test_pdfstring
 
 
 from pdfrw.uncompress import flate_png, flate_png_orig
+from pdfrw.py23_diffs import xrange
 
 import unittest
 import base64
