@@ -67,10 +67,10 @@ def uncompress(mylist, leave_raw=False, warnings=set(),
                     l0 = len(data)
                     if 10 <= predictor <= 15:
                         data, error = flate_png_orig(data, predictor, columns, colors, bpc)
-                        l1 = len(data)
                         try:
-                            assert error == None
+                            l1 = len(data)
                             assert l1 == l0, "Mismatch len %d vs %d" % (l0, l1)
+                            assert error == None
                         except Exception as e:
                             print "Exception", e
                             pass
