@@ -17,6 +17,7 @@ from pdfrw.py23_diffs import xrange
 import unittest
 import base64
 import array
+import logging
 
 def create_data(nc=1, nr=1, bpc=8, ncolors=1, filter_type=0):
     pixel_size = (bpc * ncolors + 7) // 8
@@ -26,7 +27,16 @@ def create_data(nc=1, nr=1, bpc=8, ncolors=1, filter_type=0):
         for c in xrange(nc * pixel_size):
             data.append(r * nc * pixel_size + c * pixel_size)
     data = array.array('B', data)
+    logging.error("Data: %r" % (data))
     return data, nc, nr, bpc, ncolors
+
+def print_data(data1, data2):
+    if data1 is None:
+        return
+    for b1, b2 in zip(data1, data2):
+        logging.error("%4d %4d" % (ord(b1), ord(b2)))
+    if len(data1) != len(data2):
+        logging.error("Mismatch lengths: %d %d" % (len(data1), len(data2)))
 
 class TestFlatePNG(unittest.TestCase):
     
@@ -37,55 +47,63 @@ class TestFlatePNG(unittest.TestCase):
         data = base64.b64decode(b64)
         d1, error1 = flate_png_orig(data, predictor, columns, colors, bpc)
 
+        assert d1 is None
+        assert error1 is not None
+
         data = base64.b64decode(b64)
         d2, error2 = flate_png(data, predictor, columns, colors, bpc)
 
-        assert d1 == d2 
+        assert d2 is not None
+        assert error2 is None
 
     def test_flate_png_filter_0(self):
-        data, nc, nr, bpc, ncolors = create_data(nc=4, nr=6, bpc=8, ncolors=4)
+        # None filter
+        data, nc, nr, bpc, ncolors = create_data(nc=5, nr=7, bpc=8, ncolors=4)
         d1, error1 = flate_png_orig(data, 12, nc, ncolors, bpc) 
 
-        data, nc, nr, bpc, ncolors = create_data(nc=4, nr=6, bpc=8, ncolors=4)
+        data, nc, nr, bpc, ncolors = create_data(nc=5, nr=7, bpc=8, ncolors=4)
         d2, error2 = flate_png(data, 12, nc, ncolors, bpc)
 
+        print_data(d1, d2)
         assert d1 == d2 
 
     def test_flate_png_filter_1(self):
-        data, nc, nr, bpc, ncolors = create_data(nc=4, nr=6, bpc=8, ncolors=4, filter_type=1)
+        # Sub filter
+        data, nc, nr, bpc, ncolors = create_data(nc=5, nr=7, bpc=8, ncolors=4, filter_type=1)
         d1, error1 = flate_png_orig(data, 12, nc, ncolors, bpc) 
 
-        data, nc, nr, bpc, ncolors = create_data(nc=4, nr=6, bpc=8, ncolors=4, filter_type=1)
+        data, nc, nr, bpc, ncolors = create_data(nc=5, nr=7, bpc=8, ncolors=4, filter_type=1)
         d2, error2 = flate_png(data, 12, nc, ncolors, bpc)
 
+        print_data(d1, d2)
         assert d1 == d2 
 
     def test_flate_png_filter_2(self):
-        data, nc, nr, bpc, ncolors = create_data(nc=4, nr=6, bpc=8, ncolors=4, filter_type=2)
+        # Up filter
+        data, nc, nr, bpc, ncolors = create_data(nc=5, nr=7, bpc=8, ncolors=4, filter_type=2)
         d1, error1 = flate_png_orig(data, 12, nc, ncolors, bpc) 
 
-        data, nc, nr, bpc, ncolors = create_data(nc=4, nr=6, bpc=8, ncolors=4, filter_type=2)
+        data, nc, nr, bpc, ncolors = create_data(nc=5, nr=7, bpc=8, ncolors=4, filter_type=2)
         d2, error2 = flate_png(data, 12, nc, ncolors, bpc)
 
+        print_data(d1, d2)
         assert d1 == d2 
 
     def test_flate_png_filter_3(self):
-        data, nc, nr, bpc, ncolors = create_data(nc=4, nr=6, bpc=8, ncolors=4, filter_type=3)
-        d1, error1 = flate_png_orig(data, 12, nc, ncolors, bpc) 
-
-        data, nc, nr, bpc, ncolors = create_data(nc=4, nr=6, bpc=8, ncolors=4, filter_type=3)
+        # Avg filter
+        data, nc, nr, bpc, ncolors = create_data(nc=5, nr=7, bpc=8, ncolors=4, filter_type=3)
         d2, error2 = flate_png(data, 12, nc, ncolors, bpc)
 
-        assert d1 == d2 
+        assert d2
+        assert error2 is None
 
     def test_flate_png_filter_4(self):
-        data, nc, nr, bpc, ncolors = create_data(nc=4, nr=6, bpc=8, ncolors=4, filter_type=4)
-        d1, error1 = flate_png_orig(data, 12, nc, ncolors, bpc) 
-
-        data, nc, nr, bpc, ncolors = create_data(nc=4, nr=6, bpc=8, ncolors=4, filter_type=4)
+        # Paeth filter
+        data, nc, nr, bpc, ncolors = create_data(nc=5, nr=7, bpc=8, ncolors=4, filter_type=4)
         d2, error2 = flate_png(data, 12, nc, ncolors, bpc)
 
-        assert d1 == d2 
+        assert d2
+        assert error2 is None
 
 
 def main():

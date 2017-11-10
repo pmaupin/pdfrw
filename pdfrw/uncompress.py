@@ -66,7 +66,7 @@ def uncompress(mylist, leave_raw=False, warnings=set(),
                     bpc = int(parms.BitsPerComponent or 8)
                     l0 = len(data)
                     if 10 <= predictor <= 15:
-                        data, error = flate_png_orig(data, predictor, columns, colors, bpc)
+                        data, error = flate_png(data, predictor, columns, colors, bpc)
                         try:
                             l1 = len(data)
                             assert l1 == l0, "Mismatch len %d vs %d" % (l0, l1)
@@ -111,6 +111,7 @@ def flate_png(data, predictor=1, columns=1, colors=1, bpc=8):
         # filter type 1: Sub
         end = start + length
         for index in xrange(start, end):
+            # FIXME: data[index - pixel_size] is not the previous pixel
             data[index] = (data[index] + data[index - pixel_size]) % 256
 
     def upfilter(data, prior_row_data, start, length, pixel_size):
@@ -156,23 +157,12 @@ def flate_png(data, predictor=1, columns=1, colors=1, bpc=8):
         data.extend([0] * padding)
     assert len(data) % rowlen == 0
 
-#    print "columnbytes", columnbytes
-#    print "pixel_size", pixel_size
-#    print "data", data
-#    for i in xrange(0, len(data), rowlen):
-#        print "[%d]" % (i), data[i], data[i + 1 : i + 1 + columnbytes]
-#    print "rowlen", rowlen
-
     rows = xrange(0, len(data), rowlen)
-    prior_row_data = [ 0 for i in xrange(rowlen) ]
+    prior_row_data = [ 0 for i in xrange(columnbytes) ]
     for row_index in rows:
 
         filter_type = data[row_index]
-        row_data = data[row_index + 1 : row_index + 1 + columnbytes] # without filter_type
-
-#        print "row_index:", row_index, "filter_type:", filter_type
-#        print "prior_row_data", prior_row_data
-#        print "row_data", row_data
+        #row_data = data[row_index + 1 : row_index + 1 + columnbytes] # without filter_type
 
         if filter_type == 0: # None filter
             pass
@@ -192,9 +182,8 @@ def flate_png(data, predictor=1, columns=1, colors=1, bpc=8):
         else:
             return None, 'Unsupported PNG filter %d' % filter_type
 
+        row_data = data[row_index + 1 : row_index + 1 + columnbytes] # without filter_type
         prior_row_data = row_data
-
-#        print
 
     for row_index in reversed(rows):
         data.pop(row_index)
