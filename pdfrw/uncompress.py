@@ -29,7 +29,7 @@ decompressobj = zlib if zlib is None else zlib.decompressobj
 def uncompress(mylist, leave_raw=False, warnings=set(),
                flate=PdfName.FlateDecode, decompress=decompressobj,
                isinstance=isinstance, list=list, len=len):
-    print "leave_raw", leave_raw
+    log.error("uncompress leave_raw: %s" % leave_raw)
     ok = True
     for obj in streamobjects(mylist):
         ftype = obj.Filter
@@ -72,7 +72,7 @@ def uncompress(mylist, leave_raw=False, warnings=set(),
                             assert l1 == l0, "Mismatch len %d vs %d" % (l0, l1)
                             assert error == None
                         except Exception as e:
-                            print "Exception", e
+                            log.exception("Exception after flate_png")
                             pass
                     elif predictor != 1:
                         error = ('Unsupported flatedecode predictor %s' %
