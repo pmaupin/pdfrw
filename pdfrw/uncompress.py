@@ -110,8 +110,7 @@ def flate_png(data, predictor=1, columns=1, colors=1, bpc=8):
     def subfilter(data, prior_row_data, start, length, pixel_size):
         # filter type 1: Sub
         end = start + length
-        for index in xrange(start, end):
-            # FIXME: data[index - pixel_size] is not the previous pixel
+        for index in xrange(start + pixel_size, end):
             data[index] = (data[index] + data[index - pixel_size]) % 256
 
     def upfilter(data, prior_row_data, start, length, pixel_size):

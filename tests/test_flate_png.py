@@ -69,10 +69,10 @@ class TestFlatePNG(unittest.TestCase):
 
     def test_flate_png_filter_1(self):
         # Sub filter
-        data, nc, nr, bpc, ncolors = create_data(nc=5, nr=7, bpc=8, ncolors=4, filter_type=1)
+        data, nc, nr, bpc, ncolors = create_data(nc=2, nr=3, bpc=8, ncolors=4, filter_type=1)
         d1, error1 = flate_png_orig(data, 12, nc, ncolors, bpc) 
 
-        data, nc, nr, bpc, ncolors = create_data(nc=5, nr=7, bpc=8, ncolors=4, filter_type=1)
+        data, nc, nr, bpc, ncolors = create_data(nc=2, nr=3, bpc=8, ncolors=4, filter_type=1)
         d2, error2 = flate_png(data, 12, nc, ncolors, bpc)
 
         print_data(d1, d2)
