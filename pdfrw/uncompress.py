@@ -90,19 +90,7 @@ def uncompress(mylist, leave_raw=False, warnings=set(),
                 ok = False
     return ok
 
-def flate_png(data, predictor=1, columns=1, colors=1, bpc=8):
-    ''' PNG prediction is used to make certain kinds of data
-        more compressible.  Before the compression, each data
-        byte is either left the same, or is set to be a delta
-        from the previous byte, or is set to be a delta from
-        the previous row.  This selection is done on a per-row
-        basis, and is indicated by a compression type byte
-        prepended to each row of data.
-
-        Within more recent PDF files, it is normal to use
-        this technique for Xref stream objects, which are
-        quite regular.
-    '''
+def flate_png_impl(data, predictor=1, columns=1, colors=1, bpc=8):
 
     # http://www.libpng.org/pub/png/spec/1.2/PNG-Filters.html
     # Reverse filter functions
@@ -110,20 +98,22 @@ def flate_png(data, predictor=1, columns=1, colors=1, bpc=8):
     def subfilter(data, prior_row_data, start, length, pixel_size):
         # filter type 1: Sub
         end = start + length
-        for index in xrange(start + pixel_size, end):
-            data[index] = (data[index] + data[index - pixel_size]) % 256
+        for index in xrange(start, end):
+            left = data[index - pixel_size] if index > start else 0
+            data[index] = (data[index] + left) % 256
 
     def upfilter(data, prior_row_data, start, length, pixel_size):
         # filter type 2: Up
         end = start + length
         for index, i in zip(xrange(start, end), xrange(length)):
-            data[index] = (data[index] + prior_row_data[i]) % 256
+            up = prior_row_data[i] if index > start else 0
+            data[index] = (data[index] + up) % 256
 
     def avgfilter(data, prior_row_data, start, length, pixel_size):
         # filter type 3: Avg
         end = start + length
         for index, i in zip(xrange(start, end), xrange(length)):
-            left = data[index - pixel_size] if index != start else 0
+            left = data[index - pixel_size] if index > start else 0
             floor = math.floor((left + prior_row_data[i]) / 2)
             data[index] = (data[index] + int(floor)) % 256
 
@@ -161,7 +151,6 @@ def flate_png(data, predictor=1, columns=1, colors=1, bpc=8):
     for row_index in rows:
 
         filter_type = data[row_index]
-        #row_data = data[row_index + 1 : row_index + 1 + columnbytes] # without filter_type
 
         if filter_type == 0: # None filter
             pass
@@ -181,13 +170,30 @@ def flate_png(data, predictor=1, columns=1, colors=1, bpc=8):
         else:
             return None, 'Unsupported PNG filter %d' % filter_type
 
-        row_data = data[row_index + 1 : row_index + 1 + columnbytes] # without filter_type
-        prior_row_data = row_data
+        prior_row_data = data[row_index + 1 : row_index + 1 + columnbytes] # without filter_type
 
     for row_index in reversed(rows):
         data.pop(row_index)
 
-    return from_array(data), None
+    return data, None
+
+def flate_png(data, predictor=1, columns=1, colors=1, bpc=8):
+    ''' PNG prediction is used to make certain kinds of data
+        more compressible.  Before the compression, each data
+        byte is either left the same, or is set to be a delta
+        from the previous byte, or is set to be a delta from
+        the previous row.  This selection is done on a per-row
+        basis, and is indicated by a compression type byte
+        prepended to each row of data.
+
+        Within more recent PDF files, it is normal to use
+        this technique for Xref stream objects, which are
+        quite regular.
+    '''
+    d, e = flate_png_impl(data, predictor, columns, colors, bpc)
+    if d is not None:
+        d = from_array(data)
+    return d, e
 
 def flate_png_orig(data, predictor=1, columns=1, colors=1, bpc=8):
     ''' PNG prediction is used to make certain kinds of data
