@@ -39,9 +39,11 @@ def print_data(data1, data2):
     if data1 is None:
         return
     for b1, b2 in zip(data1, data2):
-        logging.error("%4d %4d" % (ord(b1), ord(b2)))
+        b1 = b1 if type(b1) != str else ord(b1)
+        b2 = b2 if type(b2) != str else ord(b2)
+        logging.error("%4d %4d" % (b1, b2))
     if len(data1) != len(data2):
-        logging.error("Mismatch lengths: %d %d" % (len(data1), len(data2)))
+        logging.error("Mismatched lengths: %d %d" % (len(data1), len(data2)))
 
 class TestFlatePNG(unittest.TestCase):
     
