@@ -104,10 +104,9 @@ def flate_png_impl(data, predictor=1, columns=1, colors=1, bpc=8):
 
     def upfilter(data, prior_row_data, start, length, pixel_size):
         # filter type 2: Up
-        end = start + length
-        for index, i in zip(xrange(start, end), xrange(length)):
-            up = prior_row_data[i] if index > start else 0
-            data[index] = (data[index] + up) % 256
+        for i in xrange(length):
+            up = prior_row_data[i]
+            data[start + i] = (data[start + i] + up) % 256
 
     def avgfilter(data, prior_row_data, start, length, pixel_size):
         # filter type 3: Avg
@@ -192,7 +191,7 @@ def flate_png(data, predictor=1, columns=1, colors=1, bpc=8):
     '''
     d, e = flate_png_impl(data, predictor, columns, colors, bpc)
     if d is not None:
-        d = from_array(data)
+        d = from_array(d)
     return d, e
 
 def flate_png_orig(data, predictor=1, columns=1, colors=1, bpc=8):
