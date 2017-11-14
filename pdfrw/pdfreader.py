@@ -471,7 +471,6 @@ class PdfReader(PdfDict):
         typename = PdfName.Type
         kidname = PdfName.Kids
 
-        #print "readpages", self, node
         try:
             result = []
             stack = [node]
@@ -479,8 +478,6 @@ class PdfReader(PdfDict):
             pop = stack.pop
             while stack:
                 node = pop()
-                #print "node", node 
-                #print "typename", typename
                 nodetype = node[typename]
                 if nodetype == pagename:
                     append(node)
@@ -491,11 +488,9 @@ class PdfReader(PdfDict):
                 else:
                     log.error('Expected /Page or /Pages dictionary, got %s' %
                             repr(node))
-            #print "readpages done", result
             return result
         except (AttributeError, TypeError) as s:
             log.error('Invalid page tree: %s' % s)
-            #print "readpages err"
             return []
 
     def _parse_encrypt_info(self, source, password, trailer):
