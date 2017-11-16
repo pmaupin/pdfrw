@@ -19,6 +19,16 @@ import base64
 import array
 import logging
 import ast
+import os
+
+#
+# Sample PNGs with filtered scanlines retrieved from
+# http://www.schaik.com/pngsuite/pngsuite_fil_png.html
+#
+
+def filepath(filename):
+    pwd = os.path.dirname(__file__)
+    return os.path.join(pwd, filename)
 
 def create_data(nc=1, nr=1, bpc=8, ncolors=1, filter_type=0):
     pixel_size = (bpc * ncolors + 7) // 8
@@ -207,7 +217,7 @@ class TestFlatePNG(unittest.TestCase):
 
     def util_test_flate_png_alt_from_png_log_file(self, filename):
 
-        with open(filename) as f:
+        with open(filepath(filename)) as f:
             data = array.array('B')
             expected = array.array('B')
             width = 0
@@ -290,9 +300,9 @@ class TestFlatePNG(unittest.TestCase):
         result, error = flate_png_impl(data, 12, width, channels, bit_depth)
 
         import pickle
-        with open('./result.pickle', 'wb') as f:
+        with open(filepath('./result.pickle'), 'wb') as f:
             pickle.dump(result, f)
-        with open('./expected.pickle', 'wb') as f:
+        with open(filepath('./expected.pickle'), 'wb') as f:
             pickle.dump(expected, f)
 
         assert error is None
