@@ -11,7 +11,7 @@ python -m tests.test_pdfstring
 '''
 
 
-from pdfrw.uncompress import flate_png, flate_png_orig, flate_png_impl
+from pdfrw.uncompress import flate_png, flate_png_impl
 from pdfrw.py23_diffs import zlib, xrange, from_array, convert_load, convert_store
 
 import unittest
@@ -62,57 +62,36 @@ class TestFlatePNG(unittest.TestCase):
     def test_flate_png(self):
         b64 = 'AAAAAAD//wACAAA2AAAAAQAADwAAAgEAACcAAQL/AAAzAP8AAgAANgACAAEAAO8AAAABAAF1AAAAAgAANgADAAEAAfsAAAACAAA2AAQCAAAAAAABAgAAAAAAAQIAAAAAAAECAAAAAAABAgAAAAAAAQIAAAAAAAECAAAAAAABAQECBXx8AAIAAAGHAAAAAgAANgAMAAEDCcMAAAACAAA2AA0CAAAAAAABAgAAAAAAAQIAAAAAAAECAAAAAAABAgAAAAAAAQIAAAAAAAECAAAAAAABAgAAAAAAAQABBxI2AAAEAfn5AAAWAgAAAAAAAQIAAAAAAAECAAAAAAABAgAAAAAAAQIAAAAAAAECAAAAAAABAgAAAAAAAQIAAAAAAAEAAQ6fJgAAAAIAADYAHwIAAAAAAAECAAAAAAABAgAAAAAAAQIAAAAAAAECAAAAAAABAgAAAAAAAQABESDsAAAAAgAANgAmAAAAAAD//wIAAAAAAAACARp0hgEBAgAA/eAAAA=='
         predictor, columns, colors, bpc = (12, 6, 1, 8)
-
-        data = base64.b64decode(b64)
-        d1, error1 = flate_png_orig(data, predictor, columns, colors, bpc)
-
-        assert d1 is None
-        assert error1 is not None
-
         data = base64.b64decode(b64)
         d2, error2 = flate_png(data, predictor, columns, colors, bpc)
-
         assert d2 is not None
         assert error2 is None
 
     def test_flate_png_filter_0(self):
         # None filter
         data, nc, nr, bpc, ncolors = create_data(nc=5, nr=7, bpc=8, ncolors=4)
-        d1, error1 = flate_png_orig(data, 12, nc, ncolors, bpc) 
-
-        data, nc, nr, bpc, ncolors = create_data(nc=5, nr=7, bpc=8, ncolors=4)
         d2, error2 = flate_png(data, 12, nc, ncolors, bpc)
-
-        print_data(d1, d2)
-        assert d1 == d2 
+        assert d2 is not None
+        assert error2 is None
 
     def test_flate_png_filter_1(self):
         # Sub filter
         data, nc, nr, bpc, ncolors = create_data(nc=2, nr=3, bpc=8, ncolors=4, filter_type=1)
-        d1, error1 = flate_png_orig(data, 12, nc, ncolors, bpc) 
-
-        data, nc, nr, bpc, ncolors = create_data(nc=2, nr=3, bpc=8, ncolors=4, filter_type=1)
         d2, error2 = flate_png(data, 12, nc, ncolors, bpc)
-
-        print_data(d1, d2)
-        assert d1 == d2
+        assert d2 is not None
+        assert error2 is None
 
     def test_flate_png_filter_2(self):
         # Up filter
         data, nc, nr, bpc, ncolors = create_data(nc=5, nr=7, bpc=8, ncolors=4, filter_type=2)
-        d1, error1 = flate_png_orig(data, 12, nc, ncolors, bpc) 
-
-        data, nc, nr, bpc, ncolors = create_data(nc=5, nr=7, bpc=8, ncolors=4, filter_type=2)
         d2, error2 = flate_png(data, 12, nc, ncolors, bpc)
-
-        print_data(d1, d2)
-        assert d1 == d2 
+        assert d2 is not None
+        assert error2 is None
 
     def test_flate_png_filter_3(self):
         # Avg filter
         data, nc, nr, bpc, ncolors = create_data(nc=5, nr=7, bpc=8, ncolors=4, filter_type=3)
         d2, error2 = flate_png(data, 12, nc, ncolors, bpc)
-
         assert d2
         assert error2 is None
 
@@ -120,7 +99,6 @@ class TestFlatePNG(unittest.TestCase):
         # Paeth filter
         data, nc, nr, bpc, ncolors = create_data(nc=5, nr=7, bpc=8, ncolors=4, filter_type=4)
         d2, error2 = flate_png(data, 12, nc, ncolors, bpc)
-
         assert d2
         assert error2 is None
 
@@ -409,6 +387,9 @@ class TestFlatePNG(unittest.TestCase):
 
     def test_flate_png_alt_file_basn2c08(self):
         self.util_test_flate_png_alt_from_png_log_file("./basn2c08.png.log")
+
+    def test_flate_png_alt_file_basn0g08(self):
+        self.util_test_flate_png_alt_from_png_log_file("./basn0g08.png.log")
 
 
 def main():
