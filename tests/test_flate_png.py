@@ -18,6 +18,7 @@ import unittest
 import base64
 import array
 import logging
+import ast
 
 def create_data(nc=1, nr=1, bpc=8, ncolors=1, filter_type=0):
     pixel_size = (bpc * ncolors + 7) // 8
@@ -27,7 +28,7 @@ def create_data(nc=1, nr=1, bpc=8, ncolors=1, filter_type=0):
         for c in xrange(nc * pixel_size):
             data.append(r * nc * pixel_size + c * pixel_size)
     data = array.array('B', data)
-    logging.error("Data: %r" % (data))
+    logging.debug("Data: %r" % (data))
     return data, nc, nr, bpc, ncolors
 
 def prepend_data_with_filter(data, filter):
@@ -44,6 +45,7 @@ def print_data(data1, data2):
         logging.error("%4d %4d" % (b1, b2))
     if len(data1) != len(data2):
         logging.error("Mismatched lengths: %d %d" % (len(data1), len(data2)))
+    return None
 
 class TestFlatePNG(unittest.TestCase):
     
@@ -203,6 +205,114 @@ class TestFlatePNG(unittest.TestCase):
         expected = prev_rowa
         assert expected == result, "e: %r\nr: %r" % (expected, result)
 
+    def util_test_flate_png_alt_from_png_log_file(self, filename):
+
+        with open(filename) as f:
+            data = array.array('B')
+            expected = array.array('B')
+            width = 0
+            bit_depth = 0
+            channels = 0
+            color_type = 0
+            pixel_depth = 0
+            rowbytes = 0
+            filter = 0
+            nrows = 0
+
+            for l in f.readlines():
+
+                if l.startswith("PASS:"):
+                    break
+
+                l = l.split(' = ')
+                var = l[0]
+                val = l[1]
+
+                if var == 'width':
+                    width = int(val)
+
+                elif var == 'bit_depth':
+                    bit_depth = int(val)
+
+                elif var == 'channels':
+                    channels = int(val)
+
+                elif var == 'color_type':
+                   color_type = int(val)
+
+                elif var == 'pixel_depth':
+                    pixel_depth = int(val)
+
+                elif var == 'rowbytes':
+                    rowbytes = int(val)
+
+                elif var == 'filter':
+                    filter = int(val)
+
+                elif var == 'data':
+                    d = ast.literal_eval(val)
+                    data.append(filter)
+                    data.extend(d)
+
+                elif var == 'expected':
+                    e = ast.literal_eval(val)
+                    expected.extend(e)
+                    nrows += 1
+
+            bytes_per_pixel = pixel_depth // 8
+
+            logging.error("width: %d" % width)
+            logging.error("bit_depth: %d" % bit_depth)
+            logging.error("channels: %d" % channels)
+            logging.error("color_type: %d" % color_type)
+            logging.error("pixel_depth: %d" % pixel_depth)
+            logging.error("rowbytes: %d" % rowbytes)
+            logging.error("filter: %d" % filter)
+            logging.error("bytes_per_pixel: %d" % bytes_per_pixel)
+            logging.error("expected: %r" % len(expected))
+            logging.error("data: %r" % len(data))
+
+            assert color_type in [
+                        0, # Grayscale (Y)
+                        2, # Truecolor (RGB)
+                        # 3 Indexed is not supported (Palette)
+                        4, # Grayscale with alpha (YA)
+                        6, # Truecolor with alpha (RGBA)
+                    ]
+            assert filter in [0, 1, 2, 3, 4]
+            assert channels * bit_depth == pixel_depth
+            assert (pixel_depth // 8) * width == rowbytes
+            assert 0 == pixel_depth % 8 # can't support pixels with bit_depth < 8
+            assert 8 == bit_depth # ideally, we should test bit_depth 16 also
+            assert nrows * (1 + width * bytes_per_pixel) == len(data) # 1 filter byte preceeding each row
+            assert nrows * width * bytes_per_pixel == len(expected)
+
+        result, error = flate_png_impl(data, 12, width, channels, bit_depth)
+
+        import pickle
+        with open('./result.pickle', 'wb') as f:
+            pickle.dump(result, f)
+        with open('./expected.pickle', 'wb') as f:
+            pickle.dump(expected, f)
+
+        assert error is None
+        assert expected == result
+
+
+    def test_flate_png_alt_file_f01n2c08(self):
+        self.util_test_flate_png_alt_from_png_log_file("./f01n2c08.png.log")
+
+    def test_flate_png_alt_file_f02n2c08(self):
+        self.util_test_flate_png_alt_from_png_log_file("./f02n2c08.png.log")
+
+    def test_flate_png_alt_file_f03n2c08(self):
+        self.util_test_flate_png_alt_from_png_log_file("./f03n2c08.png.log")
+
+    def test_flate_png_alt_file_f04n2c08(self):
+        self.util_test_flate_png_alt_from_png_log_file("./f04n2c08.png.log")
+
+    def test_flate_png_alt_file_basn2c08(self):
+        self.util_test_flate_png_alt_from_png_log_file("./basn2c08.png.log")
 
 
 def main():
