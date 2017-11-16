@@ -84,31 +84,39 @@ def uncompress(mylist, leave_raw=False, warnings=set(),
 def flate_png_impl(data, predictor=1, columns=1, colors=1, bpc=8):
 
     # http://www.libpng.org/pub/png/spec/1.2/PNG-Filters.html
-    # Reverse filter functions
+    # https://www.w3.org/TR/2003/REC-PNG-20031110/#9Filters
+    # Reconstruction functions
+    # x: the byte being filtered;
+    # a: the byte corresponding to x in the pixel immediately before the pixel containing x (or the byte immediately before x, when the bit depth is less than 8);
+    # b: the byte corresponding to x in the previous scanline;
+    # c: the byte corresponding to b in the pixel immediately before the pixel containing b (or the byte immediately before b, when the bit depth is less than 8).
 
     def subfilter(data, prior_row_data, start, length, pixel_size):
         # filter type 1: Sub
-        end = start + length
-        for index in xrange(start, end):
-            left = data[index - pixel_size] if index > start else 0
-            data[index] = (data[index] + left) % 256
+        # Recon(x) = Filt(x) + Recon(a)
+        for i in xrange(pixel_size, length):
+            left = data[start + i - pixel_size]
+            data[start + i] = (data[start + i] + left) % 256
 
     def upfilter(data, prior_row_data, start, length, pixel_size):
         # filter type 2: Up
+        # Recon(x) = Filt(x) + Recon(b)
         for i in xrange(length):
             up = prior_row_data[i]
             data[start + i] = (data[start + i] + up) % 256
 
     def avgfilter(data, prior_row_data, start, length, pixel_size):
         # filter type 3: Avg
-        end = start + length
-        for index, i in zip(xrange(start, end), xrange(length)):
-            left = data[index - pixel_size] if index > start else 0
-            floor = math.floor((left + prior_row_data[i]) / 2)
-            data[index] = (data[index] + int(floor)) % 256
+        # Recon(x) = Filt(x) + floor((Recon(a) + Recon(b)) / 2)
+        for i in xrange(length):
+            left = data[start + i - pixel_size] if i >= pixel_size else 0
+            up = prior_row_data[i]
+            floor = math.floor((left + up) / 2)
+            data[start + i] = (data[start + i] + int(floor)) % 256
 
     def paethfilter(data, prior_row_data, start, length, pixel_size):
         # filter type 4: Paeth
+        # Recon(x) = Filt(x) + PaethPredictor(Recon(a), Recon(b), Recon(c))
         def paeth_predictor(a, b, c):
             p = a + b - c
             pa = abs(p - a)
@@ -120,12 +128,11 @@ def flate_png_impl(data, predictor=1, columns=1, colors=1, bpc=8):
                 return b
             else:
                 return c
-        end = start + length
-        for index, i in zip(xrange(start, end), xrange(length)):
-            left = data[index - pixel_size] if index != start else 0
+        for i in xrange(length):
+            left = data[start + i - pixel_size] if i >= pixel_size else 0
             up = prior_row_data[i]
-            up_left = prior_row_data[i - pixel_size] if i != 0 else 0
-            data[index] = (data[index] + paeth_predictor(left, up, up_left)) % 256
+            up_left = prior_row_data[i - pixel_size] if i >= pixel_size else 0
+            data[start + i] = (data[start + i] + paeth_predictor(left, up, up_left)) % 256
 
     columnbytes = ((columns * colors * bpc) + 7) // 8
     pixel_size = (colors * bpc + 7) // 8
