@@ -95,7 +95,7 @@ class TestFlatePNG(unittest.TestCase):
         d2, error2 = flate_png(data, 12, nc, ncolors, bpc)
 
         print_data(d1, d2)
-        #assert d1 == d2
+        assert d1 == d2
 
     def test_flate_png_filter_2(self):
         # Up filter
