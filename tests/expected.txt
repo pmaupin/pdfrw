@@ -45,20 +45,34 @@ simple/b107669d1dd69eabb89765fabb2cb321.pdf         56025c06ab8633575ddc6c6990d2
 
 # Encrypted files
 
-repaginate/0ae80b493bc21e6de99f2ff6bbb8bc2c.pdf     56025c06ab8633575ddc6c6990d2fbf1
-repaginate/6e122f618c27f3aa9a689423e3be6b8d.pdf     56025c06ab8633575ddc6c6990d2fbf1
-repaginate/7dc787639aa6765214e9ff5494d231ed.pdf     56025c06ab8633575ddc6c6990d2fbf1
-repaginate/b4b27aaa1f9c7c524298e98be279bebb.pdf     56025c06ab8633575ddc6c6990d2fbf1
-repaginate/b5b6c6405d7b48418bccf97277957664.pdf     56025c06ab8633575ddc6c6990d2fbf1
-repaginate/bd0ef57aec16ded45bd89d61b54af0be.pdf     56025c06ab8633575ddc6c6990d2fbf1
-repaginate/dbb807a878ac1da6b91ac15c9de4e209.pdf     56025c06ab8633575ddc6c6990d2fbf1
-simple/0ae80b493bc21e6de99f2ff6bbb8bc2c.pdf         56025c06ab8633575ddc6c6990d2fbf1
-simple/6e122f618c27f3aa9a689423e3be6b8d.pdf         56025c06ab8633575ddc6c6990d2fbf1
-simple/7dc787639aa6765214e9ff5494d231ed.pdf         56025c06ab8633575ddc6c6990d2fbf1
-simple/b4b27aaa1f9c7c524298e98be279bebb.pdf         56025c06ab8633575ddc6c6990d2fbf1
-simple/b5b6c6405d7b48418bccf97277957664.pdf         56025c06ab8633575ddc6c6990d2fbf1
-simple/bd0ef57aec16ded45bd89d61b54af0be.pdf         56025c06ab8633575ddc6c6990d2fbf1
-simple/dbb807a878ac1da6b91ac15c9de4e209.pdf         56025c06ab8633575ddc6c6990d2fbf1
+repaginate/0ae80b493bc21e6de99f2ff6bbb8bc2c.pdf     skip
+simple/0ae80b493bc21e6de99f2ff6bbb8bc2c.pdf         skip
+compress/0ae80b493bc21e6de99f2ff6bbb8bc2c.pdf       skip
+decompress/0ae80b493bc21e6de99f2ff6bbb8bc2c.pdf     skip
+repaginate/6e122f618c27f3aa9a689423e3be6b8d.pdf     skip
+simple/6e122f618c27f3aa9a689423e3be6b8d.pdf         skip
+compress/6e122f618c27f3aa9a689423e3be6b8d.pdf       skip
+decompress/6e122f618c27f3aa9a689423e3be6b8d.pdf     skip
+repaginate/7dc787639aa6765214e9ff5494d231ed.pdf     skip
+simple/7dc787639aa6765214e9ff5494d231ed.pdf         skip
+compress/7dc787639aa6765214e9ff5494d231ed.pdf       skip
+decompress/7dc787639aa6765214e9ff5494d231ed.pdf     skip
+repaginate/b4b27aaa1f9c7c524298e98be279bebb.pdf     skip
+simple/b4b27aaa1f9c7c524298e98be279bebb.pdf         skip
+compress/b4b27aaa1f9c7c524298e98be279bebb.pdf       skip
+decompress/b4b27aaa1f9c7c524298e98be279bebb.pdf     skip
+repaginate/b5b6c6405d7b48418bccf97277957664.pdf     skip
+simple/b5b6c6405d7b48418bccf97277957664.pdf         skip
+compress/b5b6c6405d7b48418bccf97277957664.pdf       skip
+decompress/b5b6c6405d7b48418bccf97277957664.pdf     skip
+repaginate/bd0ef57aec16ded45bd89d61b54af0be.pdf     skip
+simple/bd0ef57aec16ded45bd89d61b54af0be.pdf         skip
+compress/bd0ef57aec16ded45bd89d61b54af0be.pdf       skip
+decompress/bd0ef57aec16ded45bd89d61b54af0be.pdf     skip
+repaginate/dbb807a878ac1da6b91ac15c9de4e209.pdf     skip
+simple/dbb807a878ac1da6b91ac15c9de4e209.pdf         skip
+compress/dbb807a878ac1da6b91ac15c9de4e209.pdf       skip
+decompress/dbb807a878ac1da6b91ac15c9de4e209.pdf     skip
 
 
 

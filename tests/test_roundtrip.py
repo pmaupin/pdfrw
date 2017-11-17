@@ -75,10 +75,6 @@ class TestOnePdf(unittest.TestCase):
                     os.remove(dstf)
                 trailer = pdfrw.PdfReader(srcf, decompress=decompress,
                                           verbose=False)
-                if trailer.Encrypt:
-                    result = 'skip -- encrypt'
-                    hash = '------skip-encrypt-no-file------'
-                    return self.skipTest('File encrypted')
                 writer = pdfrw.PdfWriter(dstf, compress=compress)
                 if repaginate:
                     writer.addpages(trailer.pages)
