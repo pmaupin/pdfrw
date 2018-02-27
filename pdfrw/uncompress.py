@@ -53,6 +53,8 @@ def uncompress(mylist, leave_raw=False, warnings=set(),
                 error = str(s)
             else:
                 error = None
+                if parms == ['null']:
+                    parms = []
                 if isinstance(parms, PdfArray):
                     oldparms = parms
                     parms = PdfDict()
