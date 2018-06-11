@@ -334,7 +334,7 @@ class PdfReader(PdfDict):
         tableloc = source.next_default()
         if not tableloc.isdigit():
             source.exception('Expected table location')
-        if source.next_default().rstrip().lstrip('%') != 'EOF':
+        if source.next_default().rstrip("\x00 \t\n\r\x0b\x0c").lstrip('%') != 'EOF':
             source.exception('Expected %%EOF')
         return startloc, PdfTokens(fdata, int(tableloc), True, self.verbose)
 
