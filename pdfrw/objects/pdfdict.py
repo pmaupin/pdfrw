@@ -103,7 +103,9 @@ class PdfDict(dict):
                     )
 
     def __setitem__(self, name, value, setter=dict.__setitem__,
-                    BasePdfName=BasePdfName, isinstance=isinstance):
+                    BasePdfName=BasePdfName, PdfName=PdfName, isinstance=isinstance):
+        if isinstance(name, str):
+            name = PdfName(name)
         if not isinstance(name, BasePdfName):
             raise PdfParseError('Dict key %s is not a PdfName' % repr(name))
         if value is not None:
