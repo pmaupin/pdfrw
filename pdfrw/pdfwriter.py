@@ -242,7 +242,7 @@ class PdfWriter(object):
         if fname is not None:
             try:
                 float(fname)
-            except (ValueError, TypeError):
+            except (ValueError, TypeError, AttributeError):
                 pass
             else:
                 if version != '1.3':
