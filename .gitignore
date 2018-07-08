@@ -17,6 +17,7 @@ diffs.txt
 examples/*.pdf
 examples/rl*/*.pdf
 tests/*.pdf
+tests/*.pickle
 examples/pdfrw
 examples/rl*/pdfrw
 tests/pdfrw
@@ -65,3 +66,11 @@ coverage.xml
 
 # Sphinx documentation
 docs/_build/
+
+# ctags
+tags
+
+# pyenv
+.python-version
+
+.pytest_cache

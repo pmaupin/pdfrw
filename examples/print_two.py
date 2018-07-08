@@ -26,7 +26,12 @@ def fixpage(page, count=[0]):
     return result.render()
 
 
-inpfn, = sys.argv[1:]
-outfn = 'print_two.' + os.path.basename(inpfn)
-pages = PdfReader(inpfn).pages
-PdfWriter(outfn).addpages(fixpage(x) for x in pages).write()
+def print_two(inpfn):
+    outfn = 'print_two.' + os.path.basename(inpfn)
+    pages = PdfReader(inpfn).pages
+    PdfWriter(outfn).addpages(fixpage(x) for x in pages).write()
+
+
+if __name__ == '__main__':
+    inpfn, = sys.argv[1:]
+    print_two(inpfn)

@@ -1,6 +1,4 @@
-#!/usr/bin/env python
-
-'''
+"""
 usage:   booklet.py [-p] my.pdf
 
 Creates booklet.my.pdf
@@ -13,9 +11,7 @@ and you can get up to 3 blank sides if -p is enabled.
 
 Otherwise the two sides in the middle will be in original page size
 and you can have 1 blank sides at most.
-
-'''
-
+"""
 import os
 import argparse
 
@@ -28,29 +24,37 @@ def fixpage(*pages):
     return result.render()
 
 
-parser = argparse.ArgumentParser()
-parser.add_argument("input", help="Input pdf file name")
-parser.add_argument("-p", "--padding", action = "store_true",
-                    help="Padding the document so that all pages use the same type of sheet")
-args = parser.parse_args()
+def booklet(inpfn, padding=False):
+    outfn = 'booklet.' + os.path.basename(inpfn)
+    ipages = PdfReader(inpfn).pages
 
-inpfn = args.input
-outfn = 'booklet.' + os.path.basename(inpfn)
-ipages = PdfReader(inpfn).pages
+    if padding:
+        pad_to = 4
+    else:
+        pad_to = 2
 
-if args.padding:
-    pad_to = 4
-else:
-    pad_to = 2
+    # Make sure we have a correct number of sides
+    ipages += [None]*(-len(ipages)%pad_to)
 
-# Make sure we have a correct number of sides
-ipages += [None]*(-len(ipages)%pad_to)
+    opages = []
+    while len(ipages) > 2:
+        opages.append(fixpage(ipages.pop(), ipages.pop(0)))
+        opages.append(fixpage(ipages.pop(0), ipages.pop()))
 
-opages = []
-while len(ipages) > 2:
-    opages.append(fixpage(ipages.pop(), ipages.pop(0)))
-    opages.append(fixpage(ipages.pop(0), ipages.pop()))
+    opages += ipages
 
-opages += ipages
+    PdfWriter(outfn).addpages(opages).write()
 
-PdfWriter(outfn).addpages(opages).write()
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('input', help='Input pdf file name')
+    parser.add_argument(
+        '-p',
+        '--padding',
+        action='store_true',
+        help='Padding the document so that all pages use the '
+             'same type of sheet',
+    )
+    args = parser.parse_args()
+    booklet(args.input, padding=args.padding)

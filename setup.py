@@ -5,14 +5,14 @@ from pdfrw import __version__ as version
 from pdfrw.py23_diffs import convert_load
 
 setup(
-    name='pdfrw',
+    name='pdfrw-plangrid',
     version=version,
     description='PDF file reader/writer library',
     long_description=convert_load(open("README.rst", 'rb').read()),
     author='Patrick Maupin',
     author_email='pmaupin@gmail.com',
     platforms='Independent',
-    url='https://github.com/pmaupin/pdfrw',
+    url='https://github.com/plangrid/pdfrw',
     packages=['pdfrw', 'pdfrw.objects'],
     license='MIT',
     classifiers=[
@@ -37,4 +37,8 @@ setup(
     ],
     keywords='pdf vector graphics PDF nup watermark split join merge',
     zip_safe=True,
+    tests_require=[
+        'nosetests',
+        'reportlab==3.4.0',
+    ],
 )

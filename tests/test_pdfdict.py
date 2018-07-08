@@ -18,7 +18,7 @@ import unittest
 
 
 class TestPdfDicts(unittest.TestCase):
-    
+
     def test_indirect_set_get(self):
         io = PdfIndirect((1,2,3))
         io.value = 42
@@ -30,6 +30,7 @@ class TestPdfDicts(unittest.TestCase):
         self.assertEqual(v, io.value)
         test, = d
         self.assertEqual(type(test), type(PdfName.Name))
+
 
 def main():
     unittest.main()

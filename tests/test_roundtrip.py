@@ -4,10 +4,10 @@
 # Copyright (C) 2015 Patrick Maupin, Austin, Texas
 # MIT license -- See LICENSE.txt for details
 
-'''
-Run from the directory above like so:
+"""
+Run from the directory above using any unit testing framework, e.g.
 
-   python -m tests.test_roundtrip
+    $ python -m unittest tests/test_roundtrip.py
 
 A PDF that has been determined to be good or bad
 should be added to expected.txt with either a good
@@ -19,26 +19,22 @@ PDFs available on github.
 
 In order to use them:
 
-  1) Insure that github.com/pmaupin/static_pdfs is on your path.
+  1) Insure that pdfrw_test_data is installed
 
   2) Use the imagemagick compare program to look at differences
      between the static_pdfs/global directory and the tmp_results
      directory after you run this.
+"""
 
-
-'''
 import os
 import hashlib
+import unittest
+
+import pdfrw_test_data
+
+from . import expected
 import pdfrw
-import static_pdfs
-import expected
-
 from pdfrw.py23_diffs import convert_store
-
-try:
-    import unittest2 as unittest
-except ImportError:
-    import unittest
 
 
 class TestOnePdf(unittest.TestCase):
@@ -115,7 +111,7 @@ def build_tests():
             ('decompress', False, True, False),
             ('compress', False, True, True),
             ):
-        for srcf in static_pdfs.pdffiles[0]:
+        for srcf in pdfrw_test_data.files:
             basename = os.path.basename(srcf)
             test_name = 'test_%s_%s' % (mytest, basename)
             test = test_closure(mytest, basename, srcf,

@@ -102,7 +102,11 @@ def create_pdf(filename, pdf_template_filename):
     pdf_report.close()
 
 
-if __name__ == '__main__':
-    template, = sys.argv[1:]
+def platypus_template(template):
     output = 'platypus_pdf_template.' + os.path.basename(template)
     create_pdf(output, template)
+
+
+if __name__ == '__main__':
+    template, = sys.argv[1:]
+    platypus_template(template)
