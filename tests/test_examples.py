@@ -172,6 +172,8 @@ class TestOnePdf(unittest.TestCase):
         self._do_test(extract, 'extract c5c895deecf7a7565393587e0d61be2b')
 
     def test_rl1_4up(self):
+        if sys.version_info < (2, 7):
+            return
         self._do_test(
             get4_reportlab,
             'rl1/4up b1c400de699af29ea3f1983bb26870ab',
@@ -179,6 +181,8 @@ class TestOnePdf(unittest.TestCase):
         )
 
     def test_rl1_booklet(self):
+        if sys.version_info < (2, 7):
+            return
         self._do_test(
             booklet_reportlab,
             'rl1/booklet b1c400de699af29ea3f1983bb26870ab',
@@ -186,6 +190,8 @@ class TestOnePdf(unittest.TestCase):
         )
 
     def test_rl1_subset(self):
+        if sys.version_info < (2, 7):
+            return
         self._do_test(
             subset_reportlab,
             'rl1/subset b1c400de699af29ea3f1983bb26870ab 3 5',
@@ -193,6 +199,8 @@ class TestOnePdf(unittest.TestCase):
         )
 
     def test_rl1_platypus(self):
+        if sys.version_info < (2, 7):
+            return
         self._do_test(
             platypus_template,
             'rl1/platypus_pdf_template b1c400de699af29ea3f1983bb26870ab',
