@@ -62,7 +62,10 @@ def make_pdf(outfn, xobjpairs):
     canvas.save()
 
 
-inpfn, = sys.argv[1:]
-outfn = 'booklet.' + os.path.basename(inpfn)
+def booklet_reportlab(inpfn):
+    outfn = 'booklet.' + os.path.basename(inpfn)
+    make_pdf(outfn, read_and_double(inpfn))
 
-make_pdf(outfn, read_and_double(inpfn))
+
+if __name__ == '__main__':
+    booklet_reportlab(sys.argv[1])

@@ -1,0 +1,3 @@
+pytest==3.6.3
+pdfrw-test-data==0.0.1
+reportlab==3.4.0

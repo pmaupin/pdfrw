@@ -40,8 +40,7 @@ def addpage(canvas, allpages):
     canvas.showPage()
 
 
-def go(argv):
-    inpfn, = argv
+def get4_reportlab(inpfn):
     outfn = '4up.' + os.path.basename(inpfn)
 
     pages = PdfReader(inpfn).pages
@@ -52,5 +51,6 @@ def go(argv):
         addpage(canvas, pages)
     canvas.save()
 
+
 if __name__ == '__main__':
-    go(sys.argv[1:])
+    get4_reportlab(sys.argv[1])

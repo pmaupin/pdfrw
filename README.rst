@@ -648,32 +648,11 @@ __ https://github.com/pmaupin/pdfrw/tree/master/pdfrw/py23_diffs.py
 Testing
 ===============
 
-The tests associated with pdfrw require a large number of PDFs,
-which are not distributed with the library.
-
 To run the tests:
 
-* Download or clone the full package from github.com/pmaupin/pdfrw
-* cd into the tests directory, and then clone the package
-  github.com/pmaupin/static_pdfs into a subdirectory (also named
-  static_pdfs).
-* Now the tests may be run from tests directory using unittest, or
-  py.test, or nose.
-* travisci is used at github, and runs the tests with py.test
-
 .. code-block:: bash
-    $ pip install pytest
-    $ pip install reportlab
-    $ pwd
-    <...>/pdfrw/tests
-    $ git clone https://github.com/pmaupin/static_pdfs
-    $ ln -s ../pdfrw
-    $ pytest
-
-To run a single test-case:
-
-.. code-block:: bash
-    $ pytest test_roundtrip.py -k "test_compress_9f98322c243fe67726d56ccfa8e0885b.pdf"
+    $ pip install -r requirements-dev.txt
+    $ python -m pytest tests
 
 Other libraries
 =====================

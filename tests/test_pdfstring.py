@@ -4,17 +4,10 @@
 # Copyright (C) 2006-2017 Patrick Maupin, Austin, Texas
 #                    2016 James Laird-Wah, Sydney, Australia
 # MIT license -- See LICENSE.txt for details
-
-'''
-Run from the directory above like so:
-python -m tests.test_pdfstring
-'''
-
+import unittest
 
 from pdfrw import PdfString
 from pdfrw.py23_diffs import convert_store
-
-import unittest
 
 
 class TestBaseEncoding(unittest.TestCase):
@@ -111,10 +104,3 @@ class TestBaseEncoding(unittest.TestCase):
     def test_nullstring(self):
         self.assertEqual(PdfString('<>').to_bytes(), b'')
         self.assertEqual(PdfString('()').to_bytes(), b'')
-
-def main():
-    unittest.main()
-
-
-if __name__ == '__main__':
-    main()

@@ -22,7 +22,7 @@ from pdfrw.buildxobj import pagexobj
 from pdfrw.toreportlab import makerl
 
 
-def go(inpfn, firstpage, lastpage):
+def subset_reportlab(inpfn, firstpage, lastpage):
     firstpage, lastpage = int(firstpage), int(lastpage)
     outfn = 'subset.' + os.path.basename(inpfn)
 
@@ -37,6 +37,7 @@ def go(inpfn, firstpage, lastpage):
 
     canvas.save()
 
+
 if __name__ == '__main__':
     inpfn, firstpage, lastpage = sys.argv[1:]
-    go(inpfn, firstpage, lastpage)
+    subset_reportlab(inpfn, firstpage, lastpage)

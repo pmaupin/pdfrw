@@ -279,7 +279,7 @@ class TestFlatePNG(unittest.TestCase):
         expected = prev_rowa
         assert expected == result, "\ne: %r\nr: %r" % (expected, result)
 
-    def util_test_flate_png_alt_from_png_log_file(self, filename):
+    def _util_test_flate_png_alt_from_png_log_file(self, filename):
 
         with open(filepath(filename)) as f:
             data = array.array('B')
@@ -374,27 +374,19 @@ class TestFlatePNG(unittest.TestCase):
 
 
     def test_flate_png_alt_file_f01n2c08(self):
-        self.util_test_flate_png_alt_from_png_log_file("./f01n2c08.png.log")
+        self._util_test_flate_png_alt_from_png_log_file("./f01n2c08.png.log")
 
     def test_flate_png_alt_file_f02n2c08(self):
-        self.util_test_flate_png_alt_from_png_log_file("./f02n2c08.png.log")
+        self._util_test_flate_png_alt_from_png_log_file("./f02n2c08.png.log")
 
     def test_flate_png_alt_file_f03n2c08(self):
-        self.util_test_flate_png_alt_from_png_log_file("./f03n2c08.png.log")
+        self._util_test_flate_png_alt_from_png_log_file("./f03n2c08.png.log")
 
     def test_flate_png_alt_file_f04n2c08(self):
-        self.util_test_flate_png_alt_from_png_log_file("./f04n2c08.png.log")
+        self._util_test_flate_png_alt_from_png_log_file("./f04n2c08.png.log")
 
     def test_flate_png_alt_file_basn2c08(self):
-        self.util_test_flate_png_alt_from_png_log_file("./basn2c08.png.log")
+        self._util_test_flate_png_alt_from_png_log_file("./basn2c08.png.log")
 
     def test_flate_png_alt_file_basn0g08(self):
-        self.util_test_flate_png_alt_from_png_log_file("./basn0g08.png.log")
-
-
-def main():
-    unittest.main()
-
-
-if __name__ == '__main__':
-    main()
+        self._util_test_flate_png_alt_from_png_log_file("./basn0g08.png.log")

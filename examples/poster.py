@@ -1,6 +1,5 @@
 #!/usr/bin/env python
-
-'''
+"""
 usage:   poster.py my.pdf
 
 Shows how to change the size on a PDF.
@@ -16,9 +15,7 @@ So she did an 8.5x11" output with 0.5" margin all around
 up by 4.8.
 
 We also copy the Info dict to the new PDF.
-
-'''
-
+"""
 import sys
 import os
 
@@ -34,10 +31,15 @@ def adjust(page, margin=36, scale=4.8):
     return page.render()
 
 
-inpfn, = sys.argv[1:]
-outfn = 'poster.' + os.path.basename(inpfn)
-reader = PdfReader(inpfn)
-writer = PdfWriter(outfn)
-writer.addpage(adjust(reader.pages[0]))
-writer.trailer.Info = IndirectPdfDict(reader.Info or {})
-writer.write()
+def poster(inpfn):
+    outfn = 'poster.' + os.path.basename(inpfn)
+    reader = PdfReader(inpfn)
+    writer = PdfWriter(outfn)
+    writer.addpage(adjust(reader.pages[0]))
+    writer.trailer.Info = IndirectPdfDict(reader.Info or {})
+    writer.write()
+
+
+if __name__ == '__main__':
+    inpfn, = sys.argv[1:]
+    poster(inpfn)
