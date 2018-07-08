@@ -38,7 +38,8 @@ setup(
     keywords='pdf vector graphics PDF nup watermark split join merge',
     zip_safe=True,
     tests_require=[
-        'nosetests',
-        'reportlab==3.4.0',
+        'pytest',
+        'pdfrw-test-data',
+        'reportlab',
     ],
 )
