@@ -613,18 +613,42 @@ class PdfReader(PdfDict):
 
             # Find all the xref tables/streams, and
             # then deal with them backwards.
+            #
             xref_list = []
+
             while 1:
                 source.obj_offsets = {}
+
                 trailer, is_stream = self.parsexref(source)
-                prev = trailer.Prev
+
+                xref_list.append((source.obj_offsets, trailer, is_stream))
+
+                prev       = trailer.Prev
+                xrefStream = trailer.XRefStm
+
+                # Process any xref stream specified in the trailer, then get
+                # back to processing any previous xref section specified in the
+                # trailer.
+                #
+                if xrefStream:
+                    source.obj_offsets = {}
+
+                    savedLoc = source.floc
+
+                    source.floc = int(xrefStream)
+
+                    trailer, is_stream = self.parsexref(source)
+
+                    xref_list.append((source.obj_offsets, trailer, is_stream))
+
+                    source.floc = savedLoc
                 if prev is None:
                     token = source.next()
                     if token != 'startxref' and not xref_list:
                         source.warning('Expected "startxref" '
                                        'at end of xref table')
                     break
-                xref_list.append((source.obj_offsets, trailer, is_stream))
+
                 source.floc = int(prev)
 
             # Handle document encryption
