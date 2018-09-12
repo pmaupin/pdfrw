@@ -613,18 +613,58 @@ class PdfReader(PdfDict):
 
             # Find all the xref tables/streams, and
             # then deal with them backwards.
+            #
             xref_list = []
+
             while 1:
+                # Parse the xref table, getting object offsets, a trailer, and
+                # a stream flag.
+                #
                 source.obj_offsets = {}
+
                 trailer, is_stream = self.parsexref(source)
-                prev = trailer.Prev
+
+                # Get any previous section or xref stream section offsets from
+                # the trailer.
+                #
+                prev       = trailer.Prev
+                xrefStream = trailer.XRefStm
+
+                # If there is an xref stream section, process it.
+                #
+                if xrefStream:
+                    # Save off the object offsets, trailer, and stream flag just parsed.
+                    #
+                    xref_list.append((source.obj_offsets, trailer, is_stream))
+
+                    # Parse the xref stream section as above, then return the
+                    # source pointer to its original location.
+                    #
+                    savedLoc = source.floc
+
+                    source.obj_offsets = {}
+
+                    source.floc = int(xrefStream)
+
+                    trailer, is_stream = self.parsexref(source)
+
+                    source.floc = savedLoc
+
+                # If there is no previous section, finish up and break out of
+                # the loop.
                 if prev is None:
                     token = source.next()
                     if token != 'startxref' and not xref_list:
                         source.warning('Expected "startxref" '
                                        'at end of xref table')
                     break
+
+                # There is a previous section, so save off the object offsets,
+                # trailer, and stream flag just parsed, set the source pointer
+                # to the previous section, and keep parsing.
+                #
                 xref_list.append((source.obj_offsets, trailer, is_stream))
+
                 source.floc = int(prev)
 
             # Handle document encryption
