@@ -617,37 +617,53 @@ class PdfReader(PdfDict):
             xref_list = []
 
             while 1:
+                # Parse the xref table, getting object offsets, a trailer, and
+                # a stream flag.
+                #
                 source.obj_offsets = {}
 
                 trailer, is_stream = self.parsexref(source)
 
-                xref_list.append((source.obj_offsets, trailer, is_stream))
-
+                # Get any previous section or xref stream section offsets from
+                # the trailer.
+                #
                 prev       = trailer.Prev
                 xrefStream = trailer.XRefStm
 
-                # Process any xref stream specified in the trailer, then get
-                # back to processing any previous xref section specified in the
-                # trailer.
+                # If there is an xref stream section, process it.
                 #
                 if xrefStream:
-                    source.obj_offsets = {}
+                    # Save off the object offsets, trailer, and stream flag just parsed.
+                    #
+                    xref_list.append((source.obj_offsets, trailer, is_stream))
 
+                    # Parse the xref stream section as above, then return the
+                    # source pointer to its original location.
+                    #
                     savedLoc = source.floc
+
+                    source.obj_offsets = {}
 
                     source.floc = int(xrefStream)
 
                     trailer, is_stream = self.parsexref(source)
 
-                    xref_list.append((source.obj_offsets, trailer, is_stream))
-
                     source.floc = savedLoc
+
+                # If there is no previous section, finish up and break out of
+                # the loop.
                 if prev is None:
                     token = source.next()
                     if token != 'startxref' and not xref_list:
                         source.warning('Expected "startxref" '
                                        'at end of xref table')
                     break
+
+                # There is a previous section, so save off the object offsets,
+                # trailer, and stream flag just parsed, set the source pointer
+                # to the previous section, and keep parsing.
+                #
+                xref_list.append((source.obj_offsets, trailer, is_stream))
 
                 source.floc = int(prev)
 
