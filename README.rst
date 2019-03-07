@@ -292,8 +292,10 @@ to an entire document::
     >>> x.keys()
     ['/Info', '/Size', '/Root']
     >>> x.Info
-    {'/Producer': '(cairo 1.8.6 (http://cairographics.org))',
-     '/Creator': '(cairo 1.8.6 (http://cairographics.org))'}
+    {'/Creator': '(\xfe\xff\x00M\x00i\x00c\x00r\x00o\x00s\x00o\x00f\x00t\x00\xae\x00 \x00W\x00o\x00r\x00d\x00 \x00f\x00o\x00r\x00 \x00O\x00f\x00f\x00i\x00c\x00e\x00 \x003\x006\x005)',
+     '/Producer': '(\xfe\xff\x00M\x00i\x00c\x00r\x00o\x00s\x00o\x00f\x00t\x00\xae\x00 \x00W\x00o\x00r\x00d\x00 \x00f\x00o\x00r\x00 \x00O\x00f\x00f\x00i\x00c\x00e\x00 \x003\x006\x005)'}
+    >>> x.Info.Creator.decode()
+    'Microsoft® Word for Office 365'
     >>> x.Root.keys()
     ['/Type', '/Pages']
 
