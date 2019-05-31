@@ -54,7 +54,7 @@ try to use pdftk to uncompress and/or unencrypt them first.
 * `alter.py`__ shows an example of modifying metadata, without
   altering the structure of the PDF.
 * `booklet.py`__ shows an example of creating a 2-up output
-  suitable for printing and folding (e.g on tabloid size paper).
+  suitable for printing and folding (e.g. on tabloid size paper).
 * `cat.py`__ shows an example of concatenating multiple PDFs together.
 * `extract.py`__ will extract images and Form XObjects (embedded pages)
   from existing PDFs to make them easier to use and refer to from
@@ -79,7 +79,7 @@ try to use pdftk to uncompress and/or unencrypt them first.
   by user asannes.
 * `rl2`__ Experimental code for parsing graphics.  Needs work.
 * `subset_booklets.py`__ shows an example of creating a full printable pdf
-  version in a more professional and pratical way ( take a look at
+  version in a more professional and practical way ( take a look at
   http://www.wikihow.com/Bind-a-Book )
 
 __ https://github.com/pmaupin/pdfrw/tree/master/examples/4up.py
@@ -148,7 +148,7 @@ needs to be spiral bound, you either have to do some fancy rearranging,
 or just waste half your paper.
 
 The `print_two.py`__ example program will, for example, make two side-by-side
-copies each page of of your PDF on a each output sheet.
+copies each page of your PDF on each output sheet.
 
 __ https://github.com/pmaupin/pdfrw/tree/master/examples/print_two.py
 
@@ -496,7 +496,7 @@ __ https://github.com/pmaupin/pdfrw/tree/master/pdfrw/objects/pdfdict.py
 If a PdfDict has an associated data stream in the PDF file, the stream
 is accessed via the 'stream' (all lower-case) attribute.  Setting the
 stream attribute on the PdfDict will automatically set the /Length attribute
-as well.  If that is not what is desired (for example if the the stream
+as well.  If that is not what is desired (for example if the stream
 is compressed), then _stream (same name with an underscore) may be used
 to associate the stream with the PdfDict without setting the length.
 
