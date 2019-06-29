@@ -65,3 +65,9 @@ coverage.xml
 
 # Sphinx documentation
 docs/_build/
+
+# Vim
+*.sw[op]
+
+# pyenv
+.python-version
