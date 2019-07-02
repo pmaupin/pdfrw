@@ -667,7 +667,7 @@ class PdfReader(PdfDict):
             for later_offsets, later_trailer, is_stream in reversed(xref_list):
                 source.obj_offsets.update(later_offsets)
                 if is_stream:
-                    trailer.update(later_trailer)
+                    trailer.update_indirect(later_trailer)
                 else:
                     trailer = later_trailer
 
