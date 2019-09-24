@@ -614,8 +614,8 @@ class PdfReader(PdfDict):
             # Find all the xref tables/streams, and
             # then deal with them backwards.
             xref_list = []
+            source.obj_offsets = {}
             while 1:
-                source.obj_offsets = {}
                 trailer, is_stream = self.parsexref(source)
                 prev = trailer.Prev
                 if prev is None:
