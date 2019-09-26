@@ -22,6 +22,8 @@ from .uncompress import uncompress
 from . import crypt
 from .py23_diffs import convert_load, convert_store, iteritems
 
+_PAGE_TREE_MAX_DEPTH = 50000
+
 
 class PdfReader(PdfDict):
 
@@ -490,18 +492,26 @@ class PdfReader(PdfDict):
 
         try:
             result = []
-            stack = [node]
+            stack = [(node, 0)]
             append = result.append
             pop = stack.pop
             while stack:
-                node = pop()
+                node, depth = pop()
+
+                # Guard against infinite loops in the page tree
+                if depth >= _PAGE_TREE_MAX_DEPTH:
+                    log.error('Page tree exceeded max depth')
+                    return []
+
                 nodetype = node[typename]
                 if nodetype == pagename:
                     append(node)
                 elif nodetype == pagesname:
-                    stack.extend(reversed(node[kidname]))
+                    stack.extend(
+                        (n, depth + 1) for n in reversed(node[kidname])
+                    )
                 elif nodetype == catalogname:
-                    stack.append(node[pagesname])
+                    stack.append((node[pagesname], depth + 1))
                 else:
                     log.error('Expected /Page or /Pages dictionary, got %s' %
                             repr(node))
