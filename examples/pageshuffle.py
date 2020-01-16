@@ -39,7 +39,7 @@ parser_mark.add_argument('-o', '--operation',
                          choices=('insert','delete','rename','shift','list'), required=True)
 parser_mark.add_argument('-p', '--page', metavar='P', help='p[-p] end is 0')
 parser_mark.add_argument('-l', '--level', type=int, metavar='L', help='offset or increment')
-parser_mark.add_argument('-b', '--before', metavar='B', help='previous title or insert before')
+parser_mark.add_argument('-b', '--before', metavar='B', help='previous title or insert before (blank for first)')
 parser_mark.add_argument('-t', '--title', metavar='T', help='destination title')
 parser_mark.add_argument('document')
 
@@ -134,28 +134,67 @@ def subcommand_scan(args):
 parser_scan.set_defaults(func=subcommand_scan)
 
 class PdfBookmarks():
-    def import_outlines(self, reader, elt=None, level=0):
-        mark = []
-        if not elt:
-            if not reader.Root.Outlines:
-                return mark
-            elt = reader.Root.Outlines.First
-        while True:
-            if hasattr(elt, 'Title') and elt.Title:
+
+    def __init__(self, reader=None):
+        self.pagecount = 0
+        self.mark = []
+        if not reader: return
+        self.pagecount = len(reader.pages)
+        if not reader.Root.Outlines: return
+
+        def outline_walk(elt, level=0):
+            # walk the document's outline tree
+            while True:
+                if hasattr(elt, 'Title') and elt.Title:
+                    yield elt, level
+                if hasattr(elt, 'First') and elt.First:
+                    for ret in outline_walk(elt.First, level + 1):
+                        yield ret
+                if hasattr(elt, 'Next') and elt.Next:
+                    elt = elt.Next
+                else:
+                    break
+
+        def name_look(name, names=None):
+            # search document catalog for a named destination
+            if names is None: names = reader.Root.Names.Dests
+            if hasattr(names, 'Names') and not names.Names is None:
+                for n, p in zip(names.Names[0::2], names.Names[1::2]):
+                    if n == name: return p
+            if hasattr(names, 'Kids') and not names.Kids is None:
+                for k in names.Kids:
+                    p = name_look(name, k)
+                    if not p is None: return p
+            return None
+
+        def import_dest(dest, level, title):
+            if isinstance(dest, pdfrw.objects.pdfstring.PdfString):
+                # dest as a named destination
+                dest = name_look(dest)
+            if isinstance(dest, pdfrw.objects.pdfdict.PdfDict):
+                # dest as a dictionary
+                dest = dest.D
+            if isinstance(dest, pdfrw.objects.pdfarray.PdfArray):
+                # page is in dest[0]
                 for page in range(0, len(reader.pages)):
-                    if reader.pages[page] is elt.Dest[0]:
-                        mark.append(types.SimpleNamespace(
-                            level=level, page=page,
-                            title=elt.Title.to_unicode()))
+                    if reader.pages[page] is dest[0]:
+                        self.mark.append(types.SimpleNamespace(
+                            level=level, page=page, title=title))
                         break
-            if hasattr(elt, 'First') and elt.First:
-                mark += self.import_outlines(reader, elt.First, level + 1)
-            if hasattr(elt, 'Next') and elt.Next:
-                elt = elt.Next
+
+        for elt, level in outline_walk(reader.Root.Outlines.First):
+            title=elt.Title.to_unicode()
+            if not elt.Dest is None:
+                # dest can be in the outline itself
+                import_dest(elt.Dest, level, title)
+            elif hasattr(elt, 'A') and hasattr(elt.A, 'S') \
+                 and elt.A.S == pdfrw.objects.pdfname.PdfName('GoTo') \
+                 and hasattr(elt.A, 'D'):
+                # dest can be in a GoTo action in the outline
+                import_dest(elt.A.D, level, title)
             else:
-                break
-        mark.sort(key=lambda t: t.page)
-        return mark
+                print('Missing destination:', title)
+        self.mark.sort(key=lambda t: t.page)
 
     def export_outlines(self, writer):
         if not self.mark: return
@@ -186,21 +225,14 @@ class PdfBookmarks():
             elt.Parent.Last = elt
             elt = elt.Parent
 
-    def __init__(self, reader=None):
-        self.pagecount = 0
-        self.mark = []
-        if reader:
-            self.pagecount = len(reader.pages)
-            self.outlines = reader.Root.Outlines
-            self.mark = self.import_outlines(reader)
-
     def format(self):
         return ''.join(str(m.page) + '.' + str(m.level) + ' ' + m.title + '\n' for m in self.mark)
 
     def add(self, page, title, level, before):
         self.mark.insert(next((
             i for i, m in enumerate(self.mark) if m.page > page
-            or (m.page == page and before is not None and m.title == before)), len(self.mark)),
+            or (m.page == page and before is not None
+                and (before == '' or m.title == before))), len(self.mark)),
             types.SimpleNamespace(level=level, page=page, title=title))
 
     def remove(self, page, title, level):
