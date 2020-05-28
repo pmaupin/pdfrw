@@ -11,7 +11,7 @@ python:
   - 3.8
 
 before_install:
-  - git clone https://github.com/pmaupin/static_pdfs tests/static_pdfs
+  - git clone --depth 1 https://github.com/pmaupin/static_pdfs tests/static_pdfs
   
 install:
   - pip install pytest pytest-xdist
@@ -24,5 +24,4 @@ script: PYTHONPATH=./tests pytest -n auto
 cache:
   pip: true
   directories:
-  - ./tests/static_pdfs
   
