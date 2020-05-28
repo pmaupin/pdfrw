@@ -9,18 +9,18 @@ python:
   - 3.6.10
   - 3.7.6
   - 3.8.2
-  - nightly
   
 before_install:
   - pip install --upgrade pip
   - git clone https://github.com/pmaupin/static_pdfs tests/static_pdfs
   
 install:
-  - pip install --compile --requirement requirements.txt
-  - pip install --compile .
+  - pip install pytest
+  - pip install --requirement requirements.txt
+  - pip install .
   
 # command to run tests
-script: "cd tests; /usr/bin/env PYTHONPATH=. py.test"
+script: PYTHONPATH=. py.test
 
 cache:
   pip: true
