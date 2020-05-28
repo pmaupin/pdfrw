@@ -11,16 +11,16 @@ python:
   - 3.8.2
   
 before_install:
-  - pip install --upgrade pip
+  - pip install --upgrade --compile pip
   - git clone https://github.com/pmaupin/static_pdfs tests/static_pdfs
   
 install:
-  - pip install pytest
+  - pip install --upgrade --compile pytest pytest-xdist
   - pip install --requirement requirements.txt
   - pip install .
   
 # command to run tests
-script: PYTHONPATH=. py.test
+script: PYTHONPATH=./tests pytest -n auto 
 
 cache:
   pip: true
