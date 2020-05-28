@@ -1,4 +1,4 @@
 reportlab
 PyCrypto
-zlib
 unittest2
+# zlib couldnt find this package
