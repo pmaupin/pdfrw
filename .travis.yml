@@ -16,8 +16,8 @@ before_install:
   - git clone https://github.com/pmaupin/static_pdfs tests/static_pdfs
   
 install:
-  - "pip install --only-binary=:all: --python-version $TRAVIS_PYTHON_VERSION -r requirements.txt"
-  - pip install .
+  - pip install --compile --requirement requirements.txt
+  - pip install --compile .
   
 # command to run tests
 script: "cd tests; /usr/bin/env PYTHONPATH=. py.test"
