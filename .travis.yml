@@ -5,17 +5,16 @@ os: linux
 dist: bionic
 
 python:
-  - 2.7.17
-  - 3.6.10
-  - 3.7.6
-  - 3.8.2
-  
+  - 2.7
+  - 3.6
+  - 3.7
+  - 3.8
+
 before_install:
-  - pip install --upgrade --compile pip
   - git clone https://github.com/pmaupin/static_pdfs tests/static_pdfs
   
 install:
-  - pip install --upgrade --compile pytest pytest-xdist
+  - pip install pytest pytest-xdist
   - pip install --requirement requirements.txt
   - pip install .
   
@@ -24,3 +23,6 @@ script: PYTHONPATH=./tests pytest -n auto
 
 cache:
   pip: true
+  directories:
+  - ./tests/static_pdfs
+  
