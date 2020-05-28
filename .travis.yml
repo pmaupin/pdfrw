@@ -21,3 +21,6 @@ install:
   
 # command to run tests
 script: "cd tests; /usr/bin/env PYTHONPATH=. py.test"
+
+cache:
+  pip: true
