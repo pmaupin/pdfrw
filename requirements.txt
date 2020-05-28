@@ -1,0 +1,4 @@
+reportlab
+PyCrypto
+zlib
+unittest2
