@@ -8,10 +8,10 @@ git:
   depth: 1
 
 python:
-  - 2.7
-  - 3.6
-  - 3.7
-  - 3.8
+  - 2.7.18
+  - 3.6.10
+  - 3.7.7
+  - 3.8.2
 
 before_install:
   - git clone --depth 1 https://github.com/pmaupin/static_pdfs tests/static_pdfs
