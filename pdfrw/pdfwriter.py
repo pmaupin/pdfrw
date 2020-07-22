@@ -138,7 +138,7 @@ def FormatObjects(f, trailer, version='1.3', compress=True, killobj=(),
                     if compress and obj.stream:
                         do_compress([obj])
                     pairs = sorted((getattr(x, 'encoded', None) or x, y)
-                                   for (x, y) in obj.iteritems())
+                                   for (x, y) in iteritems(obj))
                     myarray = []
                     for key, value in pairs:
                         myarray.append(key)
