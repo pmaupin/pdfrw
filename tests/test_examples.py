@@ -94,7 +94,7 @@ class TestOnePdf(unittest.TestCase):
                     os.remove(dstf)
                 if scrub and os.path.exists(scrub):
                     os.remove(scrub)
-                subprocess.call(params)
+                subprocess.check_output(params)
                 if scrub:
                     PdfWriter(dstf).addpages(PdfReader(scrub).pages).write()
             with open(dstf, 'rb') as f:
@@ -109,7 +109,7 @@ class TestOnePdf(unittest.TestCase):
             if expects:
                 if len(expects) == 1:
                     expects, = expects
-                    self.assertEqual(hash, expects)
+                    self.assertEqual(hash, expects, '{} file does not have the expected MD5 hash'.format(dstf))
                 else:
                     self.assertIn(hash, expects)
                 result = 'pass'

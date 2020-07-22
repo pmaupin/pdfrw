@@ -138,7 +138,7 @@ def FormatObjects(f, trailer, version='1.3', compress=True, killobj=(),
                     if compress and obj.stream:
                         do_compress([obj])
                     pairs = sorted((getattr(x, 'encoded', None) or x, y)
-                                   for (x, y) in obj.iteritems())
+                                   for (x, y) in iteritems(obj))
                     myarray = []
                     for key, value in pairs:
                         myarray.append(key)
@@ -262,6 +262,7 @@ class PdfWriter(object):
                                      "on PdfWriter instance" % name)
                 setattr(self, name, value)
 
+        self.Pages = None
         self.pagearray = PdfArray()
         self.killobj = {}
 
@@ -310,14 +311,14 @@ class PdfWriter(object):
             self.make_canonical()
 
         # Create the basic object structure of the PDF file
+        pages = self.Pages or IndirectPdfDict()
+        pages.Type = PdfName.Pages
+        pages.Count = PdfObject(len(self.pagearray))
+        pages.Kids = self.pagearray
         trailer = PdfDict(
             Root=IndirectPdfDict(
                 Type=PdfName.Catalog,
-                Pages=IndirectPdfDict(
-                    Type=PdfName.Pages,
-                    Count=PdfObject(len(self.pagearray)),
-                    Kids=self.pagearray
-                )
+                Pages=pages,
             )
         )
         # Make all the pages point back to the page dictionary and
