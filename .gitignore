@@ -62,6 +62,8 @@ htmlcov/
 .cache
 nosetests.xml
 coverage.xml
+tests/result.pickle
+tests/expected.pickle
 
 # Sphinx documentation
 docs/_build/
