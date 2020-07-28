@@ -1,20 +1,28 @@
 language: python
+os: linux
+dist: bionic
+
 python:
-  - "2.6"
-  - "2.7"
-  - "3.3"
-  - "3.4"
-  - "3.5"
-  - "3.6"
-  - "nightly"
-# command to install dependencies
+  - 2.7   # Trusty LTS
+  - 3.5   # Xenial LTS
+  - 3.6   # Bionic LTS
+  - 3.8   # Focal LTS
+
 before_install:
-  - "git clone https://github.com/pmaupin/static_pdfs tests/static_pdfs"
+  - pip install --upgrade pip
+  - pip install --upgrade wheel
+  - pip install --upgrade setuptools
+  
 install:
-  - "pip install ."
-  - "pip install reportlab || true"
-  - "pip install PyCrypto || true"
-  - "pip install zlib || true"
-  - "pip install unittest2 || true"
-# command to run tests
-script: "cd tests; /usr/bin/env PYTHONPATH=. py.test"
+  - pip install -r requirements.txt
+  - pip install .
+
+before_script:
+  - git clone https://github.com/pmaupin/static_pdfs tests/static_pdfs
+  
+script: 
+  - cd tests; /usr/bin/env PYTHONPATH=. py.test
+  
+cache:
+  apt: true
+  pip: true
