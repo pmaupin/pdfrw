@@ -31,8 +31,8 @@ import sys
 import os
 import hashlib
 import subprocess
-import static_pdfs
-import expected
+from tests import static_pdfs
+from tests import expected
 
 from pdfrw.py23_diffs import convert_store
 from pdfrw import PdfReader, PdfWriter
@@ -188,8 +188,10 @@ class TestOnePdf(unittest.TestCase):
         self.do_test('rl1/platypus_pdf_template b1c400de699af29ea3f1983bb26870ab',
                      scrub=True)
 
+
 def main():
     unittest.main()
+
 
 if __name__ == '__main__':
     main()
