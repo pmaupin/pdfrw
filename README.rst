@@ -730,10 +730,6 @@ Pure Python
     text formats (such as HTML). It has an extensible PDF parser that
     can be used for other purposes instead of text analysis."
 
--  `pikepdf <https://github.com/pikepdf/pikepdf>`__
-
-    pikepdf is a Python library for reading and writing PDF files, based on C++ lib QPDF.
-
 -  `WeasyPrint <https://github.com/Kozea/WeasyPrint>`__
 
     WeasyPrint is a visual rendering engine for HTML and CSS that can export to PDF.
@@ -745,6 +741,8 @@ Pure Python
 non-pure-Python libraries
 -------------------------
 
+-  `pikepdf <https://github.com/pikepdf/pikepdf>`__ read and write PDF files,
+    based on C++ lib QPDF.
 -  `pyPoppler <https://launchpad.net/poppler-python/>`__ can read PDF
    files.
 -  `pycairo <http://www.cairographics.org/pycairo/>`__ can write PDF
