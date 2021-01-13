@@ -686,9 +686,9 @@ Pure Python
     reportlab is must-have software if you want to programmatically
     generate arbitrary PDFs.
 
--  `pyPdf <https://github.com/mstamy2/PyPDF2>`__
+-  `PyFPDF <https://github.com/reingart/pyfpdf>`__
 
-    pyPdf is, in some ways, very full-featured. It can do decompression
+    PyPDF is, in some ways, very full-featured. It can do decompression
     and decryption and seems to know a lot about items inside at least
     some kinds of PDF files. In comparison, pdfrw knows less about
     specific PDF file features (such as metadata), but focuses on trying
@@ -697,6 +697,10 @@ Pure Python
     parser.  The Form XObject capability of pdfrw means that, in many
     cases, it does not actually need to decompress objects -- they
     can be left compressed.
+
+    PyPDF is not maintained anymore, but it has a successors:
+    `PyFPDF2 <https://github.com/mstamy2/PyPDF2>`__
+    and `fpdf2 <https://github.com/PyPDF/fpdf2>`__.
 
 -  `pdftools <http://www.boddie.org.uk/david/Projects/Python/pdftools/index.html>`__
 
@@ -725,6 +729,18 @@ Pure Python
     includes a PDF converter that can transform PDF files into other
     text formats (such as HTML). It has an extensible PDF parser that
     can be used for other purposes instead of text analysis."
+
+-  `pikepdf <https://github.com/pikepdf/pikepdf>`__
+
+    pikepdf is a Python library for reading and writing PDF files, based on C++ lib QPDF.
+
+-  `WeasyPrint <https://github.com/Kozea/WeasyPrint>`__
+
+    WeasyPrint is a visual rendering engine for HTML and CSS that can export to PDF.
+    It aims to support web standards for printing.
+    It is based on various libraries but not on a full rendering engine like WebKit or Gecko.
+    The CSS layout engine is written in Python, designed for pagination,
+    and meant to be easy to hack on.
 
 non-pure-Python libraries
 -------------------------
