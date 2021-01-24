@@ -20,7 +20,8 @@ tests/*.pdf
 examples/pdfrw
 examples/rl*/pdfrw
 tests/pdfrw
-tests/static_pdfs
+# this is now a submodle
+# tests/static_pdfs
 tests/ramdisk
 tests/saved_results
 tests/tmp_results
