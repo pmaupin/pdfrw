@@ -8,3 +8,7 @@
 pycrypto>=2.6.1
 reportlab>=3.5.46
 Pillow>=6.2.2
+
+# Test dependencies (Pytest runs tests faster in parallel unsin the -n option)
+pytest>=4.6.11
+pytest-xdist>=1.33.0
