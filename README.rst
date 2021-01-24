@@ -653,27 +653,23 @@ which are not distributed with the library.
 
 To run the tests:
 
-* Download or clone the full package from github.com/pmaupin/pdfrw
-* cd into the tests directory, and then clone the package
-  github.com/pmaupin/static_pdfs into a subdirectory (also named
-  static_pdfs).
-* Now the tests may be run from tests directory using unittest, or
-  py.test, or nose.
-* travisci is used at github, and runs the tests with py.test
+* Clone the full package from github with ``--recursive``
+* Install the tox test drivers from OS pkgs or pip in a venv
+* Run the tests with tox using default system python version
 
 .. code-block:: bash
-    $ pip install pytest
-    $ pip install reportlab
-    $ pwd
-    <...>/pdfrw/tests
-    $ git clone https://github.com/pmaupin/static_pdfs
-    $ ln -s ../pdfrw
-    $ pytest
+
+   $ <apt|yum|emerge|pip> install tox tox-xdist
+   $ git clone --recursive https://github.com/sarnold/pdfrw.git
+   $ cd pdfrw
+   $ tox -e py
+
 
 To run a single test-case:
 
 .. code-block:: bash
-    $ pytest test_roundtrip.py -k "test_compress_9f98322c243fe67726d56ccfa8e0885b.pdf"
+
+   $ pytest test_roundtrip.py -k "test_compress_9f98322c243fe67726d56ccfa8e0885b.pdf"
 
 Other libraries
 =====================
