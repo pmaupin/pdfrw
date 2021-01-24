@@ -1,6 +1,6 @@
 #! /usr/bin/env python
-import static_pdfs
 
+from tests import static_pdfs
 from pdfrw import PdfReader
 
 try:
@@ -23,6 +23,7 @@ class TestPdfReaderInit(unittest.TestCase):
 
 def main():
     unittest.main()
+
 
 if __name__ == '__main__':
     main()

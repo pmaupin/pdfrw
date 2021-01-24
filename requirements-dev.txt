@@ -1,0 +1,14 @@
+# Theese dependencies where tested on Python 2.7.18 to 3.8.2
+# It is necessary to have native build tools to install from source
+# In Debian/Ubuntu run:
+# sudo apt-get install build-essential
+
+# Application dependencies
+# These dependencies should be fixed in future
+pycrypto>=2.6.1
+reportlab>=3.5.46
+Pillow>=6.2.2
+
+# Test dependencies (Pytest runs tests faster in parallel unsin the -n option)
+pytest>=4.6.11
+pytest-xdist>=1.33.0

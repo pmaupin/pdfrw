@@ -30,8 +30,8 @@ In order to use them:
 import os
 import hashlib
 import pdfrw
-import static_pdfs
-import expected
+from tests import static_pdfs
+from tests import expected
 
 from pdfrw.py23_diffs import convert_store
 
@@ -114,7 +114,7 @@ def build_tests():
             ('repaginate', True, False, False),
             ('decompress', False, True, False),
             ('compress', False, True, True),
-            ):
+    ):
         for srcf in static_pdfs.pdffiles[0]:
             basename = os.path.basename(srcf)
             test_name = 'test_%s_%s' % (mytest, basename)
@@ -124,11 +124,14 @@ def build_tests():
                                 compress=compress,
                                 )
             setattr(TestOnePdf, test_name, test)
+
+
 build_tests()
 
 
 def main():
     unittest.main()
+
 
 if __name__ == '__main__':
     main()
