@@ -254,8 +254,6 @@ class PdfWriter(object):
         self.fname = fname
         self.version = version
         self.compress = compress
-        self.pagearray = PdfArray()
-        self.killobj = {}
 
         if kwargs:
             for name, value in iteritems(kwargs):
@@ -264,34 +262,29 @@ class PdfWriter(object):
                                      "on PdfWriter instance" % name)
                 setattr(self, name, value)
 
-    def addpage(self, page, at_index=None):
-        """
-        If `at_index` is None (default), the page will be appended at the end.
-        Else, it is an integer representing the new index of the inserted page.
-        """
+        self.pagearray = PdfArray()
+        self.killobj = {}
+
+    def addpage(self, page):
+        self._trailer = None
         if page.Type != PdfName.Page:
             raise PdfOutputError('Bad /Type:  Expected %s, found %s'
                                  % (PdfName.Page, page.Type))
         inheritable = page.inheritable  # searches for resources
-        new_page = IndirectPdfDict(
-            page,
-            Resources=inheritable.Resources,
-            MediaBox=inheritable.MediaBox,
-            CropBox=inheritable.CropBox,
-            Rotate=inheritable.Rotate,
+        self.pagearray.append(
+            IndirectPdfDict(
+                page,
+                Resources=inheritable.Resources,
+                MediaBox=inheritable.MediaBox,
+                CropBox=inheritable.CropBox,
+                Rotate=inheritable.Rotate,
+            )
         )
-        if at_index is None:
-            self.pagearray.append(new_page)
-        else:
-            self.pagearray.insert(at_index, new_page)
-        if self._trailer:
-            count = int(self._trailer.Root.Pages.Count)
-            self._trailer.Root.Pages.Count = PdfObject(count + 1)
 
         # Add parents in the hierarchy to objects we
         # don't want to output
         killobj = self.killobj
-        obj, new_obj = page, new_page
+        obj, new_obj = page, self.pagearray[-1]
         while obj is not None:
             objid = id(obj)
             if objid in killobj:
@@ -338,7 +331,6 @@ class PdfWriter(object):
 
     def _set_trailer(self, trailer):
         self._trailer = trailer
-        self.pagearray = self._trailer.Root.Pages.Kids
 
     trailer = property(_get_trailer, _set_trailer)
 
