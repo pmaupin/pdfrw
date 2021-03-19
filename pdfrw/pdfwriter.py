@@ -151,6 +151,8 @@ def FormatObjects(f, trailer, version='1.3', compress=True, killobj=(),
                     return result
                 obj = (PdfArray, PdfDict)[isinstance(obj, dict)](obj)
                 continue
+            elif isinstance(obj, bool):
+                return 'true' if obj else 'false'
 
             # We assume that an object with an indirect
             # attribute knows how to represent itself to us.
