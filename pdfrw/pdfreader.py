@@ -689,3 +689,15 @@ class PdfReader(PdfDict):
     # For compatibility with pyPdf
     def getPage(self, pagenum):
         return self.pages[pagenum]
+
+    def remove_page(self, index):
+        '''
+        Usage example:
+
+            PdfWriter(trailer=PdfReader('src.pdf').remove_page(1)).write('out.pdf')
+        '''
+        del self.pages[index]
+        self.private.numPages = self.numPages - 1
+        del self.Root.Pages.Kids[index]
+        self.Root.Pages.Count = PdfObject(len(self.Root.Pages.Kids))
+        return self
