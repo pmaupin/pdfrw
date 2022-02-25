@@ -1,0 +1,19 @@
+name: Test
+
+on:
+  push:
+    branch:
+      - master
+
+jobs:
+  ci:
+  strategy:
+    matrix:
+      python-version: [3.6, 3.4, 3.3, 2.7]
+  runs-on: ubuntu-latest
+  steps:
+    - uses: actions/checkout@v2
+    - name: Python setup
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
