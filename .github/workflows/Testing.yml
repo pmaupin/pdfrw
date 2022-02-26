@@ -24,4 +24,4 @@ jobs:
           
       - name: run unit tests
         run: |
-          pytest
+          python -m test_roundtrip.py
