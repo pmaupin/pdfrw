@@ -17,3 +17,13 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
+    - name Install dependencies
+      run: |
+        run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    -name run unit tests
+      run: |
+        pip install pytest
+        pip install pytest-cov
+        pytest tests/test_roundtrip.py --cov=com --cov-report=xml
