@@ -22,4 +22,4 @@ jobs:
       - name: run unit tests
         run: |
           pip install pytest
-          pytest tests/test_roundtrip.py
+          pytest tests/
