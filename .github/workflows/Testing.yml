@@ -23,4 +23,4 @@ jobs:
           
       - name: run unit tests
         run: |
-          python -m tests.test_roundtrip
+          python -m tests.test_pdfstring
