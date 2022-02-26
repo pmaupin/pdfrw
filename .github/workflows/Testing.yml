@@ -1,0 +1,26 @@
+name: Test
+
+on:
+  push:
+    branches:
+      -master
+      -development
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [2.7,3.6]
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Python setup
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: run unit tests
+        run: |
+          python -m tests.test_pdfreader_init
+          python -m tests.test_pdfstring
+          python -m tests.test_pdfdict
