@@ -17,7 +17,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
-        working-directory: ./tests
+        working-directory: tests/
         run: |
           python -m pip install --upgrade pip
           pip install pytest
