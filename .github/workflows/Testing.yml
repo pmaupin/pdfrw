@@ -5,23 +5,23 @@ on:
 
 jobs:
   ci:
-  strategy:
-    matrix:
-      python-version: [3.6, 3.4, 3.3]
-  runs-on: ubuntu-latest
-  steps:
-    - uses: actions/checkout@v2
-    - name: Python setup
-      uses: actions/setup-python@v2
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name Install dependencies
-      run: |
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.6, 3.4, 3.3]
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Python setup
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }
+      - name: Install dependencies
         run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-    -name run unit tests
-      run: |
-        pip install pytest
-        pip install pytest-cov
-        pytest tests/test_roundtrip.py --cov=com --cov-report=xml
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: run unit tests
+        run: |
+          pip install pytest
+          pip install pytest-cov
+          pytest tests/test_roundtrip.py --cov=com --cov-report=xml
