@@ -30,7 +30,7 @@ In order to use them:
 import os
 import hashlib
 import pdfrw
-import ../static_pdfs
+import static_pdfs
 import expected
 
 from pdfrw.py23_diffs import convert_store
