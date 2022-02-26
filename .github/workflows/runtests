@@ -2,8 +2,6 @@ name: Test
 
 on:
   push:
-    branch:
-      - master
 
 jobs:
   ci:
