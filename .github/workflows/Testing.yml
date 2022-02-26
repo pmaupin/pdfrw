@@ -24,4 +24,4 @@ jobs:
       - name: run unit tests
         working-directory: tests/
         run: |
-          pytest
+          pytest test_roundtrip.py
