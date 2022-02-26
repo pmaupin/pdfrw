@@ -29,7 +29,7 @@ In order to use them:
 '''
 import os
 import hashlib
-from .. import pdfrw
+import pdfrw
 import static_pdfs
 import expected
 
