@@ -1,0 +1,64 @@
+%PDF-1.3 °Ÿ’œŸÔàÎÐÐÐ
+1 0 obj
+<<
+	/Type /Catalog
+	/Pages 2 0 R
+>>
+endobj
+2 0 obj
+<<
+	/Type /Pages
+	/Kids [3 0 R]
+	/Count 1
+>>
+endobj
+3 0 obj
+<<
+	/Type /Page
+	/MediaBox [0 0 594 841]
+	/Parent 2 0 R
+	/Contents 4 0 R
+	/Resources <<
+	/Font <<
+	/F00000001 5 0 R
+>>
+>>
+>>
+endobj
+4 0 obj
+<<
+	/Length 50
+>>
+stream
+BT
+1 0 0 1 0 825 Tm
+/F00000001 16 Tf
+(Hello) '
+ET
+endstream
+endobj
+5 0 obj
+<<
+	/Type /Font
+	/Subtype /Type1
+	/Name /F00000001
+	/BaseFont /Helvetica
+	/Encoding /MacRomanEncoding
+>>
+endobj
+xref
+0 6
+0000000000 65535 f
+0000000022 00000 n
+0000000079 00000 n
+0000000146 00000 n
+0000000299 00000 n
+0000000409 00000 n
+trailer
+<<
+/Size 7
+/Root 1 0 R
+>>
+startxref
+538
+%%EOF
