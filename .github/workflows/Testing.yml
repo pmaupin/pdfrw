@@ -5,6 +5,7 @@ on:
     branches:
       -master
       -development
+      -fix
 
 jobs:
   ci:
@@ -24,3 +25,4 @@ jobs:
           python -m tests.test_pdfreader_init
           python -m tests.test_pdfstring
           python -m tests.test_pdfdict
+          python -m tests.test_roundtrip
