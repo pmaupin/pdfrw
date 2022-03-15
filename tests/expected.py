@@ -12,7 +12,8 @@
 '''
 
 import os
-import collections
+import collections.abc as collections
+from collections import defaultdict
 from pdfrw.py23_diffs import convert_load
 
 root_dir = os.path.dirname(__file__)
@@ -28,7 +29,7 @@ for sourcef in ('mytests.txt', 'expected.txt'):
 
 
 def results():
-    results = collections.defaultdict(set)
+    results = defaultdict(set)
     with open(expectedf, 'rb') as f:
         for line in f:
             line = convert_load(line)

@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 
 # A part of pdfrw (https://github.com/pmaupin/pdfrw)
 # Copyright (C) 2015 Patrick Maupin, Austin, Texas
@@ -30,8 +30,8 @@ In order to use them:
 import os
 import hashlib
 import pdfrw
-import static_pdfs
-import expected
+from tests import static_pdfs
+from tests import expected
 
 from pdfrw.py23_diffs import convert_store
 
@@ -114,7 +114,7 @@ def build_tests():
             ('repaginate', True, False, False),
             ('decompress', False, True, False),
             ('compress', False, True, True),
-            ):
+        ):
         for srcf in static_pdfs.pdffiles[0]:
             basename = os.path.basename(srcf)
             test_name = 'test_%s_%s' % (mytest, basename)

@@ -82,8 +82,6 @@ class PdfTokens(object):
         '''
         fdata = self.fdata
         current = self.current = [(startloc, startloc)]
-        cache = {}
-        get_cache = cache.get
         while 1:
             for match in findtok(fdata, current[0][1]):
                 current[0] = tokspan = match.span()
@@ -140,18 +138,17 @@ class PdfTokens(object):
                     else:
                         self.exception(('Tokenizer logic incorrect -- '
                                         'should never get here'))
-
-                newtok = get_cache(token)
-                if newtok is None:
-                    newtok = cache[token] = toktype(token)
+                        
+                newtok = toktype(token)
                 yield newtok
                 if current[0] is not tokspan:
                     break
             else:
                 if self.strip_comments:
                     break
-                raise StopIteration
-
+                #raise StopIteration
+                return
+            
     def __init__(self, fdata, startloc=0, strip_comments=True, verbose=True):
         self.fdata = fdata
         self.strip_comments = strip_comments

@@ -1,4 +1,4 @@
-#! /usr/bin/env python2
+#! /usr/bin/env python
 """
 Put old (good) results in ramdisk/reference,
 then generate new (unknown) test results in ramdisk/tmp_results,
@@ -58,7 +58,7 @@ for (srcpath, _, filenames) in os.walk('ramdisk/reference'):
         src_digest = get_digest(src)
         if not src_digest or src_digest not in expected:
             continue
-        print src
+        print(src)
         count += 1
         trailer = make_canonical(PdfReader(src))
         out = PdfWriter(tmp)
@@ -72,10 +72,10 @@ for (srcpath, _, filenames) in os.walk('ramdisk/reference'):
         if get_digest(tmp) != match_digest:
             continue
         goodcount += 1
-        print "OK"
+        print("OK")
         changes.append((src_digest, get_digest(dst)))
 
-print count, goodcount
+print(count, goodcount)
 
 for stuff in changes:
     expected = expected.replace(*stuff)

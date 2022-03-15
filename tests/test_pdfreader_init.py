@@ -1,5 +1,5 @@
 #! /usr/bin/env python
-import static_pdfs
+from tests import static_pdfs
 
 from pdfrw import PdfReader
 

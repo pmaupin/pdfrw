@@ -12,7 +12,8 @@ of the object.
 '''
 import gc
 import binascii
-import collections
+import collections.abc as collections
+from collections import defaultdict
 import itertools
 
 from .errors import PdfParseError, log
@@ -22,7 +23,7 @@ from .uncompress import uncompress
 from . import crypt
 from .py23_diffs import convert_load, convert_store, iteritems
 
-
+_PAGE_TREE_MAX_DEPTH = 50000
 class PdfReader(PdfDict):
 
     def findindirect(self, objnum, gennum, PdfIndirect=PdfIndirect, int=int):
@@ -32,7 +33,8 @@ class PdfReader(PdfDict):
         key = int(objnum), int(gennum)
         result = self.indirect_objects.get(key)
         if result is None:
-            self.indirect_objects[key] = result = PdfIndirect(key)
+            result = PdfIndirect(key)
+            self.indirect_objects.update({key:result})
             self.deferred_objects.add(key)
             result._loader = self.loadindirect
         return result
@@ -182,6 +184,12 @@ class PdfReader(PdfDict):
         result = self.indirect_objects.get(key)
         if not isinstance(result, PdfIndirect):
             return result
+        
+        # If the object was loaded from an object stream, return it
+        result = self.loaded_object_stream_objs.get(key)
+        if result is not None:
+            return result
+        
         source = self.source
         offset = int(self.source.obj_offsets.get(key, '0'))
         if not offset:
@@ -219,7 +227,8 @@ class PdfReader(PdfDict):
         if func is not None:
             obj = func(source)
 
-        self.indirect_objects[key] = obj
+        #self.indirect_objects[key] = obj
+        self.indirect_objects.update({key: obj})
         self.deferred_objects.remove(key)
 
         # Mark the object as indirect, and
@@ -252,7 +261,8 @@ class PdfReader(PdfDict):
             obj = PdfObject('')
 
         obj.indirect = key
-        self.indirect_objects[key] = obj
+        #self.indirect_objects[key] = obj
+        self.indirect_objects.update({key: obj})
         return obj
 
     def read_all(self):
@@ -314,14 +324,26 @@ class PdfReader(PdfDict):
                         sobj = func(objsource)
 
                     key = (num, 0)
-                    self.indirect_objects[key] = sobj
-                    if key in self.deferred_objects:
-                        self.deferred_objects.remove(key)
 
                     # Mark the object as indirect, and
                     # add it to the list of streams if it starts a stream
                     sobj.indirect = key
+                    
+                    # We call load_stream_objects on the most recent stream objects
+                    # in the file first, so we don't want to clobber already-stored
+                    # objects.
+                    if key not in self.loaded_object_stream_objs:
+                        self.loaded_object_stream_objs.update({key: sobj})
+                        #self.loaded_object_stream_objs[key] = sobj
+                    if key in self.indirect_objects:
+                        continue
 
+                    self.indirect_objects.update({key: sobj})
+                    #self.indirect_objects[key] = sobj
+                    
+                    if key in self.deferred_objects:
+                        self.deferred_objects.remove(key)
+                        
     def findxref(self, fdata):
         ''' Find the cross reference section at the end of a file
         '''
@@ -340,7 +362,7 @@ class PdfReader(PdfDict):
 
     def parse_xref_stream(self, source, int=int, range=range,
                           enumerate=enumerate, islice=itertools.islice,
-                          defaultdict=collections.defaultdict,
+                          defaultdict=defaultdict,
                           hexlify=binascii.hexlify):
         ''' Parse (one of) the cross-reference file section(s)
         '''
@@ -351,7 +373,6 @@ class PdfReader(PdfDict):
                 next = offset + length
                 yield int(hexlify(s[offset:next]), 16) if length else None
                 offset = next
-
         setdefault = source.obj_offsets.setdefault
         next = source.next
         # check for xref stream object
@@ -473,18 +494,26 @@ class PdfReader(PdfDict):
 
         try:
             result = []
-            stack = [node]
+            stack = [(node, 0)]
             append = result.append
             pop = stack.pop
             while stack:
-                node = pop()
+                node, depth = pop()
+
+                # Guard against infinite loops in the page tree
+                if depth >= _PAGE_TREE_MAX_DEPTH:
+                    log.error('Page tree exceeded max depth')
+                    return []
+                
                 nodetype = node[typename]
                 if nodetype == pagename:
                     append(node)
                 elif nodetype == pagesname:
-                    stack.extend(reversed(node[kidname]))
+                    stack.extend(
+                        (n, depth + 1) for n in reversed(node[kidname])
+                    )
                 elif nodetype == catalogname:
-                    stack.append(node[pagesname])
+                    stack.append((node[pagesname], depth + 1))
                 else:
                     log.error('Expected /Page or /Pages dictionary, got %s' %
                             repr(node))
@@ -517,9 +546,11 @@ class PdfReader(PdfDict):
 
                     cfm = params.CFM
                     if cfm == PdfName.AESV2:
-                        crypt_filters[name] = crypt.AESCryptFilter(key)
+                        #crypt_filters: crypt_filters[name] = crypt.AESCryptFilter(key)
+                        crypt_filters.append([crypt.AESCryptFilter(key)])
                     elif cfm == PdfName.V2:
-                        crypt_filters[name] = crypt.RC4CryptFilter(key)
+                        #crypt_filters: crypt_filters[name] = crypt.RC4CryptFilter(key)
+                        crypt_filters.append([crypt.AESCryptFilter(key)])
                     else:
                         source.warning(
                             'Unsupported crypt filter: {}, {}'.format(
@@ -588,7 +619,7 @@ class PdfReader(PdfDict):
 
             self.private.version = fdata[5:8]
 
-            endloc = fdata.rfind('%EOF')
+            endloc = fdata.rfind("%EOF")
             if endloc < 0:
                 raise PdfParseError('EOF mark not found: %s' %
                                     repr(fdata[-20:]))
@@ -601,12 +632,13 @@ class PdfReader(PdfDict):
             private = self.private
             private.indirect_objects = {}
             private.deferred_objects = set()
+            private.loaded_object_stream_objs = {}
             private.special = {'<<': self.readdict,
                                '[': self.readarray,
                                'endobj': self.empty_obj,
                                }
             for tok in r'\ ( ) < > { } ] >> %'.split():
-                self.special[tok] = self.badtoken
+                self.special.update({tok:self.badtoken})
 
             startloc, source = self.findxref(fdata)
             private.source = source
@@ -614,9 +646,11 @@ class PdfReader(PdfDict):
             # Find all the xref tables/streams, and
             # then deal with them backwards.
             xref_list = []
+            
             while 1:
                 source.obj_offsets = {}
                 trailer, is_stream = self.parsexref(source)
+                xref_list.append((source.obj_offsets, trailer, is_stream))
                 prev = trailer.Prev
                 if prev is None:
                     token = source.next()
@@ -624,7 +658,6 @@ class PdfReader(PdfDict):
                         source.warning('Expected "startxref" '
                                        'at end of xref table')
                     break
-                xref_list.append((source.obj_offsets, trailer, is_stream))
                 source.floc = int(prev)
 
             # Handle document encryption
@@ -644,18 +677,22 @@ class PdfReader(PdfDict):
 
                 self._parse_encrypt_info(source, password, trailer)
 
-            if is_stream:
-                self.load_stream_objects(trailer.object_streams)
-
-            while xref_list:
-                later_offsets, later_trailer, is_stream = xref_list.pop()
+            # Go through all trailers from earliest to latest and make sure the
+            # trailer object contains the latest information.
+            for later_offsets, later_trailer, is_stream in reversed(xref_list): 
                 source.obj_offsets.update(later_offsets)
                 if is_stream:
-                    trailer.update(later_trailer)
-                    self.load_stream_objects(later_trailer.object_streams)
+                    trailer.update_indirect(later_trailer)
                 else:
                     trailer = later_trailer
-
+                    
+            # Go through all trailers from latest to earliest and load their
+            # object streams.
+            while xref_list:
+                _, later_trailer, is_stream = xref_list.pop(0)
+                if is_stream:
+                    self.load_stream_objects(later_trailer.object_streams)
+                    
             trailer.Prev = None
 
             if (trailer.Version and

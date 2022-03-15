@@ -186,6 +186,11 @@ class PdfDict(dict):
         for key, value in self.iteritems():
             yield value
 
+    def update_indirect(self, other):
+        ''' Update a PdfDict without calling real_value() on the items. '''
+        for key, value in iteritems(other):
+            self[key] = value
+            
     def values(self):
         return list((value for key, value in self.iteritems()))
 

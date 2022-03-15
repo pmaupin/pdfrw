@@ -56,6 +56,9 @@ htmlcov/
 .cache
 nosetests.xml
 coverage.xml
-
+tests/result.pickle
+tests/expected.pickle
+tests/tmp_results
 # Sphinx documentation
 docs/_build/
+.vscode/settings.json

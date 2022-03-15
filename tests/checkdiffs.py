@@ -1,4 +1,4 @@
-#! /usr/bin/env python2
+#! /usr/bin/env python
 
 import sys
 import os
@@ -50,7 +50,7 @@ for subdir in sorted(os.listdir(result_dir)):
                 n = next pdf without marking
                 q = quit
 -->  ''' % testname)
-            sel = raw_input()
+            sel = input()
             if sel == 'q':
                 raise SystemExit(0)
             if sel == 'n':

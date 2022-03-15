@@ -107,6 +107,11 @@ def FormatObjects(f, trailer, version='1.3', compress=True, killobj=(),
     def format_array(myarray, formatter):
         # Format array data into semi-readable ASCII
         if sum([len(x) for x in myarray]) <= 70:
+            if len(myarray) == 2:
+                if myarray[1] == 'True':
+                    myarray[1] = 'true'
+                elif myarray[1] == 'False':
+                    myarray[1] = 'false'            
             return formatter % space_join(myarray)
         return format_big(myarray, formatter)
 

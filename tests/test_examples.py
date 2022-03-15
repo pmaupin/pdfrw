@@ -31,8 +31,8 @@ import sys
 import os
 import hashlib
 import subprocess
-import static_pdfs
-import expected
+from tests import static_pdfs
+from tests import expected
 
 from pdfrw.py23_diffs import convert_store
 from pdfrw import PdfReader, PdfWriter
