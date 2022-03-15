@@ -111,7 +111,7 @@ def FormatObjects(f, trailer, version='1.3', compress=True, killobj=(),
                 if myarray[1] == 'True':
                     myarray[1] = 'true'
                 elif myarray[1] == 'False':
-                    myarray[1] = 'false'            
+                    myarray[1] = 'false' 
             return formatter % space_join(myarray)
         return format_big(myarray, formatter)
 

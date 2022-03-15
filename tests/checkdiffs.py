@@ -5,8 +5,8 @@ import os
 import subprocess
 import hashlib
 
-import expected
-import static_pdfs
+from tests import expected
+from tests import static_pdfs
 
 source_pdfs = static_pdfs.pdffiles[0]
 source_pdfs = dict((os.path.basename(x), x) for x in source_pdfs)

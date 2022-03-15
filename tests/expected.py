@@ -16,6 +16,7 @@ import collections.abc as collections
 from collections import defaultdict
 from pdfrw.py23_diffs import convert_load
 
+
 root_dir = os.path.dirname(__file__)
 result_dir = 'tmp_results'
 if os.path.exists('ramdisk'):
