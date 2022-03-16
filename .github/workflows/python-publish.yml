@@ -44,16 +44,17 @@ jobs:
     - name: Add requirements
       run: |
         python -m pip install --upgrade pip
-        pip install tox tox-gh-actions
+        pip install tox tox-gh-actions pytest-xdist
     - name: Check for lint
       run: |
         tox -e lint
+    - name: Install and test
+      run: |
+        tox -e py
     - name: Build dist pkgs
       run: |
         tox -e deploy
     - name: Test wheels
       run: |
         tox -e check
-    - name: Install and test
-      run: |
-        tox -e py
+
