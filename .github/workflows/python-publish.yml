@@ -51,7 +51,7 @@ jobs:
         tox -e lint
     - name: Install and test
       run: |
-        tox -r -e py
+        tox -e py
     - name: Build dist pkgs
       run: |
         tox -e deploy
