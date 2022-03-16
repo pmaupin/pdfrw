@@ -48,13 +48,13 @@ jobs:
         
     - name: Check for lint
       run: |
-        tox -e -r lint
+        tox -e lint
     - name: Install and test
       run: |
         tox -e -r py
     - name: Build dist pkgs
       run: |
-        tox -e -r deploy
+        tox -e deploy
     - name: Test wheels
       run: |
-        tox -e -r check
+        tox -e check
