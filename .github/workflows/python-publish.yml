@@ -31,7 +31,7 @@ jobs:
     - name: Set git crlf/eol
       run: |
         git config --global core.autocrlf false
-        git config --global core.eol lf
+        git config --global core.eol crlf
     - uses: actions/checkout@v2
       with:
         fetch-depth: 0
