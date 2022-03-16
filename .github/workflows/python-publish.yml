@@ -46,4 +46,5 @@ jobs:
         python -m pip install --upgrade pip
         pip install tox tox-gh-actions
     - name: Run tox-gh-actions
+      uses: ymyzk/run-tox-gh-actions@v0.1
 
