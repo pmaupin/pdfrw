@@ -29,10 +29,6 @@ jobs:
         python-version: [3.6, 3.7, 3.8, 3.9]
 
     steps:
-    - name: Set git crlf/eol
-      run: |
-        git config --global core.autocrlf false
-        git config --global core.eol crlf
     - uses: actions/checkout@v2
       with:
         fetch-depth: 0
