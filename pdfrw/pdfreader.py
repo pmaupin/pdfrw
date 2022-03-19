@@ -15,6 +15,7 @@ import binascii
 import collections.abc as collections
 from collections import defaultdict
 import itertools
+import warnings
 
 from .errors import PdfParseError, log
 from .tokens import PdfTokens
