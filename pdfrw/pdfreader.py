@@ -209,8 +209,7 @@ class PdfReader(PdfDict):
             try:
                 source.next()
             except:
-                print("it failed here")
-                print(source)
+                warnings.warn(repr(source))
             objheader = '%d %d obj' % (objnum, gennum)
             fdata = source.fdata
             offset2 = (fdata.find('\n' + objheader) + 1 or
