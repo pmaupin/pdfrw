@@ -3,26 +3,29 @@ name: Test
 on:
   push:
     branches:
-      -master
-      -development
-      -rileym666-patch-1
+      - master
+      - development
+      - "rileym666-patch-1"
 
 jobs:
-  ci:
-    runs-on: ubuntu-latest
+  python_wheels:
+    runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: true
       matrix:
-        python-version: [2.7,3.6]
+        os: [ubuntu-20.04, windows-latest]
+        python-version: [3.7,3.6.2]
+
 
     steps:
       - uses: actions/checkout@v2
       - name: Python setup
         uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.python-version }}
+      - name: Add requirements
+        run: |
+          python -m pip install --upgrade pip
+          pip install coverage
+
       - name: run unit tests
         run: |
-          python -m tests.test_pdfreader_init
-          python -m tests.test_pdfstring
-          python -m tests.test_pdfdict
-          python -m tests.test_roundtrip
+          coverage run -m unittest discover
