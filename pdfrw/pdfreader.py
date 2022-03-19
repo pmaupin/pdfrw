@@ -206,7 +206,11 @@ class PdfReader(PdfDict):
         ok = ok and objid[2] == 'obj'
         if not ok:
             source.floc = offset
-            source.next()
+            try:
+                source.next()
+            except:
+                print("it failed here")
+                print(source)
             objheader = '%d %d obj' % (objnum, gennum)
             fdata = source.fdata
             offset2 = (fdata.find('\n' + objheader) + 1 or
