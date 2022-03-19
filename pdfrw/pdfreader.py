@@ -197,43 +197,8 @@ class PdfReader(PdfDict):
             source.warning("Did not find PDF object %s", key)
             return None
 
-        # Read the object header and validate it
-        objnum, gennum = key
-        source.floc = offset
-        objid = source.multiple(3)
-        ok = len(objid) == 3
-        ok = ok and objid[0].isdigit() and int(objid[0]) == objnum
-        ok = ok and objid[1].isdigit() and int(objid[1]) == gennum
-        ok = ok and objid[2] == 'obj'
-        if not ok:
-            source.floc = offset
-            try:
-                source.next()
-            except:
-                warnings.warn(repr(source))
-            objheader = '%d %d obj' % (objnum, gennum)
-            fdata = source.fdata
-            offset2 = (fdata.find('\n' + objheader) + 1 or
-                       fdata.find('\r' + objheader) + 1)
-            if (not offset2 or
-                    fdata.find(fdata[offset2 - 1] + objheader, offset2) > 0):
-                source.warning("Expected indirect object '%s'", objheader)
-                return None
-            source.warning("Indirect object %s found at incorrect "
-                           "offset %d (expected offset %d)",
-                           objheader, offset2, offset)
-            source.floc = offset2 + len(objheader)
-
-        # Read the object, and call special code if it starts
-        # an array or dictionary
-        obj = source.next()
-        func = self.special.get(obj)
-        if func is not None:
-            obj = func(source)
-
-        #self.indirect_objects[key] = obj
-        self.indirect_objects.update({key: obj})
-        self.deferred_objects.remove(key)
+        self._validate_header(key, offset)
+        obj = self._read_obj(key)
 
         # Mark the object as indirect, and
         # just return it if it is a simple object.
@@ -241,10 +206,8 @@ class PdfReader(PdfDict):
         tok = source.next()
         if tok == 'endobj':
             return obj
-
-        # Should be a stream.  Either that or it's broken.
-        isdict = isinstance(obj, PdfDict)
-        if isdict and tok == 'stream':
+        elif tok == 'stream' and isinstance(obj, PdfDict):
+            # Should be a stream.  Either that or it's broken.
             self.readstream(obj, self.findstream(obj, tok, source), source)
             return obj
 
@@ -267,6 +230,48 @@ class PdfReader(PdfDict):
         obj.indirect = key
         #self.indirect_objects[key] = obj
         self.indirect_objects.update({key: obj})
+        return obj
+
+    def _validate_header(self, key, offset):
+        """Reads and validates the header"""
+        objnum, gennum = key
+        self.source.floc = offset
+        objid = self.source.multiple(3)
+        if not (
+            len(objid) == 3 and objid[0].isdigit() and int(objid[0]) == objnum
+            and objid[1].isdigit() and int(objid[1]) == gennum
+            and objid[2] == 'obj'
+        ):
+            self.source.floc = offset
+            try:
+                self.source.next()
+            except:
+                warnings.warn(repr(self.source))
+            objheader = '%d %d obj' % (objnum, gennum)
+            fdata = self.source.fdata
+            offset2 = (fdata.find('\n' + objheader) + 1 or
+                       fdata.find('\r' + objheader) + 1)
+            if (not offset2 or
+                    fdata.find(fdata[offset2 - 1] + objheader, offset2) > 0):
+                self.source.warning("Expected indirect object '%s'", objheader)
+                return None
+            self.source.warning("Indirect object %s found at incorrect "
+                           "offset %d (expected offset %d)",
+                           objheader, offset2, offset)
+            self.source.floc = offset2 + len(objheader)
+
+    def _read_obj(self, key):
+        """Read the object, and call special code if it starts
+        an array or dictionary"""
+        obj = self.source.next()
+        func = self.special.get(obj)
+        if func is not None:
+            obj = func(self.source)
+
+        #self.indirect_objects[key] = obj
+        self.indirect_objects.update({key: obj})
+        self.deferred_objects.remove(key)
+
         return obj
 
     def read_all(self):
