@@ -160,13 +160,13 @@ class PdfReader(PdfDict):
             return
         source.floc = endstream
         if length > room:
-            source.error('stream /Length attribute (%d) appears to '
+            source.warning('stream /Length attribute (%d) appears to '
                          'be too big (size %d) -- adjusting',
                          length, room)
             obj.stream = fdata[startstream:endstream]
             return
         if fdata[target_endstream:endstream].rstrip():
-            source.error('stream /Length attribute (%d) appears to '
+            source.warning('stream /Length attribute (%d) appears to '
                          'be too small (size %d) -- adjusting',
                          length, room)
             obj.stream = fdata[startstream:endstream]
