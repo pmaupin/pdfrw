@@ -159,13 +159,13 @@ class PdfReader(PdfDict):
             return
         source.floc = endstream
         if length > room:
-            source.error('stream /Length attribute (%d) appears to '
+            source.warning('stream /Length attribute (%d) appears to '
                          'be too big (size %d) -- adjusting',
                          length, room)
             obj.stream = fdata[startstream:endstream]
             return
         if fdata[target_endstream:endstream].rstrip():
-            source.error('stream /Length attribute (%d) appears to '
+            source.warning('stream /Length attribute (%d) appears to '
                          'be too small (size %d) -- adjusting',
                          length, room)
             obj.stream = fdata[startstream:endstream]
@@ -253,10 +253,10 @@ class PdfReader(PdfDict):
         # okular just handle it.
 
         if isinstance(obj, PdfObject) and obj.endswith('endobj'):
-            source.error('No space or delimiter before endobj')
+            source.warning('No space or delimiter before endobj')
             obj = PdfObject(obj[:-6])
         else:
-            source.error("Expected 'endobj'%s token",
+            source.warning("Expected 'endobj'%s token",
                          isdict and " or 'stream'" or '')
             obj = PdfObject('')
 
