@@ -15,6 +15,7 @@ import binascii
 import collections.abc as collections
 from collections import defaultdict
 import itertools
+import warnings
 
 from .errors import PdfParseError, log
 from .tokens import PdfTokens
@@ -70,7 +71,7 @@ class PdfReader(PdfDict):
         tok = next()
         while tok != '>>':
             if not tok.startswith('/'):
-                source.error('Expected PDF /name object')
+                source.warning('Expected PDF /name object')
                 tok = next()
                 continue
             key = tok
@@ -84,7 +85,7 @@ class PdfReader(PdfDict):
                 if value.isdigit() and tok.isdigit():
                     tok2 = next()
                     if tok2 != 'R':
-                        source.error('Expected "R" following two integers')
+                        source.warning('Expected "R" following two integers')
                         tok = tok2
                         continue
                     value = self.findindirect(value, tok)
@@ -159,13 +160,13 @@ class PdfReader(PdfDict):
             return
         source.floc = endstream
         if length > room:
-            source.error('stream /Length attribute (%d) appears to '
+            source.warning('stream /Length attribute (%d) appears to '
                          'be too big (size %d) -- adjusting',
                          length, room)
             obj.stream = fdata[startstream:endstream]
             return
         if fdata[target_endstream:endstream].rstrip():
-            source.error('stream /Length attribute (%d) appears to '
+            source.warning('stream /Length attribute (%d) appears to '
                          'be too small (size %d) -- adjusting',
                          length, room)
             obj.stream = fdata[startstream:endstream]
@@ -206,7 +207,10 @@ class PdfReader(PdfDict):
         ok = ok and objid[2] == 'obj'
         if not ok:
             source.floc = offset
-            source.next()
+            try:
+                source.next()
+            except:
+                warnings.warn(repr(source))
             objheader = '%d %d obj' % (objnum, gennum)
             fdata = source.fdata
             offset2 = (fdata.find('\n' + objheader) + 1 or
@@ -253,10 +257,10 @@ class PdfReader(PdfDict):
         # okular just handle it.
 
         if isinstance(obj, PdfObject) and obj.endswith('endobj'):
-            source.error('No space or delimiter before endobj')
+            source.warning('No space or delimiter before endobj')
             obj = PdfObject(obj[:-6])
         else:
-            source.error("Expected 'endobj'%s token",
+            source.warning("Expected 'endobj'%s token",
                          isdict and " or 'stream'" or '')
             obj = PdfObject('')
 
