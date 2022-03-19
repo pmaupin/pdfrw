@@ -71,7 +71,7 @@ class PdfReader(PdfDict):
         tok = next()
         while tok != '>>':
             if not tok.startswith('/'):
-                source.error('Expected PDF /name object')
+                source.warning('Expected PDF /name object')
                 tok = next()
                 continue
             key = tok
@@ -85,7 +85,7 @@ class PdfReader(PdfDict):
                 if value.isdigit() and tok.isdigit():
                     tok2 = next()
                     if tok2 != 'R':
-                        source.error('Expected "R" following two integers')
+                        source.warning('Expected "R" following two integers')
                         tok = tok2
                         continue
                     value = self.findindirect(value, tok)
