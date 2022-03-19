@@ -472,7 +472,7 @@ class PdfReader(PdfDict):
         next = source.next
         try:
             tok = next()
-        except StopIteration:
+        except:
             tok = ''
         if tok.isdigit():
             return self.parse_xref_stream(source), True
