@@ -1,31 +1,60 @@
-name: Test
+# This workflow will attempt to build a Python Package using pip to test if it is buildable
+
+name: Test Build
 
 on:
   push:
     branches:
       - master
-      - development
-      - "rileym666-patch-1"
+  release:
+    types: [published]
 
 jobs:
   python_wheels:
     runs-on: ${{ matrix.os }}
+    continue-on-error: true
+    defaults:
+      run:
+        shell: bash
+    env:
+      OS: ${{ matrix.os }}
+      PYTHON: ${{ matrix.python-version }}
+      PYTHONIOENCODING: utf-8
+      PIP_DOWNLOAD_CACHE: ${{ github.workspace }}/../.pip_download_cache
     strategy:
       fail-fast: true
       matrix:
-        os: [ubuntu-20.04, windows-latest]
-        python-version: [3.7]
-
+        os: [ubuntu-20.04, macos-latest, windows-latest]
+        python-version: [3.6, 3.7, 3.8, 3.9]
 
     steps:
-      - uses: actions/checkout@v2
-      - name: Python setup
-        uses: actions/setup-python@v2
-      - name: Add requirements
-        run: |
-          python -m pip install --upgrade pip
-          pip install coverage
+    - name: Set git crlf/eol
+      run: |
+        git config --global core.autocrlf false
+        git config --global core.eol lf
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+        submodules: true
 
-      - name: run unit tests
-        run: |
-          coverage run -m unittest discover
+    - uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Add requirements
+      run: |
+        python -m pip install --upgrade pip
+        pip install tox tox-gh-actions
+        
+    - name: Check for lint
+      run: |
+        tox -e lint
+    - name: Install and test
+      run: |
+        tox -e py
+    - name: Build dist pkgs
+      run: |
+        tox -e deploy
+    - name: Test wheels
+      run: |
+        tox -e check
