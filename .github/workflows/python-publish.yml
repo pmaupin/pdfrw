@@ -6,7 +6,7 @@ on:
     branches:
       -master
       -development
-      -rileym666-patch-1
+      -"rileym666-patch-1"
 
 jobs:
   python_wheels:
