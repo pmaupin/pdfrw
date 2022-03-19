@@ -1,12 +1,11 @@
 name: Test
 
 on:
-  workflow_dispatch:
   push:
     branches:
-      -master
-      -development
-      -"rileym666-patch-1"
+      - master
+      - development
+      - "rileym666-patch-1"
 
 jobs:
   python_wheels:
