@@ -12,7 +12,7 @@ from .pagemerge import PageMerge
 
 __version__ = '0.4'
 
-# Add a tiny bit of compatibility to pyPdf
+# Add a tiny bit of compatibility to pyPdf / PyPDF2<1.28.0
 
 PdfFileReader = PdfReader
 PdfFileWriter = PdfWriter
