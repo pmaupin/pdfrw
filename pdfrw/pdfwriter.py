@@ -294,7 +294,7 @@ class PdfWriter(object):
             new_obj = None
         return self
 
-    addPage = addpage  # for compatibility with pyPdf
+    addPage = addpage  # for compatibility with pyPdf / PyPDF2<1.28.0
 
     def addpages(self, pagelist):
         for page in pagelist:

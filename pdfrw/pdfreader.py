@@ -680,7 +680,7 @@ class PdfReader(PdfDict):
             if decompress:
                 self.uncompress()
 
-            # For compatibility with pyPdf
+            # For compatibility with pyPdf / PyPDF2<1.28.0
             private.numPages = len(self.pages)
         finally:
             if disable_gc:

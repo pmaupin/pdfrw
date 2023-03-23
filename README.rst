@@ -686,9 +686,9 @@ Pure Python
     reportlab is must-have software if you want to programmatically
     generate arbitrary PDFs.
 
--  `pyPdf <https://github.com/mstamy2/PyPDF2>`__
+-  `pypdf <https://pypi.org/project/pypdf/>`__
 
-    pyPdf is, in some ways, very full-featured. It can do decompression
+    pypdf is, in some ways, very full-featured. It can do decompression
     and decryption and seems to know a lot about items inside at least
     some kinds of PDF files. In comparison, pdfrw knows less about
     specific PDF file features (such as metadata), but focuses on trying
