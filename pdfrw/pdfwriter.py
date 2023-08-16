@@ -29,12 +29,12 @@ NullObject.Type = 'Null object'
 
 
 def user_fmt(obj, isinstance=isinstance, float=float, str=str,
-             str=(type(''), type(b'')), encode=PdfString.encode):
+             basestring=(type(u''), type(b'')), encode=PdfString.encode):
     ''' This function may be replaced by the user for
         specialized formatting requirements.
     '''
 
-    if isinstance(obj, str):
+    if isinstance(obj, basestring):
         return encode(obj)
 
     # PDFs don't handle exponent notation
