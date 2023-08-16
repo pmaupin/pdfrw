@@ -2,7 +2,7 @@
 # Copyright (C) 2017  Jon Lund Steffensen
 # MIT license -- See LICENSE.txt for details
 
-from __future__ import division
+
 
 import hashlib
 import struct

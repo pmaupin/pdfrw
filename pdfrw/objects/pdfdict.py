@@ -180,20 +180,20 @@ class PdfDict(dict):
                 yield key, value
 
     def items(self):
-        return list(self.iteritems())
+        return list(self.items())
 
     def itervalues(self):
-        for key, value in self.iteritems():
+        for key, value in self.items():
             yield value
 
     def values(self):
-        return list((value for key, value in self.iteritems()))
+        return list((value for key, value in self.items()))
 
     def keys(self):
-        return list((key for key, value in self.iteritems()))
+        return list((key for key, value in self.items()))
 
     def __iter__(self):
-        for key, value in self.iteritems():
+        for key, value in self.items():
             yield key
 
     def iterkeys(self):
