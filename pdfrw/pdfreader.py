@@ -63,7 +63,7 @@ class PdfReader(PdfDict):
         '''
         specialget = self.special.get
         result = PdfDict()
-        next = source.next
+        next = source.__next__
 
         tok = next()
         while tok != '>>':
@@ -198,7 +198,7 @@ class PdfReader(PdfDict):
         ok = ok and objid[2] == 'obj'
         if not ok:
             source.floc = offset
-            source.next()
+            next(source)
             objheader = '%d %d obj' % (objnum, gennum)
             fdata = source.fdata
             offset2 = (fdata.find('\n' + objheader) + 1 or
@@ -214,7 +214,7 @@ class PdfReader(PdfDict):
 
         # Read the object, and call special code if it starts
         # an array or dictionary
-        obj = source.next()
+        obj = next(source)
         func = self.special.get(obj)
         if func is not None:
             obj = func(source)
@@ -225,7 +225,7 @@ class PdfReader(PdfDict):
         # Mark the object as indirect, and
         # just return it if it is a simple object.
         obj.indirect = key
-        tok = source.next()
+        tok = next(source)
         if tok == 'endobj':
             return obj
 
@@ -271,13 +271,13 @@ class PdfReader(PdfDict):
 
         if self.crypt_filters is not None:
             crypt.decrypt_objects(
-                self.indirect_objects.values(), self.stream_crypt_filter,
+                list(self.indirect_objects.values()), self.stream_crypt_filter,
                 self.crypt_filters)
 
     def uncompress(self):
         self.read_all()
 
-        uncompress(self.indirect_objects.values())
+        uncompress(list(self.indirect_objects.values()))
 
     def load_stream_objects(self, object_streams):
         # read object streams
@@ -299,7 +299,7 @@ class PdfReader(PdfDict):
 
             for obj in objs:
                 objsource = PdfTokens(obj.stream, 0, False)
-                next = objsource.next
+                next = objsource.__next__
                 offsets = []
                 firstoffset = int(obj.First)
                 while objsource.floc < firstoffset:
@@ -329,7 +329,7 @@ class PdfReader(PdfDict):
         if startloc < 0:
             raise PdfParseError('Did not find "startxref" at end of file')
         source = PdfTokens(fdata, startloc, False, self.verbose)
-        tok = source.next()
+        tok = next(source)
         assert tok == 'startxref'  # (We just checked this...)
         tableloc = source.next_default()
         if not tableloc.isdigit():
@@ -353,7 +353,7 @@ class PdfReader(PdfDict):
                 offset = next
 
         setdefault = source.obj_offsets.setdefault
-        next = source.next
+        next = source.__next__
         # check for xref stream object
         objid = source.multiple(3)
         ok = len(objid) == 3
@@ -376,7 +376,7 @@ class PdfReader(PdfDict):
         stream = stream if stream is not old_strm else convert_store(old_strm)
         num_pairs = obj.Index or PdfArray(['0', obj.Size])
         num_pairs = [int(x) for x in num_pairs]
-        num_pairs = zip(num_pairs[0::2], num_pairs[1::2])
+        num_pairs = list(zip(num_pairs[0::2], num_pairs[1::2]))
         entry_sizes = [int(x) for x in obj.W]
         if len(entry_sizes) != 3:
             source.exception('Invalid entry size')
@@ -399,7 +399,7 @@ class PdfReader(PdfDict):
         ''' Parse (one of) the cross-reference file section(s)
         '''
         setdefault = source.obj_offsets.setdefault
-        next = source.next
+        next = source.__next__
         # plain xref table
         start = source.floc
         try:
@@ -448,7 +448,7 @@ class PdfReader(PdfDict):
     def parsexref(self, source):
         ''' Parse (one of) the cross-reference file section(s)
         '''
-        next = source.next
+        next = source.__next__
         try:
             tok = next()
         except StopIteration:
@@ -619,7 +619,7 @@ class PdfReader(PdfDict):
                 trailer, is_stream = self.parsexref(source)
                 prev = trailer.Prev
                 if prev is None:
-                    token = source.next()
+                    token = next(source)
                     if token != 'startxref' and not xref_list:
                         source.warning('Expected "startxref" '
                                        'at end of xref table')

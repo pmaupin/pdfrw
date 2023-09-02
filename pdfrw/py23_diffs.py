@@ -10,7 +10,7 @@ except ImportError:
     zlib = None
 
 try:
-    unicode = unicode
+    str = str
 except NameError:
 
     def convert_load(s):

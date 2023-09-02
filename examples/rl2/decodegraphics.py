@@ -359,7 +359,7 @@ def findparsefuncs():
 
     dispatch = {}
     expected_args = 'self token params'.split()
-    for key, func in globals().items():
+    for key, func in list(globals().items()):
         if key.startswith('parse_'):
             args, varargs, keywords, defaults = getargspec(func)
             assert (args == expected_args and varargs is None and
@@ -390,7 +390,7 @@ class _ParseClass(object):
         self.gpath = None
         self.tpath = None
         self.fontdict = dict((x, FontInfo(y)) for
-                             (x, y) in page.Resources.Font.items())
+                             (x, y) in list(page.Resources.Font.items()))
 
         for token in self.tokens:
             info = dispatch(token)
@@ -404,14 +404,14 @@ class _ParseClass(object):
             delta = len(params) - len(paraminfo)
             if delta:
                 if delta < 0:
-                    print ('Operator %s expected %s parameters, got %s' %
-                           (token, len(paraminfo), params))
+                    print(('Operator %s expected %s parameters, got %s' %
+                           (token, len(paraminfo), params)))
                     params[:] = []
                     continue
                 else:
-                    print ("Unparsed parameters/commands: %s" % params[:delta])
+                    print(("Unparsed parameters/commands: %s" % params[:delta]))
                 del params[:delta]
-            paraminfo = zip(paraminfo, params)
+            paraminfo = list(zip(paraminfo, params))
             try:
                 params[:] = [x(y) for (x, y) in paraminfo]
             except:
@@ -431,13 +431,13 @@ def debugparser(undisturbed=set('parse_array'.split())):
             name = oldval[0].__name__
 
             def myfunc(self, token, params):
-                print ('%s called %s(%s)' % (token, name,
-                       ', '.join(str(x) for x in params)))
+                print(('%s called %s(%s)' % (token, name,
+                       ', '.join(str(x) for x in params))))
             if name in undisturbed:
                 myfunc = oldval[0]
             return myfunc, oldval[1]
         return dict((x, getvalue(y))
-                    for (x, y) in _ParseClass.dispatch.items())
+                    for (x, y) in list(_ParseClass.dispatch.items()))
 
     class _DebugParse(_ParseClass):
         dispatch = debugdispatch()
@@ -453,5 +453,5 @@ if __name__ == '__main__':
     fname, = sys.argv[1:]
     pdf = PdfReader(fname, decompress=True)
     for i, page in enumerate(pdf.pages):
-        print ('\nPage %s ------------------------------------' % i)
+        print(('\nPage %s ------------------------------------' % i))
         parse(page)

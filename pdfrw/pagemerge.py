@@ -196,7 +196,7 @@ class PageMerge(list):
         if xobjs is None:
             xobjs = resources.XObject = PdfDict()
         else:
-            allkeys = xobjs.keys()
+            allkeys = list(xobjs.keys())
             if allkeys:
                 keys = (x for x in allkeys if x.startswith('/pdfrw_'))
                 keys = (x for x in keys if x[7:].isdigit())
@@ -246,5 +246,5 @@ class PageMerge(list):
         ''' Return the smallest box that encloses every object
             in the list.
         '''
-        a, b, c, d = zip(*(xobj.box for xobj in self))
+        a, b, c, d = list(zip(*(xobj.box for xobj in self)))
         return PdfArray((min(a), min(b), max(c), max(d)))

@@ -49,7 +49,7 @@ def find_objects(source, valid_types=(PdfName.XObject, None),
         if isinstance(obj, PdfDict):
             if obj.Type in valid_types and obj.Subtype in valid_subtypes:
                 yield obj
-            obj = [y for (x, y) in sorted(obj.iteritems())
+            obj = [y for (x, y) in sorted(obj.items())
                    if x not in no_follow]
         else:
             # TODO: This forces resolution of any indirect objects in

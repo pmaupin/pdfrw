@@ -21,7 +21,7 @@ class TestBaseEncoding(unittest.TestCase):
 
     def encode(self, value):
         x = PdfString.encode(value)
-        if isinstance(value, type(u'')):
+        if isinstance(value, type('')):
             y = PdfString.from_unicode(value)
         else:
             y = PdfString.from_bytes(value)
@@ -53,13 +53,13 @@ class TestBaseEncoding(unittest.TestCase):
 
     def test_unicode_encoding(self):
         # These chars are in PdfDocEncoding
-        self.assertEqual(self.roundtrip(u'PDF™©®')[0], '(')
+        self.assertEqual(self.roundtrip('PDF™©®')[0], '(')
         # These chars are not in PdfDocEncoding
-        self.assertEqual(self.roundtrip(u'δΩσ')[0], '<')
+        self.assertEqual(self.roundtrip('δΩσ')[0], '<')
         # Check that we're doing a reasonable encoding
         # Might want to change this later if we change the definition of reasonable
-        self.roundtrip(u'(\n\u00FF', '(\\(\n\xff)')
-        self.roundtrip(u'(\n\u0101', '<FEFF0028000A0101>')
+        self.roundtrip('(\n\u00FF', '(\\(\n\xff)')
+        self.roundtrip('(\n\u0101', '<FEFF0028000A0101>')
 
 
     def test_constructor(self):
@@ -98,12 +98,12 @@ class TestBaseEncoding(unittest.TestCase):
         self.decode_bytes(r'(\ )', ' ')
 
     def test_BOM_variants(self):
-        self.roundtrip(u'\ufeff', '<FEFFFEFF>')
-        self.roundtrip(u'\ufffe', '<FEFFFFFE>')
-        self.roundtrip(u'\xfe\xff', '<FEFF00FE00FF>')
-        self.roundtrip(u'\xff\xfe', '(\xff\xfe)')
+        self.roundtrip('\ufeff', '<FEFFFEFF>')
+        self.roundtrip('\ufffe', '<FEFFFFFE>')
+        self.roundtrip('\xfe\xff', '<FEFF00FE00FF>')
+        self.roundtrip('\xff\xfe', '(\xff\xfe)')
         self.assertRaises(UnicodeError, PdfString.from_unicode,
-                          u'þÿ blah', text_encoding='pdfdocencoding')
+                          'þÿ blah', text_encoding='pdfdocencoding')
 
     def test_byte_encode(self):
         self.assertEqual(self.encode(b'ABC'), '(ABC)')
