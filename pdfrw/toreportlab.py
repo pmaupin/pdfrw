@@ -67,7 +67,7 @@ def _makedict(rldoc, pdfobj):
         rlobj = rldoc.Reference(rlobj)
     pdfobj.derived_rl_obj[rldoc] = rlobj, None
 
-    for key, value in pdfobj.iteritems():
+    for key, value in pdfobj.items():
         rldict[key[1:]] = makerl_recurse(rldoc, value)
 
     return rlobj
@@ -85,7 +85,7 @@ def _makestream(rldoc, pdfobj, xobjtype=PdfName.XObject):
     result = rldoc.Reference(rlobj, fullname)
     pdfobj.derived_rl_obj[rldoc] = result, shortname
 
-    for key, value in pdfobj.iteritems():
+    for key, value in pdfobj.items():
         rldict[key[1:]] = makerl_recurse(rldoc, value)
 
     return result

@@ -94,21 +94,21 @@ def flate_png_impl(data, predictor=1, columns=1, colors=1, bpc=8):
     def subfilter(data, prior_row_data, start, length, pixel_size):
         # filter type 1: Sub
         # Recon(x) = Filt(x) + Recon(a)
-        for i in xrange(pixel_size, length):
+        for i in range(pixel_size, length):
             left = data[start + i - pixel_size]
             data[start + i] = (data[start + i] + left) % 256
 
     def upfilter(data, prior_row_data, start, length, pixel_size):
         # filter type 2: Up
         # Recon(x) = Filt(x) + Recon(b)
-        for i in xrange(length):
+        for i in range(length):
             up = prior_row_data[i]
             data[start + i] = (data[start + i] + up) % 256
 
     def avgfilter(data, prior_row_data, start, length, pixel_size):
         # filter type 3: Avg
         # Recon(x) = Filt(x) + floor((Recon(a) + Recon(b)) / 2)
-        for i in xrange(length):
+        for i in range(length):
             left = data[start + i - pixel_size] if i >= pixel_size else 0
             up = prior_row_data[i]
             floor = math.floor((left + up) / 2)
@@ -128,7 +128,7 @@ def flate_png_impl(data, predictor=1, columns=1, colors=1, bpc=8):
                 return b
             else:
                 return c
-        for i in xrange(length):
+        for i in range(length):
             left = data[start + i - pixel_size] if i >= pixel_size else 0
             up = prior_row_data[i]
             up_left = prior_row_data[i - pixel_size] if i >= pixel_size else 0
@@ -143,8 +143,8 @@ def flate_png_impl(data, predictor=1, columns=1, colors=1, bpc=8):
         data.extend([0] * padding)
     assert len(data) % rowlen == 0
 
-    rows = xrange(0, len(data), rowlen)
-    prior_row_data = [ 0 for i in xrange(columnbytes) ]
+    rows = range(0, len(data), rowlen)
+    prior_row_data = [ 0 for i in range(columnbytes) ]
     for row_index in rows:
 
         filter_type = data[row_index]

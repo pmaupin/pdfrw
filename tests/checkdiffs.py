@@ -5,7 +5,7 @@ import os
 import subprocess
 import hashlib
 
-import expected
+from . import expected
 import static_pdfs
 
 source_pdfs = static_pdfs.pdffiles[0]
@@ -22,7 +22,7 @@ for subdir in sorted(os.listdir(result_dir)):
         srcf = source_pdfs.get(pdffile)
         dstf = os.path.join(dstd, pdffile)
         if pdffile not in source_pdfs:
-            print('\n Skipping %s -- source not found' % testname)
+            print(('\n Skipping %s -- source not found' % testname))
             continue
 
         with open(dstf, 'rb') as f:
@@ -30,7 +30,7 @@ for subdir in sorted(os.listdir(result_dir)):
         hash = hashlib.md5(data).hexdigest()
         skipset = set((hash, 'skip', 'xfail', 'fail', '!' + hash))
         if expected.results[testname] & skipset:
-            print('\n Skipping %s -- marked done' % testname)
+            print(('\n Skipping %s -- marked done' % testname))
             continue
         if os.path.exists('foobar.pdf'):
             os.remove('foobar.pdf')
@@ -50,7 +50,7 @@ for subdir in sorted(os.listdir(result_dir)):
                 n = next pdf without marking
                 q = quit
 -->  ''' % testname)
-            sel = raw_input()
+            sel = input()
             if sel == 'q':
                 raise SystemExit(0)
             if sel == 'n':

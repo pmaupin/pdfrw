@@ -52,7 +52,7 @@ signs ("<" and ">").
 A literal string may encode bytes almost unmolested.  The caveat is
 that if a byte has the same value as a parenthesis, it must be escaped
 so that the tokenizer knows the string is not finished.  This is accomplished
-by using the ASCII backslash ("\") as an escape character.  Of course,
+by using the ASCII backslash ("\\") as an escape character.  Of course,
 now any backslash appearing in the data must likewise be escaped.
 
 Hexadecimal strings
@@ -117,7 +117,7 @@ The second method that can be used to improve readability (and reduce space)
 in literal strings is to not escape parentheses.  This only works, and is
 only allowed, when the parentheses are properly balanced.  For example,
 "((Hello))" is a valid encoding for a literal string, but "((Hello)" is not;
-the latter case should be encoded "(\(Hello)"
+the latter case should be encoded "(\\(Hello)"
 
 Encoding text into strings
 ==========================
@@ -291,13 +291,13 @@ def find_pdfdocencoding(encoding):
     decoding_map = dict((x, x) for x in decoding_map)
 
     # Add in the special Unicode characters
-    decoding_map.update(zip(range(0x18, 0x20), (
-            0x02D8, 0x02C7, 0x02C6, 0x02D9, 0x02DD, 0x02DB, 0x02DA, 0x02DC)))
-    decoding_map.update(zip(range(0x80, 0x9F), (
+    decoding_map.update(list(zip(list(range(0x18, 0x20)), (
+            0x02D8, 0x02C7, 0x02C6, 0x02D9, 0x02DD, 0x02DB, 0x02DA, 0x02DC))))
+    decoding_map.update(list(zip(list(range(0x80, 0x9F)), (
             0x2022, 0x2020, 0x2021, 0x2026, 0x2014, 0x2013, 0x0192, 0x2044,
             0x2039, 0x203A, 0x2212, 0x2030, 0x201E, 0x201C, 0x201D, 0x2018,
             0x2019, 0x201A, 0x2122, 0xFB01, 0xFB02, 0x0141, 0x0152, 0x0160,
-            0x0178, 0x017D, 0x0131, 0x0142, 0x0153, 0x0161, 0x017E)))
+            0x0178, 0x017D, 0x0131, 0x0142, 0x0153, 0x0161, 0x017E))))
     decoding_map[0xA0] = 0x20AC
 
     # Make the encoding map from the decoding map
@@ -350,7 +350,7 @@ class PdfString(str):
         cls.unescape_func = unescape_func
 
         unescape_dict = dict(((chr(x), chr(x)) for x in range(0x100)))
-        unescape_dict.update(zip('nrtbf', '\n\r\t\b\f'))
+        unescape_dict.update(list(zip('nrtbf', '\n\r\t\b\f')))
         unescape_dict['\r'] = ''
         unescape_dict['\n'] = ''
         unescape_dict['\r\n'] = ''
@@ -372,12 +372,12 @@ class PdfString(str):
             Possible string escapes from the spec:
             (PDF 1.7 Reference, section 3.2.3, page 53)
 
-                1. \[nrtbf\()]: simple escapes
+                1. \\[nrtbf\\()]: simple escapes
                 2. \\d{1,3}: octal. Must be zero-padded to 3 digits
                     if followed by digit
-                3. \<end of line>: line continuation. We don't know the EOL
+                3. \\<end of line>: line continuation. We don't know the EOL
                     marker used in the PDF, so accept \r, \n, and \r\n.
-                4. Any other character following \ escape -- the backslash
+                4. Any other character following \\ escape -- the backslash
                     is swallowed.
         """
         result = (self.unescape_func or self.init_unescapes())(self[1:-1])
@@ -543,7 +543,7 @@ class PdfString(str):
         return cls.from_bytes(raw, encoding)
 
     @classmethod
-    def encode(cls, source, uni_type = type(u''), isinstance=isinstance):
+    def encode(cls, source, uni_type = type(''), isinstance=isinstance):
         """ The encode() constructor is a legacy function that is
             also a convenience for the PdfWriter.
         """

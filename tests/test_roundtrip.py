@@ -31,7 +31,7 @@ import os
 import hashlib
 import pdfrw
 import static_pdfs
-import expected
+from . import expected
 
 from pdfrw.py23_diffs import convert_store
 
