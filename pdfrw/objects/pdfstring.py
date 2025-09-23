@@ -364,7 +364,7 @@ class PdfString(str):
         return unescape_func
 
     def decode_literal(self):
-        """ Decode a PDF literal string, which is enclosed in parentheses ()
+        r""" Decode a PDF literal string, which is enclosed in parentheses ()
 
             Many pdfrw users never decode strings, so defer creating
             data structures to do so until the first string is decoded.
