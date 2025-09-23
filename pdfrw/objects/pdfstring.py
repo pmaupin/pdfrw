@@ -3,7 +3,7 @@
 #                    2016 James Laird-Wah, Sydney, Australia
 # MIT license -- See LICENSE.txt for details
 
-"""
+r"""
 
 ================================
 PdfString encoding and decoding
