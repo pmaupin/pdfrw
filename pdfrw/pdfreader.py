@@ -417,7 +417,7 @@ class PdfReader(PdfDict):
                             setdefault((objnum, generation), offset)
                     elif inuse != 'f':
                         raise ValueError
-        except:
+        except Exception:
             pass
         try:
             # Table formatted incorrectly.
@@ -441,7 +441,7 @@ class PdfReader(PdfDict):
             log.warning('Badly formatted xref table')
             source.floc = end
             next()
-        except:
+        except Exception:
             source.floc = start
             source.exception('Invalid table format')
 
