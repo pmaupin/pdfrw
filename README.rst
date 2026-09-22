@@ -148,7 +148,7 @@ needs to be spiral bound, you either have to do some fancy rearranging,
 or just waste half your paper.
 
 The `print_two.py`__ example program will, for example, make two side-by-side
-copies each page of of your PDF on a each output sheet.
+copies each page of your PDF on each output sheet.
 
 __ https://github.com/pmaupin/pdfrw/tree/master/examples/print_two.py
 
@@ -496,7 +496,7 @@ __ https://github.com/pmaupin/pdfrw/tree/master/pdfrw/objects/pdfdict.py
 If a PdfDict has an associated data stream in the PDF file, the stream
 is accessed via the 'stream' (all lower-case) attribute.  Setting the
 stream attribute on the PdfDict will automatically set the /Length attribute
-as well.  If that is not what is desired (for example if the the stream
+as well.  If that is not what is desired (for example if the stream
 is compressed), then _stream (same name with an underscore) may be used
 to associate the stream with the PdfDict without setting the length.
 
